@@ -1,11 +1,13 @@
 package com.app.checkpresence;
 
 import android.app.Activity;
+import android.content.res.Configuration;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Surface;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
@@ -14,6 +16,7 @@ import android.widget.ImageButton;
 public class MainActivity extends Activity {
     private Camera mCamera = null;
     private CameraView mCameraView = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +36,7 @@ public class MainActivity extends Activity {
         }
 
         //btn to close the application
-        ImageButton imgClose = (ImageButton)findViewById(R.id.imgClose);
+        ImageButton imgClose = (ImageButton) findViewById(R.id.imgClose);
         imgClose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -41,5 +44,4 @@ public class MainActivity extends Activity {
             }
         });
     }
-
 }
