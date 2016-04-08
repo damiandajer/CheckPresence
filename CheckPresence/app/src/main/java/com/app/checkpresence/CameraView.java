@@ -17,6 +17,7 @@ package com.app.checkpresence;
         import android.view.SurfaceHolder;
         import android.view.SurfaceView;
         import android.view.View;
+        import android.widget.TextView;
         import android.widget.Toast;
 
         import java.io.ByteArrayOutputStream;
@@ -30,16 +31,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private SurfaceHolder mHolder;
     private Camera mCamera;
     private int frames = 0;
+    private int pictureSaved = 0;
+    private TextView savedPic;
 
-    public CameraView(Context context, Camera camera){
+    public CameraView(Context context, Camera camera, TextView saved){
         super(context);
 
+        this.savedPic = saved;
         mCamera = camera;
         mCamera.setDisplayOrientation(90);
         //get the holder and set this class as the callback, so we can get camera data here
         mHolder = getHolder();
         mHolder.addCallback(this);
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_NORMAL);
+
+        //this.saved = (TextView) findViewById(R.id.saved);
+        //this.saved.setText("0 saved");
     }
 
     @Override
@@ -79,29 +86,31 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                 public void onPreviewFrame(byte[] data, Camera _camera) {
                     ++frames;
                     if(frames == 10) {
-                    //Log.d("surfaceChanged",String.format("Got %d bytes of camera data", _data.length));
-                    //System.out.println("Got bytes of camera data: " + data.length);
-                    //Bitmap previewBitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-                    Camera.Parameters parameters = mCamera.getParameters();
-                    Camera.Size size = parameters.getPreviewSize();
-                    parameters.set("orientation", "portrait");
-                    parameters.setRotation(90);
-                    mCamera.setParameters(parameters);
+                        ++pictureSaved;
+                        //Log.d("surfaceChanged",String.format("Got %d bytes of camera data", _data.length));
+                        //System.out.println("Got bytes of camera data: " + data.length);
+                        //Bitmap previewBitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                        Camera.Parameters parameters = mCamera.getParameters();
+                        Camera.Size size = parameters.getPreviewSize();
+                        parameters.set("orientation", "portrait");
+                        parameters.setRotation(90);
+                        mCamera.setParameters(parameters);
 
-                    YuvImage image = new YuvImage(data, parameters.getPreviewFormat(),
-                            size.width, size.height, null);
+                        YuvImage image = new YuvImage(data, parameters.getPreviewFormat(),
+                                size.width, size.height, null);
 
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    image.compressToJpeg(
-                            new Rect(0, 0, image.getWidth(), image.getHeight()), 90,
-                            out);
+                        ByteArrayOutputStream out = new ByteArrayOutputStream();
+                        image.compressToJpeg(
+                                new Rect(0, 0, image.getWidth(), image.getHeight()), 90,
+                                out);
 
-                    byte[] imageBytes = out.toByteArray();
-                    Bitmap imageBmp = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+                        byte[] imageBytes = out.toByteArray();
+                        Bitmap imageBmp = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
 
-                    addCopy(imageBmp);
+                        addCopy(imageBmp);
 
-                    frames = 0;
+                        savedPic.setText(pictureSaved + " saved");
+                        frames = 0;
                     }
                 }
             });

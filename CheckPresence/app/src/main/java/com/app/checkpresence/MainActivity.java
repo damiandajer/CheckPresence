@@ -11,17 +11,21 @@ import android.view.Surface;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.TextView;
 
 
 public class MainActivity extends Activity {
     private Camera mCamera = null;
     private CameraView mCameraView = null;
+    public TextView saved;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        this.saved = (TextView) findViewById(R.id.saved);
 
         try{
             mCamera = Camera.open(1);//you can use open(int) to use different cameras
@@ -30,7 +34,7 @@ public class MainActivity extends Activity {
         }
 
         if(mCamera != null) {
-            mCameraView = new CameraView(this, mCamera);//create a SurfaceView to show camera data
+            mCameraView = new CameraView(this, mCamera, saved);//create a SurfaceView to show camera data
             FrameLayout camera_view = (FrameLayout)findViewById(R.id.camera_view);
             camera_view.addView(mCameraView);//add the SurfaceView to the layout
         }
@@ -43,5 +47,7 @@ public class MainActivity extends Activity {
                 System.exit(0);
             }
         });
+
+
     }
 }
