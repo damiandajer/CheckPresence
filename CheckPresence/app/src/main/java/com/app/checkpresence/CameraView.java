@@ -26,6 +26,7 @@ package com.app.checkpresence;
         import java.io.FileOutputStream;
         import java.io.IOException;
         import java.nio.channels.FileChannel;
+        import java.util.concurrent.ExecutionException;
 
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private SurfaceHolder mHolder;
@@ -33,6 +34,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private int frames = 0;
     private int pictureSaved = 0;
     private TextView savedPic;
+    Bitmap result;
 
     public CameraView(Context context, Camera camera, TextView saved){
         super(context);
@@ -84,31 +86,36 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
             mCamera.setPreviewCallback(new Camera.PreviewCallback() {
                 public void onPreviewFrame(byte[] data, Camera _camera) {
+                    //number of frames
                     ++frames;
                     if(frames == 10) {
+                        //number of saved pictures
                         ++pictureSaved;
                         //Log.d("surfaceChanged",String.format("Got %d bytes of camera data", _data.length));
                         //System.out.println("Got bytes of camera data: " + data.length);
                         //Bitmap previewBitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+
+                        //Setting camera parameters
                         Camera.Parameters parameters = mCamera.getParameters();
                         Camera.Size size = parameters.getPreviewSize();
                         parameters.set("orientation", "portrait");
                         parameters.setRotation(90);
                         mCamera.setParameters(parameters);
 
-                        YuvImage image = new YuvImage(data, parameters.getPreviewFormat(),
-                                size.width, size.height, null);
+                        //Creating classes with parameters and asynchronic converting picture
+                        ConvertPictureAsyncParams params = new ConvertPictureAsyncParams(data, parameters, size);
+                        ConvertPictureAsync convertPictureAsync = new ConvertPictureAsync();
 
-                        ByteArrayOutputStream out = new ByteArrayOutputStream();
-                        image.compressToJpeg(
-                                new Rect(0, 0, image.getWidth(), image.getHeight()), 90,
-                                out);
+                        //running new thread which convert picture
+                        try {
+                            result = convertPictureAsync.execute(params).get();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        } catch (ExecutionException e) {
+                            e.printStackTrace();
+                        }
 
-                        byte[] imageBytes = out.toByteArray();
-                        Bitmap imageBmp = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
-
-                        addCopy(imageBmp);
-
+                        addCopy(result);
                         savedPic.setText(pictureSaved + " saved");
                         frames = 0;
                     }
@@ -124,8 +131,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         mCamera.release();
     }
 
+    /**
+     * Method is saving bmp file to memory
+     * @param image Bitmap
+     */
     public void addCopy(Bitmap image){
-        
+
         FileOutputStream out = null;
         File sd = Environment.getExternalStorageDirectory();
         String backupDBPath = "backupBMP/backupImage.bmp";
@@ -142,6 +153,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         if(backupImage.exists()) {
             try {
                 out = new FileOutputStream(backupImage);
+                System.out.println("Kompresuję...");
                 image.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
                 // PNG is a lossless format, the compression factor (100) is ignored
                 /*image.compressToJpeg(
@@ -152,6 +164,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
             } finally {
                 try {
                     if (out != null) {
+                        System.out.println("Zamykam OutputStream");
                         out.close();
                     }
                 } catch (IOException e) {
@@ -160,4 +173,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
             }
         }
     }
+
 }
+
