@@ -1,6 +1,7 @@
 package com.app.checkpresence;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.res.Configuration;
 import android.hardware.Camera;
 import android.os.Bundle;
@@ -18,14 +19,17 @@ public class MainActivity extends Activity {
     private Camera mCamera = null;
     private CameraView mCameraView = null;
     public TextView saved;
+    private DataBase dataBase;
+    private Context context;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        context = this;
 
-        this.saved = (TextView) findViewById(R.id.saved);
+        saved = (TextView) findViewById(R.id.saved);
 
         try{
             mCamera = Camera.open(1);//you can use open(int) to use different cameras
@@ -48,6 +52,24 @@ public class MainActivity extends Activity {
             }
         });
 
+        openDB();
+    }
 
+    /**
+     * Metoda tworzy i otwiera bazę danych
+     */
+    private void openDB() {
+        dataBase = new DataBase(context);
+        dataBase.open();
+
+    }
+
+    /**
+     * Metoda zamyka aplikację i bazę danych
+     */
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        dataBase.close();
     }
 }
