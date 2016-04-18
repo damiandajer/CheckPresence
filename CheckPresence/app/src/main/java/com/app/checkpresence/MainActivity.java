@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.hardware.Camera;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -53,7 +54,15 @@ public class MainActivity extends Activity {
         });
 
         openDB();
+        //System.out.println(myNativeCode());
     }
+
+    static {
+        System.loadLibrary("native");
+    }
+
+    //public native String myNativeCode();
+    //public static String myNativeCodasde();
 
     /**
      * Metoda tworzy i otwiera bazę danych

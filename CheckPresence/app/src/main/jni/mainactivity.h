@@ -1,0 +1,10 @@
+//
+// Created by Damian on 18.04.2016.
+//
+
+#ifndef CHECKPRESENCE_MAINACTIVITY_H
+#define CHECKPRESENCE_MAINACTIVITY_H
+
+#include <jni.h>
+
+#endif //CHECKPRESENCE_MAINACTIVITY_H

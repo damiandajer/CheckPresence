@@ -33,6 +33,7 @@ public class ConvertPictureAsync extends AsyncTask<ConvertPictureAsyncParams, Vo
                 params[0].size.width, params[0].size.height, null);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
+        //image.
         image.compressToJpeg(
                 new Rect(0, 0, image.getWidth(), image.getHeight()), 90,
                 out);
