@@ -39,7 +39,7 @@ JNIEXPORT jstring JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNI
     std::stringstream testPixel;
     //fileData << "P6\n" << cols << " " << rows << "\n# eyetom.com\n" << 255 << "\n";
 
-    for (size_t i = 0; i < dlugosc * sizeof(int); i = i + 4) {
+    for (size_t i = 0; i < dlugosc; i++) {
         char a = plikDaneARGB[i + 0];
         char r = plikDaneARGB[i + 1];
         char g = plikDaneARGB[i + 2];
@@ -48,11 +48,11 @@ JNIEXPORT jstring JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNI
         if (i == 0) {
             testPixel << "ARGB: " << (int)a << " " << (int)r << " " << (int)g << " " << (int)b << '\n';
         }
-
+/*
         if (i > dlugosc && i <= dlugosc + 4) {
             testPixel << "ARGB: " << (int)a << " " << (int)r << " " << (int)g << " " << (int)b << '\n';
         }
-
+*/
         fileData.write(reinterpret_cast<char *>(plikDaneARGB + i), 3);
     }
 

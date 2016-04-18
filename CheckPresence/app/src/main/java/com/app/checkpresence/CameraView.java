@@ -135,6 +135,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         } catch (ExecutionException e) {
                             e.printStackTrace();
                         }
+                        //hgfg
 */
                         argb = new int[data.length];
                         YUV_NV21_TO_RGB(argb, data, size.width, size.height);
