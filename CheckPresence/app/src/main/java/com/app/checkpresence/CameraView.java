@@ -40,7 +40,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private TextView savedPic;
     private Bitmap result;
     Buffer buffer;
-    public native byte[] myNativeCode(int[] argb ,int dlugosc, int rows, int cols);
+    public native int[] myNativeCode(int[] argb ,int dlugosc, int rows, int cols);
     int[] argb;
 
     public CameraView(Context context, Camera camera, TextView saved){
@@ -71,7 +71,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     }
 
     @Override
-    public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i2, int i3) {
+    public void surfaceChanged(SurfaceHolder surfaceHolder, final int i, int i2, int i3) {
 
         //before changing the application orientation, you need to stop the preview, rotate and then start it again
         if(mHolder.getSurface() == null)//check if the surface is ready to receive camera data
@@ -142,15 +142,19 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         //Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
                         //String temp= BitMapToString(result);
                         //System.out.println(temp);
-                        byte[] tablica10 = myNativeCode(argb, argb.length, size.height, size.width);
-                        for (int i = 10000; i < 10025; ++i) {
+                        int[] tablica10 = myNativeCode(argb, argb.length, size.height, size.width);
+                        for (int i = 2000; i < 2025; ++i) {
                             System.out.println(tablica10[i]);
                         }
                         System.out.println("Alamiala 10 kotaow?");
+                        //Bitmap bmp = Bitmap.createBitmap(null, 0, 0, size.width, size.height);
+                        Bitmap.Config conf = Bitmap.Config.ARGB_8888; // see other conf types
+                        Bitmap bmp = Bitmap.createBitmap(size.width, size.height, conf);
+                        bmp.setPixels(tablica10, 0, size.width, 0, 0, size.width, size.height);
                         //Bitmap previewBitmap = BitmapFactory.
                         //System.out.println(myNativeCode(argb, argb.length, size.height, size.width));
 
-                        //addCopy(result, pictureSaved);
+                        addCopy(bmp, pictureSaved);
                         savedPic.setText(pictureSaved + " saved");
                         frames = 0;
                     }
