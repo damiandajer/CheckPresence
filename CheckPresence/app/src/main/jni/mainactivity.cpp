@@ -20,7 +20,8 @@ JNIEXPORT jstring JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNI
                                                                              jint dlugosc, jint rows, jint cols){
 
     jint *argb = (*env).GetIntArrayElements(argb_, NULL);
-    char* plikDaneARGB = (char*)argb;
+    unsigned char* plikDaneARGB = (unsigned char*)argb;
+    int dataLength = rows * cols * 3;
     /*
     std::stringstream strS;
     const char* str = env -> GetStringUTFChars(fileData, 0);
@@ -37,27 +38,33 @@ JNIEXPORT jstring JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNI
 
     std::stringstream fileData;
     std::stringstream testPixel;
-    //fileData << "P6\n" << cols << " " << rows << "\n# eyetom.com\n" << 255 << "\n";
+    fileData << "P6\n" << cols << " " << rows << "\n# eyetom.com\n" << 255 << "\n";
+    int headerLength = fileData.str().size();
 
-    for (size_t i = 0; i < dlugosc; i++) {
-        char a = plikDaneARGB[i + 0];
-        char r = plikDaneARGB[i + 1];
-        char g = plikDaneARGB[i + 2];
-        char b = plikDaneARGB[i + 3];
+    for (size_t i = 0; i < dataLength * 4; i += 4) {
+        char r = plikDaneARGB[i + 0];
+        char g = plikDaneARGB[i + 1];
+        char b = plikDaneARGB[i + 2];
+        char a = plikDaneARGB[i + 3];
+
+        fileData.write(reinterpret_cast<char *>(&r), 1);
+        fileData.write(reinterpret_cast<char *>(&g), 1);
+        fileData.write(reinterpret_cast<char *>(&b), 1);
 
         if (i == 0) {
-            testPixel << "ARGB: " << (int)a << " " << (int)r << " " << (int)g << " " << (int)b << '\n';
+            testPixel << "ARGB: " << (int)r << " " << (int)g << " " << (int)b << " " << (int)a << '\n';
         }
 /*
         if (i > dlugosc && i <= dlugosc + 4) {
             testPixel << "ARGB: " << (int)a << " " << (int)r << " " << (int)g << " " << (int)b << '\n';
         }
 */
-        fileData.write(reinterpret_cast<char *>(plikDaneARGB + i), 3);
     }
-
     (*env).ReleaseIntArrayElements(argb_, argb,0);
-    return (*env).NewStringUTF(PaPaMobile_HandRecognization(fileData.str(), dlugosc * sizeof(int)).c_str());
+
+    dataLength += headerLength;
+    std::string wynik = PaPaMobile_HandRecognization(fileData.str(), dataLength);
+    return (*env).NewStringUTF(wynik.c_str());
     //return (*env).NewStringUTF(testPixel.str().c_str());
     }
 }
@@ -68,31 +75,11 @@ std::string PaPaMobile_HandRecognization(std::string fileData, size_t fileLength
     int hpos, i, j;
     PGMFile pgmFile(fileData.c_str(), fileLength);
     //return "test happy 01";
-    //MemoryFile memoryFile;
-
-    /*
-    FILE *fp;
-    size_t flen, hlen;
-    char signature[3];
-
-
-    if ((fp = fopen(f.c_str(), "rb")) == NULL)
-        return 0;
-
-    fseek(fp, 0, SEEK_END);
-    flen = ftell(fp);	//file lenght
-    fileData = new char[flen];
-    fseek(fp, 0, SEEK_SET);
-    fread(fileData, 1, flen, fp);
-    memoryFile.setFile(fileData, flen);*/
-
-    /**/
 
     //if ((hpos = readPPMB_header(f.c_str(), &rows, &cols, &max_color)) <= 0) exit(1);
-    //if ((hpos = pgmFile.readPGMB_header(&rows, &cols, &max_color)) <= 0)
-     //   return "nie udało się wczytać nagłówka";
+    if ((hpos = pgmFile.readPGMB_header(&rows, &cols, &max_color)) <= 0)
+        return "nie udało się wczytać nagłówka";
     //return pgmFile.readPGMB_header(&rows, &cols, &max_color);
-    hpos = 0;
 
     unsigned char **R = new_char_image(rows, cols);
     unsigned char **G = new_char_image(rows, cols);

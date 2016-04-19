@@ -22,12 +22,8 @@ PGMFile::PGMFile(std::string fileName)
 }
 #endif // defined (_MSC_VER)
 
-std::string PGMFile::readPGMB_header(int * rows, int * cols, int * max_color)
+int PGMFile::readPGMB_header(int * rows, int * cols, int * max_color)
 {
-	for (int i = 0; i < this->getFileLength(); ++i) {
-		//std::cout << (char)this->getc();
-	}
-
 	size_t hlen;
 	char signature[3];
 
@@ -36,9 +32,9 @@ std::string PGMFile::readPGMB_header(int * rows, int * cols, int * max_color)
 	this->gets(signature, sizeof(signature));
 	if (signature[0] != 'P' || signature[1] != '6')
 	{
-		close(); return std::string(signature);
+		close(); return 0;
 	}	//probably not pgm binary file...
-	return std::string(signature);
+	//return std::string(signature);
 	skipcomments();
 	*cols = this->getInt();
 	skipcomments();
@@ -54,7 +50,7 @@ std::string PGMFile::readPGMB_header(int * rows, int * cols, int * max_color)
 	if ((*rows) * 3 * (*cols) != (this->getFileLength() - hlen))	//we assume only one picture in the file
 		return 0;
 
-	return std::string("ala ma kota");hlen;
+	return hlen;
 }
 
 int PGMFile::writePGMB_image_to_string(std::string &dataDestination, unsigned char * image, int rows, int cols, int max_color)

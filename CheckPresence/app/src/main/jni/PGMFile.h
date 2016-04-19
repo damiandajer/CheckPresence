@@ -11,7 +11,7 @@ public:
 	PGMFile(std::string fileName);
 #endif // defined (_MSC_VER)
 
-	std::string readPGMB_header(int *rows, int *cols, int *max_color);
+	int readPGMB_header(int *rows, int *cols, int *max_color);
 	/*int readPGMB_data(unsigned char *image, const  char *fname, int hlen, int rows, int cols, int max_color);*/
 	int writePGMB_image_to_string(std::string& dataDestination, unsigned char *image, int rows, int cols, int max_color);
 #if defined (_MSC_VER)
