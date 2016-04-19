@@ -13,15 +13,17 @@
 #include "MemoryFile.h"
 #include "PGMFile.h"
 
-std::string PaPaMobile_HandRecognization(std::string fileData, size_t fileLength);
+std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_t fileLength);
 
 extern "C" {
-JNIEXPORT jstring JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
+JNIEXPORT jbyteArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
                                                                              jint dlugosc, jint rows, jint cols){
 
     jint *argb = (*env).GetIntArrayElements(argb_, NULL);
     unsigned char* plikDaneARGB = (unsigned char*)argb;
     int dataLength = rows * cols * 3;
+
+   // (*env).SetArra
 
     /*
     std::stringstream strS;
@@ -65,17 +67,33 @@ JNIEXPORT jstring JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNI
     (*env).ReleaseIntArrayElements(argb_, argb,0);
 
 
+    jbyteArray result;
+    result = (*env).NewByteArray(rows*cols*4);
+    if (result == NULL) {
+        return NULL; /* out of memory error thrown */
+    }
+
+    jbyte table[rows*cols*4];
+    for (size_t i = 0; i < rows*cols*4; i++) {
+        table[i] = 0; // put whatever logic you want to populate the values here.
+    }
+
 
     dataLength += headerLength;
-    std::string wynik = PaPaMobile_HandRecognization(fileData.str(), dataLength);
+    std::string wynik = PaPaMobile_HandRecognization((int*)&table[0], fileData.str(), dataLength);
     int xx = wynik.size();
     int y = 0;
-    return (*env).NewStringUTF(wynik.c_str());
+
+
+    // move from the temp structure to the java structure
+    (*env).SetByteArrayRegion(result, 0, rows*cols*4, table);
+    return result;
+    //return (*env).NewStringUTF(wynik.c_str());
     //return (*env).NewStringUTF(testPixel.str().c_str());
     }
 }
 
-std::string PaPaMobile_HandRecognization(std::string fileData, size_t fileLength) {
+std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_t fileLength) {
     int rows, cols;
     int max_color;
     int hpos, i, j;
@@ -232,7 +250,8 @@ std::string PaPaMobile_HandRecognization(std::string fileData, size_t fileLength
 
     std::string daneAfterSegmentation;
     //std::cout << daneAfterSegmentation << std::endl;
-    pgmFile.writePGMB_image_to_string(daneAfterSegmentation, b_out[0], rows, cols, 255);
+    //pgmFile.writePGMB_image_to_string(daneAfterSegmentation, b_out[0], rows, cols, 255);
+    pgmFile.writePGMB_image_to_tableInt(table, b_out[0], rows, cols, 255);
 
     // to trzeba jeszcze poprawić wede alokacji pamięci
     delete[] R;

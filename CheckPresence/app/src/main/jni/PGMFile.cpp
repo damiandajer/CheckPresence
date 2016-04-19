@@ -64,11 +64,42 @@ int PGMFile::writePGMB_image_to_string(std::string &dataDestination, unsigned ch
 	//ss << "P5\n" << cols << " " << rows << "\n# eyetom.com\n" << max_color << "\n";
 	ss.write(reinterpret_cast<const char*>(image), cols * rows);
 	//for (size_t i = 0; i < cols * rows; ++i)
-		//ss.write(reinterpret_cast<char*>(image[i]), 1);
-		//ss << image[i];
+	//ss.write(reinterpret_cast<char*>(image[i]), 1);
+	//ss << image[i];
 	//fp.write(reinterpret_cast<const char*>(image), cols * rows);
 
 	dataDestination = ss.str();
+	return E_OK;
+}
+
+int PGMFile::writePGMB_image_to_tableInt(int* table, unsigned char * image, int rows, int cols, int max_color)
+{
+	if (this->getDataPointer() == nullptr) {
+		mError = NO_DATA_FILE_IN_MEMORY;
+		return mError;
+	}
+
+	//std::stringstream ss;
+	//ss << "P5\n" << cols << " " << rows << "\n# eyetom.com\n" << max_color << "\n";
+	//ss.write(reinterpret_cast<const char*>(image), cols * rows);
+	//for (size_t i = 0; i < cols * rows; ++i)
+	//ss.write(reinterpret_cast<char*>(image[i]), 1);
+	//ss << image[i];
+	//fp.write(reinterpret_cast<const char*>(image), cols * rows);
+	for (int i = 0; i < rows * cols; ++i) {
+		int argb = 0xFF;
+		((char*)&argb)[1] |= image[i];
+		((char*)&argb)[2] |= image[i];
+		((char*)&argb)[3] |= image[i];
+		table[i] = argb;
+
+		if (image[i] != 0) {
+			int x = 0;
+			x = 6;
+		}
+	}
+
+	//dataDestination = ss.str();
 	return E_OK;
 }
 
