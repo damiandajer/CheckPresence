@@ -137,7 +137,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         }
                         //hgfg
 */
-                        argb = new int[data.length];
+                        argb = new int[size.height * size.width];
                         YUV_NV21_TO_RGB(argb, data, size.width, size.height);
                         //Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
                         //String temp= BitMapToString(result);

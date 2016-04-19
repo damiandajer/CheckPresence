@@ -22,6 +22,7 @@ JNIEXPORT jstring JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNI
     jint *argb = (*env).GetIntArrayElements(argb_, NULL);
     unsigned char* plikDaneARGB = (unsigned char*)argb;
     int dataLength = rows * cols * 3;
+
     /*
     std::stringstream strS;
     const char* str = env -> GetStringUTFChars(fileData, 0);
@@ -41,7 +42,7 @@ JNIEXPORT jstring JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNI
     fileData << "P6\n" << cols << " " << rows << "\n# eyetom.com\n" << 255 << "\n";
     int headerLength = fileData.str().size();
 
-    for (size_t i = 0; i < dataLength * 4; i += 4) {
+    for (size_t i = 0; i < rows * cols * 4; i += 4) {
         char r = plikDaneARGB[i + 0];
         char g = plikDaneARGB[i + 1];
         char b = plikDaneARGB[i + 2];
@@ -60,10 +61,15 @@ JNIEXPORT jstring JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNI
         }
 */
     }
+    //return (*env).NewStringUTF(std::string("hello return 01").c_str());
     (*env).ReleaseIntArrayElements(argb_, argb,0);
+
+
 
     dataLength += headerLength;
     std::string wynik = PaPaMobile_HandRecognization(fileData.str(), dataLength);
+    int xx = wynik.size();
+    int y = 0;
     return (*env).NewStringUTF(wynik.c_str());
     //return (*env).NewStringUTF(testPixel.str().c_str());
     }
@@ -244,5 +250,6 @@ std::string PaPaMobile_HandRecognization(std::string fileData, size_t fileLength
     int etap2(daneAfterSegmentation, daneAfterSegmentation.size());
     ************************************/
 
-    return "najprawodopodniej wszystko OK! HAPPY AND READY FOR NEXT ETAP!!!! PROBABLY....";
+    //return "najprawodopodniej wszystko OK! HAPPY AND READY FOR NEXT ETAP!!!! PROBABLY....";
+    return daneAfterSegmentation;
 }

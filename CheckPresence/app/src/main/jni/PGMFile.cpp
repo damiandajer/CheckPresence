@@ -61,9 +61,11 @@ int PGMFile::writePGMB_image_to_string(std::string &dataDestination, unsigned ch
 	}
 
 	std::stringstream ss;
-	ss << "P5\n" << cols << " " << rows << "\n# eyetom.com\n" << max_color << "\n";
-	for (size_t i = 0; i < cols * rows; ++i)
-		ss << image[i];
+	//ss << "P5\n" << cols << " " << rows << "\n# eyetom.com\n" << max_color << "\n";
+	ss.write(reinterpret_cast<const char*>(image), cols * rows);
+	//for (size_t i = 0; i < cols * rows; ++i)
+		//ss.write(reinterpret_cast<char*>(image[i]), 1);
+		//ss << image[i];
 	//fp.write(reinterpret_cast<const char*>(image), cols * rows);
 
 	dataDestination = ss.str();
