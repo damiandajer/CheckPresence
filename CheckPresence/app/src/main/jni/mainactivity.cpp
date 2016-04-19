@@ -16,7 +16,7 @@
 std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_t fileLength);
 
 extern "C" {
-JNIEXPORT jbyteArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
+JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
                                                                              jint dlugosc, jint rows, jint cols){
 
     jint *argb = (*env).GetIntArrayElements(argb_, NULL);
@@ -67,14 +67,14 @@ JNIEXPORT jbyteArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(
     (*env).ReleaseIntArrayElements(argb_, argb,0);
 
 
-    jbyteArray result;
-    result = (*env).NewByteArray(rows*cols*4);
+    jintArray result;
+    result = (*env).NewIntArray(rows*cols);
     if (result == NULL) {
         return NULL; /* out of memory error thrown */
     }
 
-    jbyte table[rows*cols*4];
-    for (size_t i = 0; i < rows*cols*4; i++) {
+    jint table[rows*cols];
+    for (size_t i = 0; i < rows*cols; i++) {
         table[i] = 0; // put whatever logic you want to populate the values here.
     }
 
@@ -86,7 +86,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(
 
 
     // move from the temp structure to the java structure
-    (*env).SetByteArrayRegion(result, 0, rows*cols*4, table);
+    (*env).SetIntArrayRegion(result, 0, rows*cols, table);
     return result;
     //return (*env).NewStringUTF(wynik.c_str());
     //return (*env).NewStringUTF(testPixel.str().c_str());
