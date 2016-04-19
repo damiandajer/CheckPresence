@@ -40,7 +40,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private TextView savedPic;
     private Bitmap result;
     Buffer buffer;
-    public native String myNativeCode(int[] argb ,int dlugosc, int rows, int cols);
+    public native byte[] myNativeCode(int[] argb ,int dlugosc, int rows, int cols);
     int[] argb;
 
     public CameraView(Context context, Camera camera, TextView saved){
@@ -142,7 +142,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         //Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
                         //String temp= BitMapToString(result);
                         //System.out.println(temp);
-                        System.out.println(myNativeCode(argb, argb.length, size.height, size.width));
+                        byte[] tablica10 = myNativeCode(argb, argb.length, size.height, size.width);
+                        for (int i = 10000; i < 10025; ++i) {
+                            System.out.println(tablica10[i]);
+                        }
+                        System.out.println("Alamiala 10 kotaow?");
+                        //Bitmap previewBitmap = BitmapFactory.
+                        //System.out.println(myNativeCode(argb, argb.length, size.height, size.width));
 
                         //addCopy(result, pictureSaved);
                         savedPic.setText(pictureSaved + " saved");

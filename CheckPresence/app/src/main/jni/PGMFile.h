@@ -14,6 +14,7 @@ public:
 	int readPGMB_header(int *rows, int *cols, int *max_color);
 	/*int readPGMB_data(unsigned char *image, const  char *fname, int hlen, int rows, int cols, int max_color);*/
 	int writePGMB_image_to_string(std::string& dataDestination, unsigned char *image, int rows, int cols, int max_color);
+	int writePGMB_image_to_tableInt(int* table, unsigned char * image, int rows, int cols, int max_color);
 #if defined (_MSC_VER)
 	int writePGMB_image_to_file(std::string fileName, unsigned char *image, int rows, int cols, int max_color);
 #endif // defined (_MSC_VER)
