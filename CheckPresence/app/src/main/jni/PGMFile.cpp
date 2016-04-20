@@ -53,6 +53,37 @@ int PGMFile::readPGMB_header(int * rows, int * cols, int * max_color)
 	return hlen;
 }
 
+int PGMFile::readPPMB_header(int * rows, int * cols, int * max_color)
+{
+	size_t hlen;
+	char signature[3];
+
+	this->seek(0, SEEK_SET);
+
+	this->gets(signature, sizeof(signature));
+	if (signature[0] != 'P' || signature[1] != '6')
+	{
+		close(); return 0;
+	}	//probably not pgm binary file...
+
+	skipcomments();
+	*cols = this->getInt();
+	skipcomments();
+	*rows = this->getInt();
+	skipcomments();
+	*max_color = this->getInt();
+	this->getc();
+
+	hlen = this->tellg(); //header lenght
+	//this->close();
+	/*if ((*rows) * 3 * (*cols) != (flen - hlen))	//we assume only one picture in the file
+    return 0;*/
+	if ((*rows) * 3 * (*cols) != (this->getFileLength() - hlen))	//we assume only one picture in the file
+		return 0;
+
+	return hlen;
+}
+
 int PGMFile::writePGMB_image_to_string(std::string &dataDestination, unsigned char * image, int rows, int cols, int max_color)
 {
 	if (this->getDataPointer() == nullptr) {
@@ -86,6 +117,7 @@ int PGMFile::writePGMB_image_to_tableInt(int* table, unsigned char * image, int 
 	//ss.write(reinterpret_cast<char*>(image[i]), 1);
 	//ss << image[i];
 	//fp.write(reinterpret_cast<const char*>(image), cols * rows);
+	int ileBialych = 0;
 	for (int i = 0; i < rows * cols; ++i) {
 		int argb = 0xFF;
 		((char*)&argb)[1] |= image[i];
@@ -94,8 +126,7 @@ int PGMFile::writePGMB_image_to_tableInt(int* table, unsigned char * image, int 
 		table[i] = argb;
 
 		if (image[i] != 0) {
-			int x = 0;
-			x = 6;
+			++ileBialych;
 		}
 	}
 
