@@ -8,20 +8,26 @@
 #include <iostream>
 #include <sstream>
 
+#include <android/log.h>
+
 #include "T_img_utils.h"
 #include "T_cls_utils.h"
 #include "MemoryFile.h"
 #include "PGMFile.h"
 
-std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_t fileLength);
+std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_t fileLength, int warunek);
 
 extern "C" {
 JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
-                                                                             jint dlugosc, jint rows, jint cols){
+                                                                               jintArray returnedInputSegmentationFileData, jint rows, jint cols, jint warunek){
 
     jint *argb = (*env).GetIntArrayElements(argb_, NULL);
     unsigned char* plikDaneARGB = (unsigned char*)argb;
     int dataLength = rows * cols * 3;
+
+    jint *argbColorOut = (*env).GetIntArrayElements(returnedInputSegmentationFileData, NULL);
+
+    __android_log_print(ANDROID_LOG_DEBUG, "LOG_TEST", "Testowy log z NativeCode c++. Hello console :)");
 
    // (*env).SetArra
 
@@ -44,27 +50,54 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(J
     fileData << "P6\n" << cols << " " << rows << "\n# eyetom.com\n" << 255 << "\n";
     int headerLength = fileData.str().size();
 
+    /*
+    * koopiowanie obrazka przekazanego z java - kolorowy
+    */
+    //jintArray resultColor;
+    //resultColor = (*env).NewIntArray(rows*cols);
+    //if (resultColor == NULL) {
+    //   return NULL; /* out of memory error thrown */
+    //}
+
+    /* kopiuje orginalne pixele z obraz przekazanego do segmentacji */
+    //jint tableColor[rows*cols];
+    /*for (size_t i = 0; i < rows*cols; i++) {
+        tableColor[i] = ((int*)plikDaneARGB)[i]; // put whatever logic you want to populate the values here.
+    }*/
+
     for (size_t i = 0; i < rows * cols * 4; i += 4) {
-        char r = plikDaneARGB[i + 0];
-        char g = plikDaneARGB[i + 1];
-        char b = plikDaneARGB[i + 2];
         char a = plikDaneARGB[i + 3];
+        char r = plikDaneARGB[i + 2];
+        char g = plikDaneARGB[i + 1];
+        char b = plikDaneARGB[i + 0];
+
+        int intA = a;
+        int intR = r;
+        int intG = g;
+        int intB = b;
+        int color = (intA << 24) | (intR << 16) | (intG << 8) | (intB << 0);
+        //int color = 0xFFFF22FF;
+
+        argbColorOut[i / 4] = color;
 
         fileData.write(reinterpret_cast<char *>(&r), 1);
         fileData.write(reinterpret_cast<char *>(&g), 1);
         fileData.write(reinterpret_cast<char *>(&b), 1);
 
-        if (i == 0) {
-            testPixel << "ARGB: " << (int)r << " " << (int)g << " " << (int)b << " " << (int)a << '\n';
-        }
+        //if (i == 0) {
+        //    testPixel << "ARGB: " << (int)r << " " << (int)g << " " << (int)b << " " << (int)a << '\n';
+        //}
 /*
         if (i > dlugosc && i <= dlugosc + 4) {
             testPixel << "ARGB: " << (int)a << " " << (int)r << " " << (int)g << " " << (int)b << '\n';
         }
 */
     }
+    // move from the temp structure to the java structure
+    //(*env).SetIntArrayRegion(resultColor, 0, rows*cols, tableColor);
+
     //return (*env).NewStringUTF(std::string("hello return 01").c_str());
-    (*env).ReleaseIntArrayElements(argb_, argb,0);
+
 
 
     jintArray result;
@@ -74,26 +107,39 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(J
     }
 
     jint table[rows*cols];
+    if (table == nullptr) {
+        __android_log_print(ANDROID_LOG_DEBUG, "LOG_TEST", "Testowy log z NativeCode c++. Hello console :)");
+        int x;
+        x = 6;
+    }
     for (size_t i = 0; i < rows*cols; i++) {
         table[i] = 0; // put whatever logic you want to populate the values here.
     }
 
 
     dataLength += headerLength;
-    std::string wynik = PaPaMobile_HandRecognization((int*)&table[0], fileData.str(), dataLength);
+    std::string wynik = PaPaMobile_HandRecognization((int*)&table[0], fileData.str(), dataLength, warunek);
     int xx = wynik.size();
     int y = 0;
 
+    // zatapienie kolorow po separacje przez orginalne kolorowe
+    /*for (int i = 0; i < rows * cols; ++i) {
+        table[i] = argbColorOut[i];
+    }*/
 
     // move from the temp structure to the java structure
     (*env).SetIntArrayRegion(result, 0, rows*cols, table);
+
+    (*env).ReleaseIntArrayElements(argb_, argb,0);
+    (*env).ReleaseIntArrayElements(returnedInputSegmentationFileData, argbColorOut, 0);
+
     return result;
     //return (*env).NewStringUTF(wynik.c_str());
     //return (*env).NewStringUTF(testPixel.str().c_str());
     }
 }
 
-std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_t fileLength) {
+std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_t fileLength, int warunek) {
     int rows, cols;
     int max_color;
     int hpos, i, j;
@@ -134,7 +180,8 @@ std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_
             //warunek = (r > 65 && r>g && r > b - 10) || (i < 200 && r>25 && r > g && r > b - 10);
             //warunek = (r > 80 && r>g && r > b - 10);
             // dla ciemnego tła ten pasuje
-            warunek = (r>50 && r>g && r>b) || (r>90 && r>g && r>g - 10);
+            //warunek = (r>50 && r>g && r>b) || (r>90 && r>g && r>g - 10);
+            //warunek = (r>65 && r>g && r>b-10) || (i<200 && r>25 && r>g && r>b-10);
             /*if (index == 93484) { warunek = r>120 && r>g && r>b; }
             if (index == 112302) {warunek = (r>50 && r>g && r>b) || (r>90 && r>g && r>g-10) ; } // W miare OK
             if (index == 112305) {warunek = (r>100 && r>g && r>b) || (r>200 )  ; }
@@ -142,6 +189,14 @@ std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_
             if (index == 112311) {warunek = (r>100 && r>g && r>b-10) ;}
             if (index == 112319) {warunek = ( r>120 && r>g && r>b) ;}
             if (index == 112320) {warunek = ( r>80 && r>g && r>b) || (r>100 && r>g && r>b-20) ;}*/
+            if (warunek == 0) { warunek = r>120 && r>g && r>b; }
+            if (warunek == 1) { warunek = (r>50 && r>g && r>b) || (r>90 && r>g && r>g - 10); }
+            if (warunek == 2) { warunek = (r>100 && r>g && r>b) || (r>200); }
+            if (warunek == 3) { warunek = (r>65 && r>g && r>b - 10) || (i<200 && r>25 && r>g && r>b - 10); }
+            if (warunek == 4) { warunek = (r>100 && r>g && r>b - 10); }
+            if (warunek == 5) { warunek = (r>120 && r>g && r>b); }
+            if (warunek == 6) { warunek = (r>80 && r>g && r>b) || (r>100 && r>g && r>b - 20); }
+            warunek = !(r > 170 && g > 170 && b > 170);
 
             b_out[i][j] = warunek ? 255 : 0;
         }

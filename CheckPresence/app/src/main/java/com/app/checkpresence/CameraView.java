@@ -40,8 +40,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private TextView savedPic;
     private Bitmap result;
     Buffer buffer;
-    public native int[] myNativeCode(int[] argb ,int dlugosc, int rows, int cols);
-    int[] argb;
+    public native int[] myNativeCode(int[] argb, int[] returnedInputSegmentationFileData, int rows, int cols, int warunek);
 
     public CameraView(Context context, Camera camera, TextView saved){
         super(context);
@@ -108,9 +107,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     //number of frames
                     ++frames;
 
-                    if(frames == 30) {
+                    if(frames == 1) {
                         //number of saved pictures
                         ++pictureSaved;
+                        savedPic.setText(pictureSaved + " saved");
                         //Log.d("surfaceChanged",String.format("Got %d bytes of camera data", _data.length));
                         //System.out.println("Got bytes of camera data: " + data.length);
                         //Bitmap previewBitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
@@ -120,7 +120,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
                         /*for(int i =0; i<data.length; i++)
                             System.out.println(data[i]);*/
-                        String dane = "jestem z javy";
+                        //String dane = "jestem z javy";
                         //System.out.println(myNativeCode(dane, dane.length()));
 /*
                         //Creating classes with parameters and asynchronic converting picture
@@ -137,25 +137,37 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         }
                         //hgfg
 */
+                        int[] argb;
                         argb = new int[size.height * size.width];
                         YUV_NV21_TO_RGB(argb, data, size.width, size.height);
                         //Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
                         //String temp= BitMapToString(result);
                         //System.out.println(temp);
-                        int[] tablica10 = myNativeCode(argb, argb.length, size.height, size.width);
-                        for (int i = 2000; i < 2025; ++i) {
-                            System.out.println(tablica10[i]);
+
+                        int warunek = 2;
+                        //for(int warunek = 2; warunek < 1; ++warunek) {
+                            int[] inputColorSermentationDataPicture = new int[size.height * size.width];
+                        for (int i = 0; i < size.height * size.width; ++i) {
+                            inputColorSermentationDataPicture[i] = 0;
                         }
-                        System.out.println("Alamiala 10 kotaow?");
-                        //Bitmap bmp = Bitmap.createBitmap(null, 0, 0, size.width, size.height);
+                            int[] sermentationDataPicture = myNativeCode(argb, inputColorSermentationDataPicture, size.height, size.width, warunek);
+                            for (int i = 0; i < 10; ++i) {
+                                System.out.println(sermentationDataPicture[i] + " " + inputColorSermentationDataPicture[i]);
+                            }
+                            /* segmentatedBitmap */
                         Bitmap.Config conf = Bitmap.Config.ARGB_8888; // see other conf types
                         Bitmap bmp = Bitmap.createBitmap(size.width, size.height, conf);
-                        bmp.setPixels(tablica10, 0, size.width, 0, 0, size.width, size.height);
-                        //Bitmap previewBitmap = BitmapFactory.
-                        //System.out.println(myNativeCode(argb, argb.length, size.height, size.width));
+                        bmp.setPixels(sermentationDataPicture, 0, size.width, 0, 0, size.width, size.height);
+                        addCopy(bmp, pictureSaved, "wiedmo" + pictureSaved  + "_" + warunek + ".png");
+                        System.out.println("Zapisno:" + "wiedmo" + pictureSaved  + "_" + warunek + ".png");
 
-                        addCopy(bmp, pictureSaved);
-                        savedPic.setText(pictureSaved + " saved");
+                        /* input outpuColor Bitmap */
+                        Bitmap bmpColor = Bitmap.createBitmap(size.width, size.height, conf);
+                        bmpColor.setPixels(inputColorSermentationDataPicture, 0, size.width, 0, 0, size.width, size.height);
+                        addCopy(bmpColor, pictureSaved, "wiedmo" + pictureSaved  + "_" + warunek + "Color.png");
+                        System.out.println("Zapisno:" + "wiedmoColor" + pictureSaved  + "_" + warunek + "Color.png");
+                        //}
+
                         frames = 0;
                     }
                 }
@@ -174,14 +186,28 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
      * Method is saving bmp file to memory
      * @param image Bitmap
      */
-    public void addCopy(Bitmap image, int licznik){
+    public void addCopy(Bitmap image, int licznik, String fileName){
 
-        FileOutputStream out = null;
-        File sd = Environment.getExternalStorageDirectory();
+       // FileOutputStream out = null;
+        //File sd = Environment.getExternalStorageDirectory();
         //String backupDBPath = "backupBMP/TomekB"+licznik+".bmp";
-        String backupDBPath = "backupBMP/zdjecie.bmp";
-        File backupImage = new File(sd, backupDBPath);
-        System.out.println(backupImage.toString());
+        String extr = Environment.getExternalStorageDirectory().toString();
+        File mFolder = new File(extr + "/backupBMP");
+        if (!mFolder.exists()) {
+            mFolder.mkdir();
+        }
+
+        //String s = "/zdjecie" + licznik + ".bmp";
+        String s = fileName;
+
+        File backupImage = new File(mFolder.getAbsolutePath(), s);
+        //System.out.println("Utworzoni plik: " + s + " w lokalizacji: " + mFolder.getAbsolutePath().toString());
+
+        FileOutputStream fos = null;
+
+        /*String backupDBPath = "backupBMP/zdjecie.bmp";
+        File backupImage = new File(sd, backupDBPath);*/
+        //System.out.println(backupImage.toString());
         if(!backupImage.exists()){
             System.out.println("Tworzę backupDB");
             try {
@@ -192,10 +218,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         }
         if(backupImage.exists()) {
             try {
-                out = new FileOutputStream(backupImage);
+                //out = new FileOutputStream(backupImage);
                 //StringWriter writer = new StringWriter();
-                System.out.println("Kompresuję...");
-                image.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
+                fos = new FileOutputStream(backupImage);
+                //System.out.println("Kompresuję...");
+                image.compress(Bitmap.CompressFormat.PNG, 100, fos);
+                fos.flush();
+                fos.close();
+                //image.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
                 // PNG is a lossless format, the compression factor (100) is ignored
                 /*image.compressToJpeg(
                         new Rect(0, 0, image.getWidth(), image.getHeight()), 90,
@@ -205,9 +235,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                 e.printStackTrace();
             } finally {
                 try {
-                    if (out != null) {
+                    if (fos != null) {
                         System.out.println("Zamykam OutputStream");
-                        out.close();
+                        fos.close();
                     }
                 } catch (IOException e) {
                     e.printStackTrace();

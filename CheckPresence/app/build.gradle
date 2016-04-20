@@ -9,6 +9,7 @@ model {
             moduleName = "native"
             stl = "stlport_static"
             cppFlags.add("-std=c++11")
+            ldLibs.add("log")
         }
 
         defaultConfig {
