@@ -9,16 +9,19 @@ package com.app.checkpresence;
         import android.graphics.Bitmap;
         import android.graphics.BitmapFactory;
         import android.graphics.ImageFormat;
+        import android.graphics.Matrix;
         import android.graphics.Rect;
         import android.graphics.YuvImage;
         import android.hardware.Camera;
         import android.os.Environment;
         import android.util.Base64;
+        import android.util.DisplayMetrics;
         import android.util.Log;
         import android.view.Surface;
         import android.view.SurfaceHolder;
         import android.view.SurfaceView;
         import android.view.View;
+        import android.widget.ImageView;
         import android.widget.TextView;
         import android.widget.Toast;
 
@@ -38,14 +41,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private int frames = 0;
     private int pictureSaved = 0;
     private TextView savedPic;
+    private ImageView segmentatedHand;
     private Bitmap result;
     Buffer buffer;
     public native int[] myNativeCode(int[] argb, int[] returnedInputSegmentationFileData, int rows, int cols, int warunek);
 
-    public CameraView(Context context, Camera camera, TextView saved){
+    public CameraView(Context context, Camera camera, TextView saved, ImageView segmentatedHand){
         super(context);
 
         this.savedPic = saved;
+        this.segmentatedHand = segmentatedHand;
         mCamera = camera;
         mCamera.setDisplayOrientation(90);
         //get the holder and set this class as the callback, so we can get camera data here
@@ -90,6 +95,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         Camera.Size size = parameters.getPreviewSize();
         parameters.set("orientation", "portrait");
         parameters.setRotation(90);
+        parameters.setPreviewSize(size.width/2, size.height/2);
         //parameters.setPreviewFormat(ImageFormat.);
         mCamera.setParameters(parameters);
 
@@ -111,17 +117,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         //number of saved pictures
                         ++pictureSaved;
                         savedPic.setText(pictureSaved + " saved");
-                        //Log.d("surfaceChanged",String.format("Got %d bytes of camera data", _data.length));
-                        //System.out.println("Got bytes of camera data: " + data.length);
-                        //Bitmap previewBitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
 
                         Camera.Parameters parameters = mCamera.getParameters();
                         Camera.Size size = parameters.getPreviewSize();
-
-                        /*for(int i =0; i<data.length; i++)
-                            System.out.println(data[i]);*/
-                        //String dane = "jestem z javy";
-                        //System.out.println(myNativeCode(dane, dane.length()));
 /*
                         //Creating classes with parameters and asynchronic converting picture
                         ConvertPictureAsyncParams params = new ConvertPictureAsyncParams(data, parameters, size);
@@ -135,39 +133,25 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         } catch (ExecutionException e) {
                             e.printStackTrace();
                         }
-                        //hgfg
 */
-                        int[] argb;
-                        argb = new int[size.height * size.width];
-                        YUV_NV21_TO_RGB(argb, data, size.width, size.height);
-                        //Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
-                        //String temp= BitMapToString(result);
-                        //System.out.println(temp);
+                        int[] argb = createIntArrayFromPreviewFrame(data, size);
 
                         int warunek = 2;
                         //for(int warunek = 2; warunek < 1; ++warunek) {
-                            int[] inputColorSermentationDataPicture = new int[size.height * size.width];
+                        int[] inputColorSegmentationDataPicture = new int[size.height * size.width];
                         for (int i = 0; i < size.height * size.width; ++i) {
-                            inputColorSermentationDataPicture[i] = 0;
+                            inputColorSegmentationDataPicture[i] = 0;
                         }
-                            int[] sermentationDataPicture = myNativeCode(argb, inputColorSermentationDataPicture, size.height, size.width, warunek);
-                            for (int i = 0; i < 10; ++i) {
-                                System.out.println(sermentationDataPicture[i] + " " + inputColorSermentationDataPicture[i]);
-                            }
-                            /* segmentatedBitmap */
-                        Bitmap.Config conf = Bitmap.Config.ARGB_8888; // see other conf types
-                        Bitmap bmp = Bitmap.createBitmap(size.width, size.height, conf);
-                        bmp.setPixels(sermentationDataPicture, 0, size.width, 0, 0, size.width, size.height);
-                        addCopy(bmp, pictureSaved, "wiedmo" + pictureSaved  + "_" + warunek + ".png");
-                        System.out.println("Zapisno:" + "wiedmo" + pictureSaved  + "_" + warunek + ".png");
+                        int[] segmentationDataPicture = myNativeCode(argb, inputColorSegmentationDataPicture, size.height, size.width, warunek);
 
-                        /* input outpuColor Bitmap */
-                        Bitmap bmpColor = Bitmap.createBitmap(size.width, size.height, conf);
-                        bmpColor.setPixels(inputColorSermentationDataPicture, 0, size.width, 0, 0, size.width, size.height);
-                        addCopy(bmpColor, pictureSaved, "wiedmo" + pictureSaved  + "_" + warunek + "Color.png");
-                        System.out.println("Zapisno:" + "wiedmoColor" + pictureSaved  + "_" + warunek + "Color.png");
-                        //}
+                        Bitmap bmp = createBitmapAfterSegmentation(segmentationDataPicture, size);
+                        //addCopy(bmp, pictureSaved, "wiedmo" + pictureSaved  + "_" + warunek + ".png");
+                        //System.out.println("Zapisno:" + "wiedmo" + pictureSaved  + "_" + warunek + ".png");
+                        setImageToImageView(segmentatedHand, bmp);
 
+                        //Bitmap bmpColor = createBitmapBeforeSegmentation(inputColorSegmentationDataPicture, size);
+                        //addCopy(bmp, pictureSaved, "wiedmoColor" + pictureSaved  + "_" + warunek + ".png");
+                        //System.out.println("Zapisno:" + "wiedmoColor" + pictureSaved  + "_" + warunek + ".png");
                         frames = 0;
                     }
                 }
@@ -293,6 +277,89 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                 argb[a++] = 0xff000000 | (r << 16) | (g << 8) | b;
             }
         }
+    }
+
+    /**
+     * Method is rotating bitmap
+     * @param source Bitmap to rotation
+     * @param angle rotation angle
+     * @return Bitmap
+     */
+    public static Bitmap RotateBitmap(Bitmap source, float angle)
+    {
+        Matrix matrix = new Matrix();
+        matrix.postRotate(angle);
+        System.out.println("Bitmap rotated");
+        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+    }
+
+    /**
+     * Method is flipping bitmap by its y axis
+     * @param source Bitmap to flip
+     * @return Bitmap
+     */
+    public static Bitmap flipBitmap(Bitmap source)
+    {
+        Matrix matrix = new Matrix();
+        matrix.preScale(-1, 1);
+        System.out.println("Bitmap flipped");
+        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+    }
+
+    /**
+     * Method create a Bitmap from int array of ARGB pixels after segmentation,
+     * set Bitmap configuration to ARGB_8888, rotate Bitmap to portrait mode and
+     * flip it by its y axis (when we convert right hand, thumb is in right side
+     * of picture)
+     * @param segmentationDataPicture int array of ARGB pixels after segmentation
+     * @param size Size parameters of camera in device
+     * @return Bitmap
+     */
+    public Bitmap createBitmapAfterSegmentation(int[] segmentationDataPicture, Camera.Size size){
+        Bitmap.Config conf = Bitmap.Config.ARGB_8888; // see other conf types
+        Bitmap bmp = Bitmap.createBitmap(size.width, size.height, conf);
+        bmp.setPixels(segmentationDataPicture, 0, size.width, 0, 0, size.width, size.height);
+        bmp = RotateBitmap(bmp, -90);
+        bmp = flipBitmap(bmp);
+
+        return bmp;
+    }
+
+    /**
+     * Method create a Bitmap from int array of ARGB pixels before segmentation,
+     * set Bitmap configuration to ARGB_8888, rotate Bitmap to portrait mode and
+     * flip it by its y axis (when we convert right hand, thumb is in right side
+     * of picture)
+     * @param inputColorSegmentationDataPicture int array of ARGB pixels before segmentation
+     * @param size Size parameters of camera in device
+     * @return Bitmap
+     */
+    public Bitmap createBitmapBeforeSegmentation(int[] inputColorSegmentationDataPicture, Camera.Size size){
+        Bitmap.Config conf = Bitmap.Config.ARGB_8888; // see other conf types
+        Bitmap bmp = Bitmap.createBitmap(size.width, size.height, conf);
+        bmp.setPixels(inputColorSegmentationDataPicture, 0, size.width, 0, 0, size.width, size.height);
+        bmp = RotateBitmap(bmp, -90);
+        bmp = flipBitmap(bmp);
+
+        return bmp;
+    }
+
+    /**
+     * Returns int array of pixels in ARGB configuration
+     * @param data byte array from PreviewFrame
+     * @param size Size parameters of camera in device
+     * @return int array
+     */
+    public int[] createIntArrayFromPreviewFrame(byte[] data, Camera.Size size){
+        int[] argb;
+        argb = new int[size.height * size.width];
+        YUV_NV21_TO_RGB(argb, data, size.width, size.height);
+
+        return argb;
+    }
+
+    public void setImageToImageView(ImageView imageView, Bitmap bitmap){
+        imageView.setImageBitmap(bitmap);
     }
 
 }
