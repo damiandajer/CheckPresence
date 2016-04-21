@@ -15,7 +15,7 @@
 #include "MemoryFile.h"
 #include "PGMFile.h"
 
-std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_t fileLength, int warunek);
+std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB);
 
 extern "C" {
 JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
@@ -65,6 +65,9 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(J
         tableColor[i] = ((int*)plikDaneARGB)[i]; // put whatever logic you want to populate the values here.
     }*/
 
+    int avgR = 0;
+    int avgG = 0;
+    int avgB = 0;
     for (size_t i = 0; i < rows * cols * 4; i += 4) {
         char a = plikDaneARGB[i + 3];
         char r = plikDaneARGB[i + 2];
@@ -84,6 +87,10 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(J
         fileData.write(reinterpret_cast<char *>(&g), 1);
         fileData.write(reinterpret_cast<char *>(&b), 1);
 
+        avgR += intR;
+        avgG += intG;
+        avgB += intB;
+
         //if (i == 0) {
         //    testPixel << "ARGB: " << (int)r << " " << (int)g << " " << (int)b << " " << (int)a << '\n';
         //}
@@ -98,6 +105,9 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(J
 
     //return (*env).NewStringUTF(std::string("hello return 01").c_str());
 
+    avgR = avgR / (rows * cols);
+    avgG = avgG / (rows * cols);
+    avgB = avgB / (rows * cols);
 
 
     jintArray result;
@@ -118,7 +128,7 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(J
 
 
     dataLength += headerLength;
-    std::string wynik = PaPaMobile_HandRecognization((int*)&table[0], fileData.str(), dataLength, warunek);
+    std::string wynik = PaPaMobile_HandRecognization((int*)&table[0], fileData.str(), dataLength, warunek, avgR, avgG, avgB);
     int xx = wynik.size();
     int y = 0;
 
@@ -139,7 +149,7 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(J
     }
 }
 
-std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_t fileLength, int warunek) {
+std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB) {
     int rows, cols;
     int max_color;
     int hpos, i, j;
@@ -196,7 +206,8 @@ std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_
             if (warunek == 4) { warunek = (r>100 && r>g && r>b - 10); }
             if (warunek == 5) { warunek = (r>120 && r>g && r>b); }
             if (warunek == 6) { warunek = (r>80 && r>g && r>b) || (r>100 && r>g && r>b - 20); }
-            warunek = !(r > 170 && g > 170 && b > 170);
+            //warunek = !(r > 170 && g > 170 && b > 170);
+            warunek = !(r > avgR && g > avgG && b > avgB);
 
             b_out[i][j] = warunek ? 255 : 0;
         }
