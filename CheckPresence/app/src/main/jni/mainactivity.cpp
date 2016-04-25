@@ -18,7 +18,7 @@
 std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB);
 
 extern "C" {
-JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
+JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_ConvertPictureAsync_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
                                                                                jintArray returnedInputSegmentationFileData, jint rows, jint cols, jint warunek){
 
     jint *argb = (*env).GetIntArrayElements(argb_, NULL);

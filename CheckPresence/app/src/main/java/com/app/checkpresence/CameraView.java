@@ -42,9 +42,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private int pictureSaved = 0;
     private TextView savedPic;
     private ImageView segmentatedHand;
-    private Bitmap result;
+    private int[] result;
     Buffer buffer;
-    public native int[] myNativeCode(int[] argb, int[] returnedInputSegmentationFileData, int rows, int cols, int warunek);
+    //public native int[] myNativeCode(int[] argb, int[] returnedInputSegmentationFileData, int rows, int cols, int warunek);
 
     public CameraView(Context context, Camera camera, TextView saved, ImageView segmentatedHand){
         super(context);
@@ -120,20 +120,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
                         Camera.Parameters parameters = mCamera.getParameters();
                         Camera.Size size = parameters.getPreviewSize();
-/*
-                        //Creating classes with parameters and asynchronic converting picture
-                        ConvertPictureAsyncParams params = new ConvertPictureAsyncParams(data, parameters, size);
-                        ConvertPictureAsync convertPictureAsync = new ConvertPictureAsync();
 
-                        //running new thread which convert picture
-                        try {
-                            result = convertPictureAsync.execute(params).get();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        } catch (ExecutionException e) {
-                            e.printStackTrace();
-                        }
-*/
                         int[] argb = createIntArrayFromPreviewFrame(data, size);
 
                         int warunek = 2;
@@ -142,8 +129,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         for (int i = 0; i < size.height * size.width; ++i) {
                             inputColorSegmentationDataPicture[i] = 0;
                         }
-                        int[] segmentationDataPicture = myNativeCode(argb, inputColorSegmentationDataPicture, size.height, size.width, warunek);
+                        //int[] segmentationDataPicture = myNativeCode(argb, inputColorSegmentationDataPicture, size.height, size.width, warunek);
 
+                        int[] segmentationDataPicture = asynchronicSegmentation(argb, inputColorSegmentationDataPicture,
+                                size.height, size.width, warunek);
                         Bitmap bmp = createBitmapAfterSegmentation(segmentationDataPicture, size);
                         //addCopy(bmp, pictureSaved, "wiedmo" + pictureSaved  + "_" + warunek + ".png");
                         //System.out.println("Zapisno:" + "wiedmo" + pictureSaved  + "_" + warunek + ".png");
@@ -360,6 +349,33 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
     public void setImageToImageView(ImageView imageView, Bitmap bitmap){
         imageView.setImageBitmap(bitmap);
+    }
+
+    /**
+     * Returns int array with segmentated picture of hand
+     * @param argb int array of picture pixels in ARGB format
+     * @param inputColorSegmentationDataPicture
+     * @param height picture height
+     * @param width picture width
+     * @param warunek condition of converting (0-6)
+     * @return int array with segmentated picture of hand
+     */
+    public int[] asynchronicSegmentation(int[] argb, int [] inputColorSegmentationDataPicture, int height, int width, int warunek){
+        //Creating classes with parameters and asynchronic converting picture
+        ConvertPictureAsyncParams params = new ConvertPictureAsyncParams(argb, inputColorSegmentationDataPicture, height, width, warunek);
+        ConvertPictureAsync convertPictureAsync = new ConvertPictureAsync();
+
+
+        //running new thread which convert picture
+        try {
+            result = convertPictureAsync.execute(params).get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        return result;
     }
 
 }

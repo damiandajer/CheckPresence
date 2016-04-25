@@ -17,9 +17,11 @@ import java.io.IOException;
 /**
  * Created by Damian on 09.04.2016.
  */
-public class ConvertPictureAsync extends AsyncTask<ConvertPictureAsyncParams, Void, Bitmap> {
+public class ConvertPictureAsync extends AsyncTask<ConvertPictureAsyncParams, Void, int[]> {
 
     public ConvertPictureAsync(){}
+
+    public native int[] myNativeCode(int[] argb, int[] returnedInputSegmentationFileData, int rows, int cols, int warunek);
 
     /**
      * Method runs new thread in background
@@ -27,20 +29,11 @@ public class ConvertPictureAsync extends AsyncTask<ConvertPictureAsyncParams, Vo
      * @return bitmap
      */
     @Override
-    protected Bitmap doInBackground(ConvertPictureAsyncParams... params) {
+    protected int[] doInBackground(ConvertPictureAsyncParams... params) {
 
-        YuvImage image = new YuvImage(params[0].data, params[0].parameters.getPreviewFormat(),
-                params[0].size.width, params[0].size.height, null);
+        int[] segmentationDataPicture = myNativeCode(params[0].argb, params[0].inputColorSegmentationDataPicture, params[0].height,
+                params[0].width, params[0].warunek);
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        //image.
-        image.compressToJpeg(
-                new Rect(0, 0, image.getWidth(), image.getHeight()), 90,
-                out);
-
-        byte[] imageBytes = out.toByteArray();
-        Bitmap imageBmp = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
-
-        return imageBmp;
+        return segmentationDataPicture;
     }
 }
