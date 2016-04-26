@@ -18,7 +18,7 @@
 std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB);
 
 extern "C" {
-JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_ConvertPictureAsync_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
+JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
                                                                                jintArray returnedInputSegmentationFileData, jint rows, jint cols, jint warunek){
 
     jint *argb = (*env).GetIntArrayElements(argb_, NULL);
@@ -199,17 +199,28 @@ std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_
             if (index == 112311) {warunek = (r>100 && r>g && r>b-10) ;}
             if (index == 112319) {warunek = ( r>120 && r>g && r>b) ;}
             if (index == 112320) {warunek = ( r>80 && r>g && r>b) || (r>100 && r>g && r>b-20) ;}*/
-            if (warunek == 0) { warunek = r>120 && r>g && r>b; }
+            /*if (warunek == 0) { warunek = r>120 && r>g && r>b; }
             if (warunek == 1) { warunek = (r>50 && r>g && r>b) || (r>90 && r>g && r>g - 10); }
             if (warunek == 2) { warunek = (r>100 && r>g && r>b) || (r>200); }
             if (warunek == 3) { warunek = (r>65 && r>g && r>b - 10) || (i<200 && r>25 && r>g && r>b - 10); }
             if (warunek == 4) { warunek = (r>100 && r>g && r>b - 10); }
             if (warunek == 5) { warunek = (r>120 && r>g && r>b); }
-            if (warunek == 6) { warunek = (r>80 && r>g && r>b) || (r>100 && r>g && r>b - 20); }
+            if (warunek == 6) { warunek = (r>80 && r>g && r>b) || (r>100 && r>g && r>b - 20); }*/
             //warunek = !(r > 170 && g > 170 && b > 170);
-            warunek = !(r > avgR && g > avgG && b > avgB);
-
-            b_out[i][j] = warunek ? 255 : 0;
+            if ((i < 10 || i > rows - 25)
+                && (j < 10 || j > cols - 10)) {
+                b_out[i][j] = 0;
+            }
+            else {
+                int avgRGB = (r + g + b) / 3;
+                int deviation = 10;
+                warunek = (!(r > avgR && g > avgG && b > avgB) && (r > b && r > g) );
+                /*warunek = (r > b && r > g) && !((r > avgRGB - deviation && r > avgRGB + deviation)
+                                              && (b > avgRGB - deviation && b > avgRGB + deviation)
+                                              && (g > avgRGB - deviation && g > avgRGB + deviation));
+    */
+                b_out[i][j] = warunek ? 255 : 0;
+            }
         }
     }
 

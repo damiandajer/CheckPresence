@@ -44,7 +44,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private ImageView segmentatedHand;
     private int[] result;
     Buffer buffer;
-    //public native int[] myNativeCode(int[] argb, int[] returnedInputSegmentationFileData, int rows, int cols, int warunek);
+    public native int[] myNativeCode(int[] argb, int[] returnedInputSegmentationFileData, int rows, int cols, int warunek);
 
     public CameraView(Context context, Camera camera, TextView saved, ImageView segmentatedHand){
         super(context);
@@ -131,12 +131,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         }
                         //int[] segmentationDataPicture = myNativeCode(argb, inputColorSegmentationDataPicture, size.height, size.width, warunek);
 
-                        int[] segmentationDataPicture = asynchronicSegmentation(argb, inputColorSegmentationDataPicture,
+                        /*int[] segmentationDataPicture = asynchronicSegmentation(argb, inputColorSegmentationDataPicture,
+                                size.height, size.width, warunek);*/
+                        int[] segmentationDataPicture = myNativeCode(argb, inputColorSegmentationDataPicture,
                                 size.height, size.width, warunek);
                         Bitmap bmp = createBitmapAfterSegmentation(segmentationDataPicture, size);
                         //addCopy(bmp, pictureSaved, "wiedmo" + pictureSaved  + "_" + warunek + ".png");
                         //System.out.println("Zapisno:" + "wiedmo" + pictureSaved  + "_" + warunek + ".png");
                         setImageToImageView(segmentatedHand, bmp);
+                        //addCopy(bmp, pictureSaved, "segHand");
 
                         //Bitmap bmpColor = createBitmapBeforeSegmentation(inputColorSegmentationDataPicture, size);
                         //addCopy(bmp, pictureSaved, "wiedmoColor" + pictureSaved  + "_" + warunek + ".png");
@@ -171,7 +174,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         }
 
         //String s = "/zdjecie" + licznik + ".bmp";
-        String s = fileName;
+        String s = fileName + licznik + ".bmp";
 
         File backupImage = new File(mFolder.getAbsolutePath(), s);
         //System.out.println("Utworzoni plik: " + s + " w lokalizacji: " + mFolder.getAbsolutePath().toString());
