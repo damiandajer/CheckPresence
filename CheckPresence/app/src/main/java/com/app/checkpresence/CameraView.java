@@ -4,35 +4,25 @@ package com.app.checkpresence;
  * Created by Damian on 04.04.2016.
  */
 
-        import android.app.Activity;
         import android.content.Context;
         import android.graphics.Bitmap;
         import android.graphics.BitmapFactory;
-        import android.graphics.ImageFormat;
         import android.graphics.Matrix;
-        import android.graphics.Rect;
-        import android.graphics.YuvImage;
         import android.hardware.Camera;
+        import android.os.AsyncTask;
         import android.os.Environment;
         import android.util.Base64;
-        import android.util.DisplayMetrics;
         import android.util.Log;
-        import android.view.Surface;
         import android.view.SurfaceHolder;
         import android.view.SurfaceView;
-        import android.view.View;
         import android.widget.ImageView;
         import android.widget.TextView;
-        import android.widget.Toast;
 
         import java.io.ByteArrayOutputStream;
         import java.io.File;
-        import java.io.FileInputStream;
         import java.io.FileOutputStream;
         import java.io.IOException;
-        import java.io.StringWriter;
         import java.nio.Buffer;
-        import java.nio.channels.FileChannel;
         import java.util.concurrent.ExecutionException;
 
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
@@ -41,16 +31,23 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private int frames = 0;
     private int pictureSaved = 0;
     private TextView savedPic;
-    private ImageView segmentatedHand;
+    private ImageView segmentatedHand1, segmentatedHand3, segmentatedHand4, segmentatedHand5, segmentatedHand6;
+    private ImageView liveView;
     private int[] result;
     Buffer buffer;
     public native int[] myNativeCode(int[] argb, int[] returnedInputSegmentationFileData, int rows, int cols, int warunek);
 
-    public CameraView(Context context, Camera camera, TextView saved, ImageView segmentatedHand){
+    public CameraView(Context context, Camera camera, TextView saved, ImageView segmentatedHand1, ImageView liveView,
+                      ImageView segmentatedHand3, ImageView segmentatedHand4, ImageView segmentatedHand5, ImageView segmentatedHand6){
         super(context);
 
         this.savedPic = saved;
-        this.segmentatedHand = segmentatedHand;
+        this.segmentatedHand1 = segmentatedHand1;
+        this.segmentatedHand3 = segmentatedHand3;
+        this.segmentatedHand4 = segmentatedHand4;
+        this.segmentatedHand5 = segmentatedHand5;
+        this.segmentatedHand6 = segmentatedHand6;
+        this.liveView = liveView;
         mCamera = camera;
         mCamera.setDisplayOrientation(90);
         //get the holder and set this class as the callback, so we can get camera data here
@@ -116,14 +113,25 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     if(frames == 1) {
                         //number of saved pictures
                         ++pictureSaved;
-                        savedPic.setText(pictureSaved + " saved");
+                        savedPic.setText(pictureSaved + " processed");
 
                         Camera.Parameters parameters = mCamera.getParameters();
                         Camera.Size size = parameters.getPreviewSize();
 
                         int[] argb = createIntArrayFromPreviewFrame(data, size);
 
-                        int warunek = 2;
+                        //creating colored bitmap from frame, cropping it (in new thread) and setting to imageView
+                        CreateBitmapFromPixels colouredBitmapFromPixels = new CreateBitmapFromPixels(argb, size);
+                        Thread threadColouredBitmapFromPixels = new Thread(colouredBitmapFromPixels);
+                        threadColouredBitmapFromPixels.start();
+                        try {
+                            threadColouredBitmapFromPixels.join();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        setImageToImageView(liveView, colouredBitmapFromPixels.getBitmap());
+
+                        //int warunek = 2;
                         //for(int warunek = 2; warunek < 1; ++warunek) {
                         int[] inputColorSegmentationDataPicture = new int[size.height * size.width];
                         for (int i = 0; i < size.height * size.width; ++i) {
@@ -131,17 +139,45 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         }
                         //int[] segmentationDataPicture = myNativeCode(argb, inputColorSegmentationDataPicture, size.height, size.width, warunek);
 
-                        /*int[] segmentationDataPicture = asynchronicSegmentation(argb, inputColorSegmentationDataPicture,
-                                size.height, size.width, warunek);*/
-                        int[] segmentationDataPicture = myNativeCode(argb, inputColorSegmentationDataPicture,
-                                size.height, size.width, warunek);
-                        Bitmap bmp = createBitmapAfterSegmentation(segmentationDataPicture, size);
-                        //addCopy(bmp, pictureSaved, "wiedmo" + pictureSaved  + "_" + warunek + ".png");
-                        //System.out.println("Zapisno:" + "wiedmo" + pictureSaved  + "_" + warunek + ".png");
-                        setImageToImageView(segmentatedHand, bmp);
-                        //addCopy(bmp, pictureSaved, "segHand");
+                        //processing frame segmentation (in new thread)
+                        Segmentation segmentation1 = new Segmentation(argb, inputColorSegmentationDataPicture, size, 1);
+                        Thread threadSegmentation1 = new Thread(segmentation1);
+                        threadSegmentation1.start();
 
-                        //Bitmap bmpColor = createBitmapBeforeSegmentation(inputColorSegmentationDataPicture, size);
+                        Segmentation segmentation2 = new Segmentation(argb, inputColorSegmentationDataPicture, size, 2);
+                        Thread threadSegmentation2 = new Thread(segmentation2);
+                        threadSegmentation2.start();
+
+                        try {
+                            threadSegmentation1.join();
+                            threadSegmentation2.join();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        int[] segmentationDataPicture1 = segmentation1.getSegmentatedPicture();
+                        int[] segmentationDataPicture2 = segmentation2.getSegmentatedPicture();
+
+                        //creating segmentated bitmap from int array, cropping it (in new thread) and setting to imageView
+                        CreateBitmapFromPixels segmentatedBitmapFromPixels1 = new CreateBitmapFromPixels(segmentationDataPicture1, size);
+                        Thread threadSegmentatedBitmapFromPixels1 = new Thread(segmentatedBitmapFromPixels1);
+                        threadSegmentatedBitmapFromPixels1.start();
+
+                        CreateBitmapFromPixels segmentatedBitmapFromPixels2 = new CreateBitmapFromPixels(segmentationDataPicture1, size);
+                        Thread threadSegmentatedBitmapFromPixels2 = new Thread(segmentatedBitmapFromPixels2);
+                        threadSegmentatedBitmapFromPixels2.start();
+
+                        try {
+                            threadSegmentatedBitmapFromPixels1.join();
+                            setImageToImageView(segmentatedHand1, segmentatedBitmapFromPixels1.getBitmap());
+                            threadSegmentatedBitmapFromPixels2.join();
+                            setImageToImageView(segmentatedHand3, segmentatedBitmapFromPixels2.getBitmap());
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+
+
+                        //Bitmap bmpColor = createProcessedBitmap(inputColorSegmentationDataPicture, size);
                         //addCopy(bmp, pictureSaved, "wiedmoColor" + pictureSaved  + "_" + warunek + ".png");
                         //System.out.println("Zapisno:" + "wiedmoColor" + pictureSaved  + "_" + warunek + ".png");
                         frames = 0;
@@ -222,6 +258,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         }
     }
 
+    /**
+     * Returns Bitmap created from String of bytes
+     * @param encodedString String of bytes
+     * @return Bitmap created from String of bytes
+     */
     public Bitmap StringToBitMap(String encodedString) {
         try {
             byte[] encodeByte = Base64.decode(encodedString, Base64.DEFAULT);
@@ -234,6 +275,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         }
     }
 
+    /**
+     * Returns String of bytes created from bitmap
+     * @param bitmap Bitmap
+     * @return String of bytes created from bitmap
+     */
     public String BitMapToString(Bitmap bitmap) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
@@ -242,6 +288,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         return temp;
     }
 
+    /**
+     * Method is converting byte array to int array with argb pixels
+     * @param argb int array with argb pixels
+     * @param yuv byte array
+     * @param width width of picture
+     * @param height height of picture
+     */
     public static void YUV_NV21_TO_RGB(int[] argb, byte[] yuv, int width, int height) {
         final int frameSize = width * height;
 
@@ -281,7 +334,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     {
         Matrix matrix = new Matrix();
         matrix.postRotate(angle);
-        System.out.println("Bitmap rotated");
+        //System.out.println("Bitmap rotated");
         return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
 
@@ -294,31 +347,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     {
         Matrix matrix = new Matrix();
         matrix.preScale(-1, 1);
-        System.out.println("Bitmap flipped");
+        //System.out.println("Bitmap flipped");
         return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
 
     /**
-     * Method create a Bitmap from int array of ARGB pixels after segmentation,
-     * set Bitmap configuration to ARGB_8888, rotate Bitmap to portrait mode and
-     * flip it by its y axis (when we convert right hand, thumb is in right side
-     * of picture)
-     * @param segmentationDataPicture int array of ARGB pixels after segmentation
-     * @param size Size parameters of camera in device
-     * @return Bitmap
-     */
-    public Bitmap createBitmapAfterSegmentation(int[] segmentationDataPicture, Camera.Size size){
-        Bitmap.Config conf = Bitmap.Config.ARGB_8888; // see other conf types
-        Bitmap bmp = Bitmap.createBitmap(size.width, size.height, conf);
-        bmp.setPixels(segmentationDataPicture, 0, size.width, 0, 0, size.width, size.height);
-        bmp = RotateBitmap(bmp, -90);
-        bmp = flipBitmap(bmp);
-
-        return bmp;
-    }
-
-    /**
-     * Method create a Bitmap from int array of ARGB pixels before segmentation,
+     * Method create a Bitmap from int array of ARGB pixels,
      * set Bitmap configuration to ARGB_8888, rotate Bitmap to portrait mode and
      * flip it by its y axis (when we convert right hand, thumb is in right side
      * of picture)
@@ -326,14 +360,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
      * @param size Size parameters of camera in device
      * @return Bitmap
      */
-    public Bitmap createBitmapBeforeSegmentation(int[] inputColorSegmentationDataPicture, Camera.Size size){
+    public Bitmap createProcessedBitmap(int[] inputColorSegmentationDataPicture, Camera.Size size){
         Bitmap.Config conf = Bitmap.Config.ARGB_8888; // see other conf types
         Bitmap bmp = Bitmap.createBitmap(size.width, size.height, conf);
         bmp.setPixels(inputColorSegmentationDataPicture, 0, size.width, 0, 0, size.width, size.height);
         bmp = RotateBitmap(bmp, -90);
         bmp = flipBitmap(bmp);
 
-        return bmp;
+        Bitmap bmpCropped = Bitmap.createBitmap(bmp, 0, 0, size.height, size.width*2/3);
+        return bmpCropped;
     }
 
     /**
@@ -354,32 +389,50 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         imageView.setImageBitmap(bitmap);
     }
 
-    /**
-     * Returns int array with segmentated picture of hand
-     * @param argb int array of picture pixels in ARGB format
-     * @param inputColorSegmentationDataPicture
-     * @param height picture height
-     * @param width picture width
-     * @param warunek condition of converting (0-6)
-     * @return int array with segmentated picture of hand
-     */
-    public int[] asynchronicSegmentation(int[] argb, int [] inputColorSegmentationDataPicture, int height, int width, int warunek){
-        //Creating classes with parameters and asynchronic converting picture
-        ConvertPictureAsyncParams params = new ConvertPictureAsyncParams(argb, inputColorSegmentationDataPicture, height, width, warunek);
-        ConvertPictureAsync convertPictureAsync = new ConvertPictureAsync();
-
-
-        //running new thread which convert picture
-        try {
-            result = convertPictureAsync.execute(params).get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
+    private class CreateBitmapFromPixels implements Runnable {
+        private volatile Bitmap bmp;
+        int[] inputColorSegmentationDataPicture;
+        android.hardware.Camera.Size size;
+        public CreateBitmapFromPixels(int[] inputColorSegmentationDataPicture, Camera.Size size) {
+            // store parameter for later user
+            this.inputColorSegmentationDataPicture = inputColorSegmentationDataPicture;
+            this.size = size;
         }
 
-        return result;
+        @Override
+        public void run() {
+            //System.out.println("Tread creating processed bitmap");
+            this.bmp = createProcessedBitmap(inputColorSegmentationDataPicture, size);
+        }
+
+        public Bitmap getBitmap(){
+            return this.bmp;
+        }
     }
 
+    private class Segmentation implements Runnable {
+        private volatile int[] segmentatedPicture;
+        int[] argb;
+        int warunek;
+        int[] inputColorSegmentationDataPicture;
+        android.hardware.Camera.Size size;
+        public Segmentation(int[] argb, int[] inputColorSegmentationDataPicture, Camera.Size size, int warunek) {
+            // store parameter for later user
+            this.argb = argb;
+            this.inputColorSegmentationDataPicture = inputColorSegmentationDataPicture;
+            this.size = size;
+            this.warunek = warunek;
+        }
+
+        @Override
+        public void run() {
+            System.out.println("Tread processing frame with condition: " + warunek);
+            this.segmentatedPicture = myNativeCode(argb, inputColorSegmentationDataPicture, size.height, size.width, warunek);
+        }
+
+        public int[] getSegmentatedPicture(){
+            return this.segmentatedPicture;
+        }
+    }
 }
 

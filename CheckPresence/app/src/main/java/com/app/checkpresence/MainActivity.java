@@ -2,14 +2,9 @@ package com.app.checkpresence;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.res.Configuration;
 import android.hardware.Camera;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.Surface;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
@@ -21,7 +16,8 @@ public class MainActivity extends Activity {
     private Camera mCamera = null;
     private CameraView mCameraView = null;
     public TextView saved;
-    public ImageView segmentatedHand;
+    public ImageView segmentatedHand1, segmentatedHand3, segmentatedHand4, segmentatedHand5, segmentatedHand6;
+    public ImageView liveView;
     private DataBase dataBase;
     private Context context;
 
@@ -33,7 +29,12 @@ public class MainActivity extends Activity {
         context = this;
 
         saved = (TextView) findViewById(R.id.saved);
-        segmentatedHand = (ImageView) findViewById(R.id.segmentatedHand);
+        segmentatedHand1 = (ImageView) findViewById(R.id.segmentatedHand1);
+        segmentatedHand3 = (ImageView) findViewById(R.id.segmentatedHand3);
+        segmentatedHand4 = (ImageView) findViewById(R.id.segmentatedHand4);
+        segmentatedHand5 = (ImageView) findViewById(R.id.segmentatedHand5);
+        segmentatedHand6 = (ImageView) findViewById(R.id.segmentatedHand6);
+        liveView = (ImageView) findViewById(R.id.liveView);
 
         try{
             mCamera = Camera.open(1);//you can use open(int) to use different cameras
@@ -42,7 +43,8 @@ public class MainActivity extends Activity {
         }
 
         if(mCamera != null) {
-            mCameraView = new CameraView(this, mCamera, saved, segmentatedHand);//create a SurfaceView to show camera data
+            mCameraView = new CameraView(this, mCamera, saved, segmentatedHand1, liveView,
+                    segmentatedHand3, segmentatedHand4, segmentatedHand5, segmentatedHand6);//create a SurfaceView to show camera data
             FrameLayout camera_view = (FrameLayout)findViewById(R.id.camera_view);
             camera_view.addView(mCameraView);//add the SurfaceView to the layout
         }

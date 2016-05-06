@@ -22,18 +22,64 @@
             android:layout_height="wrap_content"
             android:id="@+id/handImage"
             android:background="@drawable/hand"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true" />
+
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:id="@+id/segmentatedHand1"
+            android:layout_gravity="center_horizontal|top"
             android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true" />
+            android:layout_alignParentEnd="true" />
+
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:id="@+id/liveView"
+            android:layout_gravity="center_horizontal|top"
+            android:layout_alignParentBottom="true"
+            android:layout_toLeftOf="@+id/segmentatedHand1"
+            android:layout_toStartOf="@+id/segmentatedHand1" />
+
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:id="@+id/segmentatedHand3"
+            android:layout_gravity="center_horizontal|top"
+            android:layout_alignParentBottom="true"
+            android:layout_toLeftOf="@+id/liveView"
+            android:layout_toStartOf="@+id/liveView"
+            android:layout_alignTop="@+id/liveView" />
+
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:id="@+id/segmentatedHand6"
+            android:layout_gravity="center_horizontal|top"
+            android:layout_above="@+id/segmentatedHand1"
+            android:layout_toRightOf="@+id/liveView"
+            android:layout_toEndOf="@+id/liveView" />
+
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:id="@+id/segmentatedHand5"
+            android:layout_gravity="center_horizontal|top"
+            android:layout_alignTop="@+id/segmentatedHand6"
+            android:layout_toLeftOf="@+id/segmentatedHand6"
+            android:layout_toStartOf="@+id/segmentatedHand6" />
+
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:id="@+id/segmentatedHand4"
+            android:layout_gravity="center_horizontal|top"
+            android:layout_above="@+id/segmentatedHand3"
+            android:layout_alignLeft="@+id/segmentatedHand3"
+            android:layout_alignStart="@+id/segmentatedHand3" />
     </RelativeLayout>
-    <ImageView
-        android:layout_width="120dp"
-        android:layout_height="160dp"
-        android:id="@+id/segmentatedHand"
-        android:layout_gravity="center_horizontal|top" />
 
     <TextView
         android:layout_width="wrap_content"

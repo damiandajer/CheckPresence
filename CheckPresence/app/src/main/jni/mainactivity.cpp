@@ -27,7 +27,7 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(J
 
     jint *argbColorOut = (*env).GetIntArrayElements(returnedInputSegmentationFileData, NULL);
 
-    __android_log_print(ANDROID_LOG_DEBUG, "LOG_TEST", "Testowy log z NativeCode c++. Hello console :)");
+    //__android_log_print(ANDROID_LOG_DEBUG, "LOG_TEST", "Testowy log z NativeCode c++. Hello console :)");
 
    // (*env).SetArra
 
@@ -181,7 +181,7 @@ std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_
             int r = R[i][j];
             int g = G[i][j];
             int b = B[i][j];
-            int warunek = 0;
+            int cond = 0;
 
             if (i == 141 && j == 145) {
                 int stop = 1;
@@ -207,19 +207,20 @@ std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_
             if (warunek == 5) { warunek = (r>120 && r>g && r>b); }
             if (warunek == 6) { warunek = (r>80 && r>g && r>b) || (r>100 && r>g && r>b - 20); }*/
             //warunek = !(r > 170 && g > 170 && b > 170);
-            if ((i < 10 || i > rows - 25)
+            if ((i < 10 || i > rows - 20)
                 && (j < 10 || j > cols - 10)) {
                 b_out[i][j] = 0;
             }
             else {
                 int avgRGB = (r + g + b) / 3;
                 int deviation = 10;
-                warunek = (!(r > avgR && g > avgG && b > avgB) && (r > b && r > g) );
+                if(warunek == 1) cond = (!(r > avgR && g > avgG && b > avgB) && (r > b && r > g) );
+                else if(warunek == 2) cond = (r>50 && r>g && r>b) || (r>90 && r>g && r>g - 10);
                 /*warunek = (r > b && r > g) && !((r > avgRGB - deviation && r > avgRGB + deviation)
                                               && (b > avgRGB - deviation && b > avgRGB + deviation)
                                               && (g > avgRGB - deviation && g > avgRGB + deviation));
     */
-                b_out[i][j] = warunek ? 255 : 0;
+                b_out[i][j] = cond ? 255 : 0;
             }
         }
     }
