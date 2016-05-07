@@ -216,6 +216,8 @@ std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_
                 int deviation = 10;
                 if(warunek == 1) cond = (!(r > avgR && g > avgG && b > avgB) && (r > b && r > g) );
                 else if(warunek == 2) cond = (r>50 && r>g && r>b) || (r>90 && r>g && r>g - 10);
+                else if(warunek == 3) cond = (r > 65 && r>g && r > b - 10) || (i < 200 && r>25 && r > g && r > b - 10);
+                else if(warunek == 4) cond = (r>65 && r>g && r>b-10) || (i<200 && r>25 && r>g && r>b-10);
                 /*warunek = (r > b && r > g) && !((r > avgRGB - deviation && r > avgRGB + deviation)
                                               && (b > avgRGB - deviation && b > avgRGB + deviation)
                                               && (g > avgRGB - deviation && g > avgRGB + deviation));

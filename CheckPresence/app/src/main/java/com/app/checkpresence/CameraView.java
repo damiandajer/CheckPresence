@@ -148,38 +148,62 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         Thread threadSegmentation2 = new Thread(segmentation2);
                         threadSegmentation2.start();
 
+                        Segmentation segmentation3 = new Segmentation(argb, inputColorSegmentationDataPicture, size, 3);
+                        Thread threadSegmentation3 = new Thread(segmentation3);
+                        threadSegmentation3.start();
+
+                        Segmentation segmentation4 = new Segmentation(argb, inputColorSegmentationDataPicture, size, 4);
+                        Thread threadSegmentation4 = new Thread(segmentation4);
+                        threadSegmentation4.start();
+
+                        //wait for threads end
                         try {
                             threadSegmentation1.join();
                             threadSegmentation2.join();
+                            threadSegmentation3.join();
+                            threadSegmentation4.join();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
+
+                        //getting results of processing
                         int[] segmentationDataPicture1 = segmentation1.getSegmentatedPicture();
                         int[] segmentationDataPicture2 = segmentation2.getSegmentatedPicture();
+                        int[] segmentationDataPicture3 = segmentation3.getSegmentatedPicture();
+                        int[] segmentationDataPicture4 = segmentation4.getSegmentatedPicture();
 
-                        //creating segmentated bitmap from int array, cropping it (in new thread) and setting to imageView
+                        //creating segmentated bitmap from int array and cropping it (in new thread)
                         CreateBitmapFromPixels segmentatedBitmapFromPixels1 = new CreateBitmapFromPixels(segmentationDataPicture1, size);
                         Thread threadSegmentatedBitmapFromPixels1 = new Thread(segmentatedBitmapFromPixels1);
                         threadSegmentatedBitmapFromPixels1.start();
 
-                        CreateBitmapFromPixels segmentatedBitmapFromPixels2 = new CreateBitmapFromPixels(segmentationDataPicture1, size);
+                        CreateBitmapFromPixels segmentatedBitmapFromPixels2 = new CreateBitmapFromPixels(segmentationDataPicture2, size);
                         Thread threadSegmentatedBitmapFromPixels2 = new Thread(segmentatedBitmapFromPixels2);
                         threadSegmentatedBitmapFromPixels2.start();
 
+                        CreateBitmapFromPixels segmentatedBitmapFromPixels3 = new CreateBitmapFromPixels(segmentationDataPicture3, size);
+                        Thread threadSegmentatedBitmapFromPixels3 = new Thread(segmentatedBitmapFromPixels3);
+                        threadSegmentatedBitmapFromPixels3.start();
+
+                        CreateBitmapFromPixels segmentatedBitmapFromPixels4 = new CreateBitmapFromPixels(segmentationDataPicture4, size);
+                        Thread threadSegmentatedBitmapFromPixels4 = new Thread(segmentatedBitmapFromPixels4);
+                        threadSegmentatedBitmapFromPixels4.start();
+
+                        //wait for threads end and set bitmap to ImageView
                         try {
                             threadSegmentatedBitmapFromPixels1.join();
                             setImageToImageView(segmentatedHand1, segmentatedBitmapFromPixels1.getBitmap());
                             threadSegmentatedBitmapFromPixels2.join();
                             setImageToImageView(segmentatedHand3, segmentatedBitmapFromPixels2.getBitmap());
+                            threadSegmentatedBitmapFromPixels3.join();
+                            setImageToImageView(segmentatedHand4, segmentatedBitmapFromPixels3.getBitmap());
+                            threadSegmentatedBitmapFromPixels4.join();
+                            setImageToImageView(segmentatedHand5, segmentatedBitmapFromPixels4.getBitmap());
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
 
-
-
-                        //Bitmap bmpColor = createProcessedBitmap(inputColorSegmentationDataPicture, size);
-                        //addCopy(bmp, pictureSaved, "wiedmoColor" + pictureSaved  + "_" + warunek + ".png");
-                        //System.out.println("Zapisno:" + "wiedmoColor" + pictureSaved  + "_" + warunek + ".png");
+                        //set frames to 0 (return to the beginning of loop)
                         frames = 0;
                     }
                 }
