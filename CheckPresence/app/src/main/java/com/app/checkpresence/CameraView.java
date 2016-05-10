@@ -35,7 +35,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private ImageView liveView;
     private int[] result;
     Buffer buffer;
-    public native int[] myNativeCode(int[] argb, int[] returnedInputSegmentationFileData, int rows, int cols, int warunek);
+    public native int[] myNativeCode(int[] argb, int rows, int cols, int warunek);
 
     public CameraView(Context context, Camera camera, TextView saved, ImageView segmentatedHand1, ImageView liveView,
                       ImageView segmentatedHand3, ImageView segmentatedHand4, ImageView segmentatedHand5, ImageView segmentatedHand6){
@@ -92,7 +92,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         Camera.Size size = parameters.getPreviewSize();
         parameters.set("orientation", "portrait");
         parameters.setRotation(90);
-        parameters.setPreviewSize(size.width/2, size.height/2);
+        parameters.setPreviewSize(size.width / 4, size.height / 4);
         //parameters.setPreviewFormat(ImageFormat.);
         mCamera.setParameters(parameters);
 
@@ -131,30 +131,25 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         }
                         setImageToImageView(liveView, colouredBitmapFromPixels.getBitmap());
 
-                        //int warunek = 2;
-                        //for(int warunek = 2; warunek < 1; ++warunek) {
-                        int[] inputColorSegmentationDataPicture = new int[size.height * size.width];
-                        for (int i = 0; i < size.height * size.width; ++i) {
-                            inputColorSegmentationDataPicture[i] = 0;
-                        }
-                        //int[] segmentationDataPicture = myNativeCode(argb, inputColorSegmentationDataPicture, size.height, size.width, warunek);
-
+                        System.out.println("Test -03. Juz po czesci watkow!");
                         //processing frame segmentation (in new thread)
-                        Segmentation segmentation1 = new Segmentation(argb, inputColorSegmentationDataPicture, size, 1);
+                        Segmentation segmentation1 = new Segmentation(argb, size, 1);
                         Thread threadSegmentation1 = new Thread(segmentation1);
                         threadSegmentation1.start();
 
-                        Segmentation segmentation2 = new Segmentation(argb, inputColorSegmentationDataPicture, size, 2);
+                        Segmentation segmentation2 = new Segmentation(argb, size, 2);
                         Thread threadSegmentation2 = new Thread(segmentation2);
                         threadSegmentation2.start();
 
-                        Segmentation segmentation3 = new Segmentation(argb, inputColorSegmentationDataPicture, size, 3);
+                        Segmentation segmentation3 = new Segmentation(argb,  size, 3);
                         Thread threadSegmentation3 = new Thread(segmentation3);
                         threadSegmentation3.start();
 
-                        Segmentation segmentation4 = new Segmentation(argb, inputColorSegmentationDataPicture, size, 4);
+                        Segmentation segmentation4 = new Segmentation(argb, size, 4);
                         Thread threadSegmentation4 = new Thread(segmentation4);
                         threadSegmentation4.start();
+
+                        System.out.println("Test -02. Przed try!");
 
                         //wait for threads end
                         try {
@@ -166,11 +161,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                             e.printStackTrace();
                         }
 
+                        System.out.println("Test -02. Po try catch!");
+
                         //getting results of processing
                         int[] segmentationDataPicture1 = segmentation1.getSegmentatedPicture();
                         int[] segmentationDataPicture2 = segmentation2.getSegmentatedPicture();
                         int[] segmentationDataPicture3 = segmentation3.getSegmentatedPicture();
                         int[] segmentationDataPicture4 = segmentation4.getSegmentatedPicture();
+
+                        System.out.println("Test -01. Juz po czesci watkow!");
 
                         //creating segmentated bitmap from int array and cropping it (in new thread)
                         CreateBitmapFromPixels segmentatedBitmapFromPixels1 = new CreateBitmapFromPixels(segmentationDataPicture1, size);
@@ -189,6 +188,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         Thread threadSegmentatedBitmapFromPixels4 = new Thread(segmentatedBitmapFromPixels4);
                         threadSegmentatedBitmapFromPixels4.start();
 
+                        System.out.println("Test 00. Juz po czesci watkow!");
                         //wait for threads end and set bitmap to ImageView
                         try {
                             threadSegmentatedBitmapFromPixels1.join();
@@ -205,6 +205,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
                         //set frames to 0 (return to the beginning of loop)
                         frames = 0;
+                        System.out.println("Juz po tych wszystkich watkach!");
                     }
                 }
             });
@@ -440,7 +441,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         int warunek;
         int[] inputColorSegmentationDataPicture;
         android.hardware.Camera.Size size;
-        public Segmentation(int[] argb, int[] inputColorSegmentationDataPicture, Camera.Size size, int warunek) {
+        public Segmentation(int[] argb, Camera.Size size, int warunek) {
             // store parameter for later user
             this.argb = argb;
             this.inputColorSegmentationDataPicture = inputColorSegmentationDataPicture;
@@ -451,7 +452,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         @Override
         public void run() {
             System.out.println("Tread processing frame with condition: " + warunek);
-            this.segmentatedPicture = myNativeCode(argb, inputColorSegmentationDataPicture, size.height, size.width, warunek);
+            this.segmentatedPicture = myNativeCode(argb, size.height, size.width, warunek);
         }
 
         public int[] getSegmentatedPicture(){

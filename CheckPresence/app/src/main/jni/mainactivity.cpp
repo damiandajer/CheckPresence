@@ -15,17 +15,15 @@
 #include "MemoryFile.h"
 #include "PGMFile.h"
 
-std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB);
+std::string PaPaMobile_HandRecognization(std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB);
 
 extern "C" {
 JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
-                                                                               jintArray returnedInputSegmentationFileData, jint rows, jint cols, jint warunek){
+                                                                               jint rows, jint cols, jint warunek){
 
     jint *argb = (*env).GetIntArrayElements(argb_, NULL);
     unsigned char* plikDaneARGB = (unsigned char*)argb;
     int dataLength = rows * cols * 3;
-
-    jint *argbColorOut = (*env).GetIntArrayElements(returnedInputSegmentationFileData, NULL);
 
     //__android_log_print(ANDROID_LOG_DEBUG, "LOG_TEST", "Testowy log z NativeCode c++. Hello console :)");
 
@@ -81,7 +79,6 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(J
         int color = (intA << 24) | (intR << 16) | (intG << 8) | (intB << 0);
         //int color = 0xFFFF22FF;
 
-        argbColorOut[i / 4] = color;
 
         fileData.write(reinterpret_cast<char *>(&r), 1);
         fileData.write(reinterpret_cast<char *>(&g), 1);
@@ -116,32 +113,13 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(J
         return NULL; /* out of memory error thrown */
     }
 
-    jint table[rows*cols];
-    if (table == nullptr) {
-        __android_log_print(ANDROID_LOG_DEBUG, "LOG_TEST", "Testowy log z NativeCode c++. Hello console :)");
-        int x;
-        x = 6;
-    }
-    for (size_t i = 0; i < rows*cols; i++) {
-        table[i] = 0; // put whatever logic you want to populate the values here.
-    }
-
 
     dataLength += headerLength;
-    std::string wynik = PaPaMobile_HandRecognization((int*)&table[0], fileData.str(), dataLength, warunek, avgR, avgG, avgB);
+    std::string wynik = PaPaMobile_HandRecognization(fileData.str(), dataLength, warunek, avgR, avgG, avgB);
     int xx = wynik.size();
     int y = 0;
 
-    // zatapienie kolorow po separacje przez orginalne kolorowe
-    /*for (int i = 0; i < rows * cols; ++i) {
-        table[i] = argbColorOut[i];
-    }*/
-
-    // move from the temp structure to the java structure
-    (*env).SetIntArrayRegion(result, 0, rows*cols, table);
-
     (*env).ReleaseIntArrayElements(argb_, argb,0);
-    (*env).ReleaseIntArrayElements(returnedInputSegmentationFileData, argbColorOut, 0);
 
     return result;
     //return (*env).NewStringUTF(wynik.c_str());
@@ -149,7 +127,7 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(J
     }
 }
 
-std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB) {
+std::string PaPaMobile_HandRecognization(std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB) {
     int rows, cols;
     int max_color;
     int hpos, i, j;
@@ -331,7 +309,7 @@ std::string PaPaMobile_HandRecognization(int* table, std::string fileData, size_
     std::string daneAfterSegmentation;
     //std::cout << daneAfterSegmentation << std::endl;
     //pgmFile.writePGMB_image_to_string(daneAfterSegmentation, b_out[0], rows, cols, 255);
-    pgmFile.writePGMB_image_to_tableInt(table, b_out[0], rows, cols, 255);
+    //pgmFile.writePGMB_image_to_tableInt(table, b_out[0], rows, cols, 255);
 
     // to trzeba jeszcze poprawić wede alokacji pamięci
     delete[] R;
