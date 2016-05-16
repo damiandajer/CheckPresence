@@ -4,16 +4,17 @@
 
 #ifndef CHECKPRESENCE_IMAGE_UTILITY_H
 #define CHECKPRESENCE_IMAGE_UTILITY_H
-/*
+
 #include <cmath>
+#include <vector>
 
 #define MIN(a,b) ((a)<(b)?(a):(b))
 #define MAX(a,b) ((a)>(b)?(a):(b))
 
-float* hsv2rgb(float hue, float sat, float val) {
+std::vector<float> hsv2rgb(float hue, float sat, float val) {
     float red, grn, blu;
     float i, f, p, q, t;
-    float *result = new float[3];
+    std::vector<float> result(3);
 
     if(val==0) {
         red = 0;
@@ -42,7 +43,7 @@ float* hsv2rgb(float hue, float sat, float val) {
 float *rgb2hsv(float red, float grn, float blu){
     float hue, sat, val;
     float x, f, i;
-    float *result = new float[3];
+    std::vector<float> result(3);
 
     x = MIN(MIN(red, grn), blu);
     val = MAX(MAX(red, grn), blu);
@@ -61,5 +62,5 @@ float *rgb2hsv(float red, float grn, float blu){
     result[2] = val;
     return result;
 }
-*/
+
 #endif //CHECKPRESENCE_IMAGE_UTILITY_H

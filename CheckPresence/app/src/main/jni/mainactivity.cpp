@@ -15,7 +15,9 @@
 #include "MemoryFile.h"
 #include "PGMFile.h"
 
-std::string PaPaMobile_HandRecognization(std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB);
+#include "image_utility.h"
+
+void PaPaMobile_HandRecognization(int* image_out, std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB);
 
 extern "C" {
 JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
@@ -79,7 +81,6 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(J
         int color = (intA << 24) | (intR << 16) | (intG << 8) | (intB << 0);
         //int color = 0xFFFF22FF;
 
-
         fileData.write(reinterpret_cast<char *>(&r), 1);
         fileData.write(reinterpret_cast<char *>(&g), 1);
         fileData.write(reinterpret_cast<char *>(&b), 1);
@@ -112,12 +113,11 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(J
     if (result == NULL) {
         return NULL; /* out of memory error thrown */
     }
+    jint *result_tab= (*env).GetIntArrayElements(result, NULL);
 
 
     dataLength += headerLength;
-    std::string wynik = PaPaMobile_HandRecognization(fileData.str(), dataLength, warunek, avgR, avgG, avgB);
-    int xx = wynik.size();
-    int y = 0;
+    PaPaMobile_HandRecognization((int*)result_tab, fileData.str(), dataLength, warunek, avgR, avgG, avgB);
 
     (*env).ReleaseIntArrayElements(argb_, argb,0);
 
@@ -127,7 +127,7 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(J
     }
 }
 
-std::string PaPaMobile_HandRecognization(std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB) {
+void PaPaMobile_HandRecognization(int* image_out, std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB) {
     int rows, cols;
     int max_color;
     int hpos, i, j;
@@ -136,7 +136,7 @@ std::string PaPaMobile_HandRecognization(std::string fileData, size_t fileLength
 
     //if ((hpos = readPPMB_header(f.c_str(), &rows, &cols, &max_color)) <= 0) exit(1);
     if ((hpos = pgmFile.readPGMB_header(&rows, &cols, &max_color)) <= 0)
-        return "nie udało się wczytać nagłówka";
+        return ;//"nie udało się wczytać nagłówka";
     //return pgmFile.readPGMB_header(&rows, &cols, &max_color);
 
     unsigned char **R = new_char_image(rows, cols);
@@ -152,6 +152,8 @@ std::string PaPaMobile_HandRecognization(std::string fileData, size_t fileLength
     /* to niewazne, mamy tylko 1 plik do przetworzenia!*/
     /*std::string str_index = f.substr(7, f.length() - 10);
     int index = atoi(str_index.c_str());*/
+
+    int avgHueHandColor = rgb2hsv(R[rows / 2][cols / 2], G[rows / 2][cols / 2], B[rows / 2][cols / 2])[0];
 
     for (i = 0; i< rows; ++i) {
         for (j = 0; j< cols; ++j) {
@@ -191,15 +193,23 @@ std::string PaPaMobile_HandRecognization(std::string fileData, size_t fileLength
             }
             else {
                 int avgRGB = (r + g + b) / 3;
-                int deviation = 10;
+                //int deviation = 10;
                 if(warunek == 1) cond = (!(r > avgR && g > avgG && b > avgB) && (r > b && r > g) );
                 else if(warunek == 2) cond = (r>50 && r>g && r>b) || (r>90 && r>g && r>g - 10);
                 else if(warunek == 3) cond = (r > 65 && r>g && r > b - 10) || (i < 200 && r>25 && r > g && r > b - 10);
                 else if(warunek == 4) cond = (r>65 && r>g && r>b-10) || (i<200 && r>25 && r>g && r>b-10);
                 /*warunek = (r > b && r > g) && !((r > avgRGB - deviation && r > avgRGB + deviation)
                                               && (b > avgRGB - deviation && b > avgRGB + deviation)
-                                              && (g > avgRGB - deviation && g > avgRGB + deviation));
-    */
+                                              && (g > avgRGB - deviation && g > avgRGB + deviation));*/
+
+
+                /*std::vector<float> hsv = rgb2hsv(r, g, b);
+
+                if (hsv[0] < 200)
+                    b_out[i][j] = 1;
+                else
+                    b_out[i][j] = 0;*/
+                /*cond = (!(r > avgR * 0.6 && g > avgG * 0.6 && b > avgB * 0.6) && (r > b && r > g) );*/
                 b_out[i][j] = cond ? 255 : 0;
             }
         }
@@ -306,10 +316,10 @@ std::string PaPaMobile_HandRecognization(std::string fileData, size_t fileLength
 	//if (writePGMB_image(outfname.c_str(), b_out[0], rows, cols, 255) == 0)	   exit(1);
 #endif
 
-    std::string daneAfterSegmentation;
+    //std::string daneAfterSegmentation;
     //std::cout << daneAfterSegmentation << std::endl;
     //pgmFile.writePGMB_image_to_string(daneAfterSegmentation, b_out[0], rows, cols, 255);
-    //pgmFile.writePGMB_image_to_tableInt(table, b_out[0], rows, cols, 255);
+    pgmFile.writePGMB_image_to_tableInt(image_out, b_out[0], rows, cols, 255);
 
     // to trzeba jeszcze poprawić wede alokacji pamięci
     delete[] R;
@@ -328,5 +338,5 @@ std::string PaPaMobile_HandRecognization(std::string fileData, size_t fileLength
     ************************************/
 
     //return "najprawodopodniej wszystko OK! HAPPY AND READY FOR NEXT ETAP!!!! PROBABLY....";
-    return daneAfterSegmentation;
+    //return daneAfterSegmentation;
 }

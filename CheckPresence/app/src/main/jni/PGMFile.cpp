@@ -1,6 +1,8 @@
 #include "PGMFile.h"
+#include <android/log.h>
 
 #include <ctype.h>
+#include <stdlib.h>
 
 #include <iostream>
 #include <sstream>
@@ -129,7 +131,7 @@ int PGMFile::writePGMB_image_to_tableInt(int* table, unsigned char * image, int 
 			++ileBialych;
 		}
 	}
-
+	//__android_log_print(ANDROID_LOG_DEBUG, "LOG_TEST", "Białych jest" + itoa(ileBialych));
 	//dataDestination = ss.str();
 	return E_OK;
 }

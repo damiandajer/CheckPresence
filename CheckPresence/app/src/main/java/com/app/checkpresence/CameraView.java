@@ -439,12 +439,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         private volatile int[] segmentatedPicture;
         int[] argb;
         int warunek;
-        int[] inputColorSegmentationDataPicture;
+        //int[] inputColorSegmentationDataPicture;
         android.hardware.Camera.Size size;
         public Segmentation(int[] argb, Camera.Size size, int warunek) {
             // store parameter for later user
             this.argb = argb;
-            this.inputColorSegmentationDataPicture = inputColorSegmentationDataPicture;
+            //this.inputColorSegmentationDataPicture = inputColorSegmentationDataPicture;
             this.size = size;
             this.warunek = warunek;
         }
