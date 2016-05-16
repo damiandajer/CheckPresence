@@ -138,14 +138,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
                         //creating colored bitmap from frame, cropping it (in new thread) and setting to imageView
                         CreateBitmapFromPixels colouredBitmapFromPixelsBackground = new CreateBitmapFromPixels(intBackground, size.height, size.width);
-                        Thread threadColouredBitmapFromPixelsBackground = new Thread(colouredBitmapFromPixelsBackground);
-                        threadColouredBitmapFromPixelsBackground.start();
+                        ThreadHandler.createThread(colouredBitmapFromPixelsBackground);
+                        ThreadHandler.startThreads();
                         try {
-                            threadColouredBitmapFromPixelsBackground.join();
+                            ThreadHandler.joinThreads();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                         bmpBackground = colouredBitmapFromPixelsBackground.getBitmap();
+
                         //number of frames
                         ++frames;
                     }
@@ -162,38 +163,25 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
                         //creating colored bitmap from frame, cropping it (in new thread) and setting to imageView
                         CreateBitmapFromPixels colouredBitmapFromPixels = new CreateBitmapFromPixels(argb, size.height, size.width);
-                        Thread threadColouredBitmapFromPixels = new Thread(colouredBitmapFromPixels);
-                        threadColouredBitmapFromPixels.start();
+                        ThreadHandler.createThread(colouredBitmapFromPixels);
+                        ThreadHandler.startThreads();
                         try {
-                            threadColouredBitmapFromPixels.join();
+                            ThreadHandler.joinThreads();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                         setImageToImageView(liveView, colouredBitmapFromPixels.getBitmap());
 
                         //-----------------OpenCV part (substracting background)----------------------------------------------
-                        //width and height after cropping
-                        int width = colouredBitmapFromPixels.getBitmap().getWidth();
-                        int height = colouredBitmapFromPixels.getBitmap().getHeight();
-
-                        Bitmap.Config conf = Bitmap.Config.ARGB_8888; // see other conf types
-                        subtractingResult = Bitmap.createBitmap(width, height, conf);
-
-                        Mat  imgToProcess1 = new Mat(height, width, CvType.CV_8UC4);
-                        Mat  imgToProcess2 = new Mat(height, width, CvType.CV_8UC4);
-                        Mat  imgToProcess = new Mat(height, width, CvType.CV_8UC4);
-
-                        Utils.bitmapToMat(colouredBitmapFromPixels.getBitmap(), imgToProcess1);
-                        Utils.bitmapToMat(bmpBackground, imgToProcess2);
-
-                        //absdiff(imgToProcess1, imgToProcess2, imgToProcess);
-                        subtract(imgToProcess2, imgToProcess1, imgToProcess);
-
-                        Mat mask = new Mat(height, width, CvType.CV_8U);
-                        cvtColor(imgToProcess, mask, Imgproc.COLOR_RGBA2GRAY, 1); //your conversion specifier may vary
-                        Imgproc.threshold(mask, mask, 50, 255, Imgproc.THRESH_BINARY);
-
-                        Utils.matToBitmap(mask, subtractingResult);
+                        OpenCVSubtraction openCVSubtraction = new OpenCVSubtraction(colouredBitmapFromPixels.getBitmap(), bmpBackground);
+                        ThreadHandler.createThread(openCVSubtraction);
+                        ThreadHandler.startThreads();
+                        try {
+                            ThreadHandler.joinThreads();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        setImageToImageView(segmentatedHand6, openCVSubtraction.getBitmap());
                         //---------------------------------------------------------------
 
                         //processing frame segmentation (in new thread)
@@ -236,7 +224,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         setImageToImageView(segmentatedHand3, bitmaps[1].getBitmap());
                         setImageToImageView(segmentatedHand4, bitmaps[2].getBitmap());
                         setImageToImageView(segmentatedHand5, bitmaps[3].getBitmap());
-                        setImageToImageView(segmentatedHand6, subtractingResult);
+
                         //set frames to 0 (return to the beginning of loop)
                         frames = 0;
                     }
@@ -360,53 +348,5 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         imageView.setImageBitmap(bitmap);
     }
 
-<<<<<<< HEAD
-    private class CreateBitmapFromPixels implements Runnable {
-        private volatile Bitmap bmp;
-        int[] inputColorSegmentationDataPicture;
-        android.hardware.Camera.Size size;
-        public CreateBitmapFromPixels(int[] inputColorSegmentationDataPicture, Camera.Size size) {
-            // store parameter for later user
-            this.inputColorSegmentationDataPicture = inputColorSegmentationDataPicture;
-            this.size = size;
-        }
-
-        @Override
-        public void run() {
-            //System.out.println("Tread creating processed bitmap");
-            this.bmp = createProcessedBitmap(inputColorSegmentationDataPicture, size);
-        }
-
-        public Bitmap getBitmap(){
-            return this.bmp;
-        }
-    }
-
-    private class Segmentation implements Runnable {
-        private volatile int[] segmentatedPicture;
-        int[] argb;
-        int warunek;
-        //int[] inputColorSegmentationDataPicture;
-        android.hardware.Camera.Size size;
-        public Segmentation(int[] argb, Camera.Size size, int warunek) {
-            // store parameter for later user
-            this.argb = argb;
-            //this.inputColorSegmentationDataPicture = inputColorSegmentationDataPicture;
-            this.size = size;
-            this.warunek = warunek;
-        }
-
-        @Override
-        public void run() {
-            System.out.println("Tread processing frame with condition: " + warunek);
-            this.segmentatedPicture = myNativeCode(argb, size.height, size.width, warunek);
-        }
-
-        public int[] getSegmentatedPicture(){
-            return this.segmentatedPicture;
-        }
-    }
-=======
->>>>>>> refs/remotes/origin/OpenCV-substracting-background
 }
 

@@ -88,4 +88,9 @@ public class MainActivity extends Activity {
         super.onDestroy();
         dataBase.close();
     }
+
+    @Override
+    public void onBackPressed(){
+        System.exit(0);
+    }
 }

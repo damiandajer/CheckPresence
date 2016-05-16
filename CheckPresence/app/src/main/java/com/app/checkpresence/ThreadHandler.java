@@ -13,6 +13,10 @@ final public class ThreadHandler {
 
     private ThreadHandler(){}
 
+    /**
+     * Create new thread with Runnable object
+     * @param threadedObject object which contains run() method
+     */
     public static void createThread(Runnable threadedObject){
         if(threads == null){
             threads = new ArrayList<Thread>();
@@ -22,12 +26,19 @@ final public class ThreadHandler {
         associatedRunnables.add(threadedObject);
     }
 
+    /**
+     * Start all actual threads
+     */
     public static void startThreads(){
         for (Thread thread:threads) {
             thread.start();
         }
     }
 
+    /**
+     * Wait to end of all actual threads
+     * @throws InterruptedException
+     */
     public static void joinThreads() throws InterruptedException {
         for (Thread thread:threads) {
             try {
