@@ -18,7 +18,7 @@
 std::string PaPaMobile_HandRecognization(std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB);
 
 extern "C" {
-JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
+JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_Segmentation_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
                                                                                jint rows, jint cols, jint warunek){
 
     jint *argb = (*env).GetIntArrayElements(argb_, NULL);
@@ -153,6 +153,7 @@ std::string PaPaMobile_HandRecognization(std::string fileData, size_t fileLength
     /*std::string str_index = f.substr(7, f.length() - 10);
     int index = atoi(str_index.c_str());*/
 
+    //__android_log_print(ANDROID_LOG_DEBUG, "LOG_TEST", "Pętle segmentacji...");
     for (i = 0; i< rows; ++i) {
         for (j = 0; j< cols; ++j) {
 

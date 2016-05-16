@@ -11,8 +11,13 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
+
 
 public class MainActivity extends Activity {
+    //private static final String TAG = "OCV::Activity";
     private Camera mCamera = null;
     private CameraView mCameraView = null;
     public TextView saved;
@@ -65,9 +70,6 @@ public class MainActivity extends Activity {
     static {
         System.loadLibrary("native");
     }
-
-    //public native String myNativeCode();
-    //public static String myNativeCodasde();
 
     /**
      * Metoda tworzy i otwiera bazę danych
