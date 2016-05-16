@@ -18,12 +18,28 @@ package com.app.checkpresence;
         import android.widget.ImageView;
         import android.widget.TextView;
 
+        import org.opencv.android.BaseLoaderCallback;
+        import org.opencv.android.LoaderCallbackInterface;
+        import org.opencv.android.OpenCVLoader;
+        import org.opencv.android.Utils;
+        import org.opencv.core.CvType;
+        import org.opencv.core.Mat;
+        import org.opencv.imgproc.Imgproc;
+        import org.opencv.video.BackgroundSubtractorMOG2;
+
         import java.io.ByteArrayOutputStream;
         import java.io.File;
         import java.io.FileOutputStream;
         import java.io.IOException;
         import java.nio.Buffer;
+        import java.util.ArrayList;
+        import java.util.List;
         import java.util.concurrent.ExecutionException;
+
+        import static org.opencv.core.Core.absdiff;
+        import static org.opencv.core.Core.subtract;
+        import static org.opencv.imgproc.Imgproc.cvtColor;
+        import static org.opencv.imgproc.Imgproc.threshold;
 
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private SurfaceHolder mHolder;
@@ -33,9 +49,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private TextView savedPic;
     private ImageView segmentatedHand1, segmentatedHand3, segmentatedHand4, segmentatedHand5, segmentatedHand6;
     private ImageView liveView;
-    private int[] result;
-    Buffer buffer;
-    public native int[] myNativeCode(int[] argb, int rows, int cols, int warunek);
+    private Bitmap bmpBackground, subtractingResult;
 
     public CameraView(Context context, Camera camera, TextView saved, ImageView segmentatedHand1, ImageView liveView,
                       ImageView segmentatedHand3, ImageView segmentatedHand4, ImageView segmentatedHand5, ImageView segmentatedHand6){
@@ -54,10 +68,19 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         mHolder = getHolder();
         mHolder.addCallback(this);
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_NORMAL);
-
         //this.saved = (TextView) findViewById(R.id.saved);
         //this.saved.setText("0 saved");
 
+    }
+
+    static {
+        if (!OpenCVLoader.initDebug()) {
+            Log.e("TEST", "OpenCVLoader Failed");
+        }else {
+            Log.e("TEST", "OpenCVLoader Succeeded");
+            //System.loadLibrary("CameraVision");
+            System.loadLibrary("opencv_java3");
+        }
     }
 
     @Override
@@ -92,8 +115,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         Camera.Size size = parameters.getPreviewSize();
         parameters.set("orientation", "portrait");
         parameters.setRotation(90);
-        parameters.setPreviewSize(size.width / 4, size.height / 4);
-        //parameters.setPreviewFormat(ImageFormat.);
+        parameters.setPreviewSize(size.width / 2, size.height / 2);
         mCamera.setParameters(parameters);
 
         //now, recreate the camera preview
@@ -107,11 +129,29 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
             mCamera.setPreviewCallback(new Camera.PreviewCallback() {
                 public void onPreviewFrame(byte[] data, Camera _camera) {
-                    //number of frames
-                    ++frames;
+                    //getting once bitmap with background
+                    if(frames == 0){
+                        Camera.Parameters parameters = mCamera.getParameters();
+                        Camera.Size size = parameters.getPreviewSize();
+
+                        int[] intBackground = createIntArrayFromPreviewFrame(data, size);
+
+                        //creating colored bitmap from frame, cropping it (in new thread) and setting to imageView
+                        CreateBitmapFromPixels colouredBitmapFromPixelsBackground = new CreateBitmapFromPixels(intBackground, size.height, size.width);
+                        Thread threadColouredBitmapFromPixelsBackground = new Thread(colouredBitmapFromPixelsBackground);
+                        threadColouredBitmapFromPixelsBackground.start();
+                        try {
+                            threadColouredBitmapFromPixelsBackground.join();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        bmpBackground = colouredBitmapFromPixelsBackground.getBitmap();
+                        //number of frames
+                        ++frames;
+                    }
 
                     if(frames == 1) {
-                        //number of saved pictures
+                        //number of processed pictures
                         ++pictureSaved;
                         savedPic.setText(pictureSaved + " processed");
 
@@ -121,7 +161,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         int[] argb = createIntArrayFromPreviewFrame(data, size);
 
                         //creating colored bitmap from frame, cropping it (in new thread) and setting to imageView
-                        CreateBitmapFromPixels colouredBitmapFromPixels = new CreateBitmapFromPixels(argb, size);
+                        CreateBitmapFromPixels colouredBitmapFromPixels = new CreateBitmapFromPixels(argb, size.height, size.width);
                         Thread threadColouredBitmapFromPixels = new Thread(colouredBitmapFromPixels);
                         threadColouredBitmapFromPixels.start();
                         try {
@@ -131,82 +171,78 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         }
                         setImageToImageView(liveView, colouredBitmapFromPixels.getBitmap());
 
-                        System.out.println("Test -03. Juz po czesci watkow!");
+                        //-----------------OpenCV part (substracting background)----------------------------------------------
+                        //width and height after cropping
+                        int width = colouredBitmapFromPixels.getBitmap().getWidth();
+                        int height = colouredBitmapFromPixels.getBitmap().getHeight();
+
+                        Bitmap.Config conf = Bitmap.Config.ARGB_8888; // see other conf types
+                        subtractingResult = Bitmap.createBitmap(width, height, conf);
+
+                        Mat  imgToProcess1 = new Mat(height, width, CvType.CV_8UC4);
+                        Mat  imgToProcess2 = new Mat(height, width, CvType.CV_8UC4);
+                        Mat  imgToProcess = new Mat(height, width, CvType.CV_8UC4);
+
+                        Utils.bitmapToMat(colouredBitmapFromPixels.getBitmap(), imgToProcess1);
+                        Utils.bitmapToMat(bmpBackground, imgToProcess2);
+
+                        //absdiff(imgToProcess1, imgToProcess2, imgToProcess);
+                        subtract(imgToProcess2, imgToProcess1, imgToProcess);
+
+                        Mat mask = new Mat(height, width, CvType.CV_8U);
+                        cvtColor(imgToProcess, mask, Imgproc.COLOR_RGBA2GRAY, 1); //your conversion specifier may vary
+                        Imgproc.threshold(mask, mask, 50, 255, Imgproc.THRESH_BINARY);
+
+                        Utils.matToBitmap(mask, subtractingResult);
+                        //---------------------------------------------------------------
+
                         //processing frame segmentation (in new thread)
-                        Segmentation segmentation1 = new Segmentation(argb, size, 1);
-                        Thread threadSegmentation1 = new Thread(segmentation1);
-                        threadSegmentation1.start();
-
-                        Segmentation segmentation2 = new Segmentation(argb, size, 2);
-                        Thread threadSegmentation2 = new Thread(segmentation2);
-                        threadSegmentation2.start();
-
-                        Segmentation segmentation3 = new Segmentation(argb,  size, 3);
-                        Thread threadSegmentation3 = new Thread(segmentation3);
-                        threadSegmentation3.start();
-
-                        Segmentation segmentation4 = new Segmentation(argb, size, 4);
-                        Thread threadSegmentation4 = new Thread(segmentation4);
-                        threadSegmentation4.start();
-
-                        System.out.println("Test -02. Przed try!");
+                        Segmentation[] segmentations = new Segmentation[4];
+                        for(int i=1; i<5;i++){
+                            Segmentation newSegmentation = new Segmentation(argb,size.height,size.width,i);
+                            segmentations[i-1] = newSegmentation;
+                            ThreadHandler.createThread(newSegmentation);
+                        }
+                        ThreadHandler.startThreads();
 
                         //wait for threads end
                         try {
-                            threadSegmentation1.join();
-                            threadSegmentation2.join();
-                            threadSegmentation3.join();
-                            threadSegmentation4.join();
+                            ThreadHandler.joinThreads();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-
-                        System.out.println("Test -02. Po try catch!");
 
                         //getting results of processing
-                        int[] segmentationDataPicture1 = segmentation1.getSegmentatedPicture();
-                        int[] segmentationDataPicture2 = segmentation2.getSegmentatedPicture();
-                        int[] segmentationDataPicture3 = segmentation3.getSegmentatedPicture();
-                        int[] segmentationDataPicture4 = segmentation4.getSegmentatedPicture();
-
-                        System.out.println("Test -01. Juz po czesci watkow!");
+                        List<int[]> segmentationDataPictures = new ArrayList<int[]>();
+                        for(int i=0;i<4;i++)
+                            segmentationDataPictures.add(segmentations[i].getSegmentatedPicture());
 
                         //creating segmentated bitmap from int array and cropping it (in new thread)
-                        CreateBitmapFromPixels segmentatedBitmapFromPixels1 = new CreateBitmapFromPixels(segmentationDataPicture1, size);
-                        Thread threadSegmentatedBitmapFromPixels1 = new Thread(segmentatedBitmapFromPixels1);
-                        threadSegmentatedBitmapFromPixels1.start();
+                        CreateBitmapFromPixels[] bitmaps = new CreateBitmapFromPixels[4];
+                        for(int i=0; i<4;i++){
+                            CreateBitmapFromPixels bitmap = new CreateBitmapFromPixels(segmentationDataPictures.get(i),size.height,size.width);
+                            bitmaps[i] = bitmap;
+                            ThreadHandler.createThread(bitmap);
+                        }
+                        ThreadHandler.startThreads();
 
-                        CreateBitmapFromPixels segmentatedBitmapFromPixels2 = new CreateBitmapFromPixels(segmentationDataPicture2, size);
-                        Thread threadSegmentatedBitmapFromPixels2 = new Thread(segmentatedBitmapFromPixels2);
-                        threadSegmentatedBitmapFromPixels2.start();
-
-                        CreateBitmapFromPixels segmentatedBitmapFromPixels3 = new CreateBitmapFromPixels(segmentationDataPicture3, size);
-                        Thread threadSegmentatedBitmapFromPixels3 = new Thread(segmentatedBitmapFromPixels3);
-                        threadSegmentatedBitmapFromPixels3.start();
-
-                        CreateBitmapFromPixels segmentatedBitmapFromPixels4 = new CreateBitmapFromPixels(segmentationDataPicture4, size);
-                        Thread threadSegmentatedBitmapFromPixels4 = new Thread(segmentatedBitmapFromPixels4);
-                        threadSegmentatedBitmapFromPixels4.start();
-
-                        System.out.println("Test 00. Juz po czesci watkow!");
                         //wait for threads end and set bitmap to ImageView
                         try {
-                            threadSegmentatedBitmapFromPixels1.join();
-                            setImageToImageView(segmentatedHand1, segmentatedBitmapFromPixels1.getBitmap());
-                            threadSegmentatedBitmapFromPixels2.join();
-                            setImageToImageView(segmentatedHand3, segmentatedBitmapFromPixels2.getBitmap());
-                            threadSegmentatedBitmapFromPixels3.join();
-                            setImageToImageView(segmentatedHand4, segmentatedBitmapFromPixels3.getBitmap());
-                            threadSegmentatedBitmapFromPixels4.join();
-                            setImageToImageView(segmentatedHand5, segmentatedBitmapFromPixels4.getBitmap());
+                            ThreadHandler.joinThreads();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-
+                        setImageToImageView(segmentatedHand1, bitmaps[0].getBitmap());
+                        setImageToImageView(segmentatedHand3, bitmaps[1].getBitmap());
+                        setImageToImageView(segmentatedHand4, bitmaps[2].getBitmap());
+                        setImageToImageView(segmentatedHand5, bitmaps[3].getBitmap());
+                        setImageToImageView(segmentatedHand6, subtractingResult);
                         //set frames to 0 (return to the beginning of loop)
                         frames = 0;
-                        System.out.println("Juz po tych wszystkich watkach!");
                     }
+
+                    //number of frames
+                    ++frames;
                 }
             });
     }
@@ -222,11 +258,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     /**
      * Method is saving bmp file to memory
      * @param image Bitmap
+     * @param licznik int number of picture
+     * @param fileName name of file
      */
-    public void addCopy(Bitmap image, int licznik, String fileName){
+    public void saveBitmapToDisk(Bitmap image, int licznik, String fileName){
 
-       // FileOutputStream out = null;
-        //File sd = Environment.getExternalStorageDirectory();
         //String backupDBPath = "backupBMP/TomekB"+licznik+".bmp";
         String extr = Environment.getExternalStorageDirectory().toString();
         File mFolder = new File(extr + "/backupBMP");
@@ -238,13 +274,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         String s = fileName + licznik + ".bmp";
 
         File backupImage = new File(mFolder.getAbsolutePath(), s);
-        //System.out.println("Utworzoni plik: " + s + " w lokalizacji: " + mFolder.getAbsolutePath().toString());
 
         FileOutputStream fos = null;
 
-        /*String backupDBPath = "backupBMP/zdjecie.bmp";
-        File backupImage = new File(sd, backupDBPath);*/
-        //System.out.println(backupImage.toString());
         if(!backupImage.exists()){
             System.out.println("Tworzę backupDB");
             try {
@@ -255,19 +287,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         }
         if(backupImage.exists()) {
             try {
-                //out = new FileOutputStream(backupImage);
-                //StringWriter writer = new StringWriter();
                 fos = new FileOutputStream(backupImage);
-                //System.out.println("Kompresuję...");
                 image.compress(Bitmap.CompressFormat.PNG, 100, fos);
                 fos.flush();
                 fos.close();
-                //image.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
-                // PNG is a lossless format, the compression factor (100) is ignored
-                /*image.compressToJpeg(
-                        new Rect(0, 0, image.getWidth(), image.getHeight()), 90,
-                        out);*/
-                //System.out.println(image.toString());
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
@@ -281,36 +304,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                 }
             }
         }
-    }
-
-    /**
-     * Returns Bitmap created from String of bytes
-     * @param encodedString String of bytes
-     * @return Bitmap created from String of bytes
-     */
-    public Bitmap StringToBitMap(String encodedString) {
-        try {
-            byte[] encodeByte = Base64.decode(encodedString, Base64.DEFAULT);
-            Bitmap bitmap = BitmapFactory.decodeByteArray(encodeByte, 0,
-                    encodeByte.length);
-            return bitmap;
-        } catch (Exception e) {
-            e.getMessage();
-            return null;
-        }
-    }
-
-    /**
-     * Returns String of bytes created from bitmap
-     * @param bitmap Bitmap
-     * @return String of bytes created from bitmap
-     */
-    public String BitMapToString(Bitmap bitmap) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
-        byte[] b = baos.toByteArray();
-        String temp = Base64.encodeToString(b, Base64.DEFAULT);
-        return temp;
     }
 
     /**
@@ -350,53 +343,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     }
 
     /**
-     * Method is rotating bitmap
-     * @param source Bitmap to rotation
-     * @param angle rotation angle
-     * @return Bitmap
-     */
-    public static Bitmap RotateBitmap(Bitmap source, float angle)
-    {
-        Matrix matrix = new Matrix();
-        matrix.postRotate(angle);
-        //System.out.println("Bitmap rotated");
-        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
-    }
-
-    /**
-     * Method is flipping bitmap by its y axis
-     * @param source Bitmap to flip
-     * @return Bitmap
-     */
-    public static Bitmap flipBitmap(Bitmap source)
-    {
-        Matrix matrix = new Matrix();
-        matrix.preScale(-1, 1);
-        //System.out.println("Bitmap flipped");
-        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
-    }
-
-    /**
-     * Method create a Bitmap from int array of ARGB pixels,
-     * set Bitmap configuration to ARGB_8888, rotate Bitmap to portrait mode and
-     * flip it by its y axis (when we convert right hand, thumb is in right side
-     * of picture)
-     * @param inputColorSegmentationDataPicture int array of ARGB pixels before segmentation
-     * @param size Size parameters of camera in device
-     * @return Bitmap
-     */
-    public Bitmap createProcessedBitmap(int[] inputColorSegmentationDataPicture, Camera.Size size){
-        Bitmap.Config conf = Bitmap.Config.ARGB_8888; // see other conf types
-        Bitmap bmp = Bitmap.createBitmap(size.width, size.height, conf);
-        bmp.setPixels(inputColorSegmentationDataPicture, 0, size.width, 0, 0, size.width, size.height);
-        bmp = RotateBitmap(bmp, -90);
-        bmp = flipBitmap(bmp);
-
-        Bitmap bmpCropped = Bitmap.createBitmap(bmp, 0, 0, size.height, size.width*2/3);
-        return bmpCropped;
-    }
-
-    /**
      * Returns int array of pixels in ARGB configuration
      * @param data byte array from PreviewFrame
      * @param size Size parameters of camera in device
@@ -414,6 +360,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         imageView.setImageBitmap(bitmap);
     }
 
+<<<<<<< HEAD
     private class CreateBitmapFromPixels implements Runnable {
         private volatile Bitmap bmp;
         int[] inputColorSegmentationDataPicture;
@@ -459,5 +406,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
             return this.segmentatedPicture;
         }
     }
+=======
+>>>>>>> refs/remotes/origin/OpenCV-substracting-background
 }
 

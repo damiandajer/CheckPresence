@@ -25,7 +25,7 @@
 void PaPaMobile_HandRecognization(int* image_out, std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB);
 
 extern "C" {
-JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
+JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_Segmentation_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
                                                                                jint rows, jint cols, jint warunek){
 
     // zebrezentacja przekazanej tablicy z java do kodu natywnego
@@ -113,6 +113,7 @@ void PaPaMobile_HandRecognization(int* image_out, std::string fileData, size_t f
 
     int avgHueHandColor = rgb2hsv(R[rows / 2][cols / 2], G[rows / 2][cols / 2], B[rows / 2][cols / 2])[0];
 
+    //__android_log_print(ANDROID_LOG_DEBUG, "LOG_TEST", "Pętle segmentacji...");
     for (i = 0; i< rows; ++i) {
         for (j = 0; j< cols; ++j) {
 
