@@ -40,7 +40,7 @@ std::vector<float> hsv2rgb(float hue, float sat, float val) {
     return result;
 }
 
-float *rgb2hsv(float red, float grn, float blu){
+std::vector<float> rgb2hsv(float red, float grn, float blu){
     float hue, sat, val;
     float x, f, i;
     std::vector<float> result(3);
