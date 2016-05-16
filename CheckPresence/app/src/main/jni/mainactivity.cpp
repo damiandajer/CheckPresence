@@ -17,113 +17,78 @@
 
 #include "image_utility.h"
 
+/**
+ * @param image_out: wskaznik do tablicy int, tu zapisywany jest wyik funkcji
+ * @param fileData: "plik" do przetwozenia
+ * @param image_out: liczba bajtow "pliku"
+ */
 void PaPaMobile_HandRecognization(int* image_out, std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB);
 
 extern "C" {
 JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_CameraView_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
                                                                                jint rows, jint cols, jint warunek){
 
+    // zebrezentacja przekazanej tablicy z java do kodu natywnego
     jint *argb = (*env).GetIntArrayElements(argb_, NULL);
     unsigned char* plikDaneARGB = (unsigned char*)argb;
+
+    // dolugosc pliku - zalezenie od etapu 2(zostanie usunieta pozniej przy downgradzie jak juz bedzie dzialac)
     int dataLength = rows * cols * 3;
 
     //__android_log_print(ANDROID_LOG_DEBUG, "LOG_TEST", "Testowy log z NativeCode c++. Hello console :)");
 
-   // (*env).SetArra
-
-    /*
-    std::stringstream strS;
-    const char* str = env -> GetStringUTFChars(fileData, 0);
-    strS << "byleco";
-    std::string hand;
-    hand.reserve(fileLength);
-    for(int i=0; i<fileLength; i++){
-        hand[i] = str[i];
-    }
-     */
-    //PaPaMobile_HandRecognization(hand, fileLength);
-
-    //env -> ReleaseStringUTFChars(fileData, str);
-
+    // przygotowanie naglowka pliku(jako (w zmiennej) std::stringstream fileData)
     std::stringstream fileData;
-    std::stringstream testPixel;
     fileData << "P6\n" << cols << " " << rows << "\n# eyetom.com\n" << 255 << "\n";
     int headerLength = fileData.str().size();
-
-    /*
-    * koopiowanie obrazka przekazanego z java - kolorowy
-    */
-    //jintArray resultColor;
-    //resultColor = (*env).NewIntArray(rows*cols);
-    //if (resultColor == NULL) {
-    //   return NULL; /* out of memory error thrown */
-    //}
-
-    /* kopiuje orginalne pixele z obraz przekazanego do segmentacji */
-    //jint tableColor[rows*cols];
-    /*for (size_t i = 0; i < rows*cols; i++) {
-        tableColor[i] = ((int*)plikDaneARGB)[i]; // put whatever logic you want to populate the values here.
-    }*/
+    dataLength += headerLength;
 
     int avgR = 0;
     int avgG = 0;
     int avgB = 0;
     for (size_t i = 0; i < rows * cols * 4; i += 4) {
+        // odczytanie pixela z tablicy(obaz z kamery)
         char a = plikDaneARGB[i + 3];
         char r = plikDaneARGB[i + 2];
         char g = plikDaneARGB[i + 1];
         char b = plikDaneARGB[i + 0];
 
-        int intA = a;
-        int intR = r;
-        int intG = g;
-        int intB = b;
-        int color = (intA << 24) | (intR << 16) | (intG << 8) | (intB << 0);
-        //int color = 0xFFFF22FF;
-
+        // zapis pixela do "pliku"
         fileData.write(reinterpret_cast<char *>(&r), 1);
         fileData.write(reinterpret_cast<char *>(&g), 1);
         fileData.write(reinterpret_cast<char *>(&b), 1);
 
-        avgR += intR;
-        avgG += intG;
-        avgB += intB;
-
-        //if (i == 0) {
-        //    testPixel << "ARGB: " << (int)r << " " << (int)g << " " << (int)b << " " << (int)a << '\n';
-        //}
-/*
-        if (i > dlugosc && i <= dlugosc + 4) {
-            testPixel << "ARGB: " << (int)a << " " << (int)r << " " << (int)g << " " << (int)b << '\n';
-        }
-*/
+        // sumowanie pixeli w poszczegulnych kanałach
+        avgR += r;
+        avgG += g;
+        avgB += b;
     }
-    // move from the temp structure to the java structure
-    //(*env).SetIntArrayRegion(resultColor, 0, rows*cols, tableColor);
 
-    //return (*env).NewStringUTF(std::string("hello return 01").c_str());
-
+    // obliczenie sredniego koloru dla kanałów RGB obazu
     avgR = avgR / (rows * cols);
     avgG = avgG / (rows * cols);
     avgB = avgB / (rows * cols);
 
 
+    // przygotawanie tablicy dla plixeli obrazu po binaryzacji
+    // taka tablize mozna zwrucic do kodu java
     jintArray result;
     result = (*env).NewIntArray(rows*cols);
     if (result == NULL) {
         return NULL; /* out of memory error thrown */
     }
+    // pobranie wskaznika na utworzona tablice (jint - java int = int(c++))
     jint *result_tab= (*env).GetIntArrayElements(result, NULL);
 
 
-    dataLength += headerLength;
+    // 1'szy etap projektu
+    //
     PaPaMobile_HandRecognization((int*)result_tab, fileData.str(), dataLength, warunek, avgR, avgG, avgB);
 
+    // dealokujemy pamiec dla tablicy przechowujacej obraz z aparatu(kolorowy)
     (*env).ReleaseIntArrayElements(argb_, argb,0);
 
     return result;
-    //return (*env).NewStringUTF(wynik.c_str());
-    //return (*env).NewStringUTF(testPixel.str().c_str());
     }
 }
 
@@ -134,10 +99,8 @@ void PaPaMobile_HandRecognization(int* image_out, std::string fileData, size_t f
     PGMFile pgmFile(fileData.c_str(), fileLength);
     //return "test happy 01";
 
-    //if ((hpos = readPPMB_header(f.c_str(), &rows, &cols, &max_color)) <= 0) exit(1);
     if ((hpos = pgmFile.readPGMB_header(&rows, &cols, &max_color)) <= 0)
         return ;//"nie udało się wczytać nagłówka";
-    //return pgmFile.readPGMB_header(&rows, &cols, &max_color);
 
     unsigned char **R = new_char_image(rows, cols);
     unsigned char **G = new_char_image(rows, cols);
@@ -147,11 +110,6 @@ void PaPaMobile_HandRecognization(int* image_out, std::string fileData, size_t f
 
     //przygotowanie czarno-bialej tablicy wyjsciowej
     unsigned char **b_out = new_char_image(rows, cols);
-
-    //wczytaj nr. indexu z nazy pliku
-    /* to niewazne, mamy tylko 1 plik do przetworzenia!*/
-    /*std::string str_index = f.substr(7, f.length() - 10);
-    int index = atoi(str_index.c_str());*/
 
     int avgHueHandColor = rgb2hsv(R[rows / 2][cols / 2], G[rows / 2][cols / 2], B[rows / 2][cols / 2])[0];
 
@@ -187,10 +145,13 @@ void PaPaMobile_HandRecognization(int* image_out, std::string fileData, size_t f
             if (warunek == 5) { warunek = (r>120 && r>g && r>b); }
             if (warunek == 6) { warunek = (r>80 && r>g && r>b) || (r>100 && r>g && r>b - 20); }*/
             //warunek = !(r > 170 && g > 170 && b > 170);
+
+            // ramka obrazu zawsze czarna
             if ((i < 10 || i > rows - 20)
                 && (j < 10 || j > cols - 10)) {
                 b_out[i][j] = 0;
             }
+            // sprawdzanie czy pixel nalezy do reki
             else {
                 int avgRGB = (r + g + b) / 3;
                 //int deviation = 10;
@@ -202,15 +163,7 @@ void PaPaMobile_HandRecognization(int* image_out, std::string fileData, size_t f
                                               && (b > avgRGB - deviation && b > avgRGB + deviation)
                                               && (g > avgRGB - deviation && g > avgRGB + deviation));*/
 
-
-                /*std::vector<float> hsv = rgb2hsv(r, g, b);
-
-                if (hsv[0] < 200)
-                    b_out[i][j] = 1;
-                else
-                    b_out[i][j] = 0;*/
-                /*cond = (!(r > avgR * 0.6 && g > avgG * 0.6 && b > avgB * 0.6) && (r > b && r > g) );*/
-                b_out[i][j] = cond ? 255 : 0;
+                b_out[i][j] = cond ? 0 : 255;
             }
         }
     }
@@ -337,6 +290,4 @@ void PaPaMobile_HandRecognization(int* image_out, std::string fileData, size_t f
     int etap2(daneAfterSegmentation, daneAfterSegmentation.size());
     ************************************/
 
-    //return "najprawodopodniej wszystko OK! HAPPY AND READY FOR NEXT ETAP!!!! PROBABLY....";
-    //return daneAfterSegmentation;
 }
