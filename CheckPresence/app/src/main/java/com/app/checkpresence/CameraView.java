@@ -182,6 +182,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                             e.printStackTrace();
                         }
                         setImageToImageView(segmentatedHand6, openCVSubtraction.getBitmap());
+                        //saveBitmapToDisk(openCVSubtraction.getBitmap(), pictureSaved, "OpenCV");
                         //---------------------------------------------------------------
 
                         //processing frame segmentation (in new thread)
@@ -191,6 +192,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                             segmentations[i-1] = newSegmentation;
                             ThreadHandler.createThread(newSegmentation);
                         }
+                        /*Segmentation newSegmentation = new Segmentation(openCVSubtraction.getARGBIntArray(),size.height,size.width,4);
+                        segmentations[3] = newSegmentation;
+                        ThreadHandler.createThread(newSegmentation);*/
+
                         ThreadHandler.startThreads();
 
                         //wait for threads end

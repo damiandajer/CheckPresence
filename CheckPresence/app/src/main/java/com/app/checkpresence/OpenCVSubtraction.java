@@ -44,6 +44,7 @@ public class OpenCVSubtraction implements Runnable {
         createMatsFromBitmap();
         processMats();
         createBitmapFromMat();
+        convertBitmapToIntArray();
     }
 
     private void setConfToBitmap(){
@@ -81,8 +82,11 @@ public class OpenCVSubtraction implements Runnable {
         bmp.getPixels(intARGBArray, 0, width, 0, 0, width, height);
     }
 
+    /**
+     * Returns int ARGB Array with pixels
+     * @return
+     */
     public int[] getARGBIntArray(){
-        convertBitmapToIntArray();
         return intARGBArray;
     }
 }
