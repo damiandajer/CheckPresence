@@ -79,6 +79,16 @@
             android:layout_above="@+id/segmentatedHand3"
             android:layout_alignLeft="@+id/segmentatedHand3"
             android:layout_alignStart="@+id/segmentatedHand3" />
+
+        <Button
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Background"
+            android:id="@+id/backgroundBtn"
+            android:layout_below="@+id/segmentatedHand5"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true" />
     </RelativeLayout>
 
     <TextView

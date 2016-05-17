@@ -6,6 +6,7 @@ import android.hardware.Camera;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -23,6 +24,7 @@ public class MainActivity extends Activity {
     public TextView saved;
     public ImageView segmentatedHand1, segmentatedHand3, segmentatedHand4, segmentatedHand5, segmentatedHand6;
     public ImageView liveView;
+    public Button backgroundBtn;
     private DataBase dataBase;
     private Context context;
 
@@ -40,6 +42,7 @@ public class MainActivity extends Activity {
         segmentatedHand5 = (ImageView) findViewById(R.id.segmentatedHand5);
         segmentatedHand6 = (ImageView) findViewById(R.id.segmentatedHand6);
         liveView = (ImageView) findViewById(R.id.liveView);
+        backgroundBtn = (Button) findViewById(R.id.backgroundBtn);
 
         try{
             mCamera = Camera.open(1);//you can use open(int) to use different cameras
@@ -49,7 +52,8 @@ public class MainActivity extends Activity {
 
         if(mCamera != null) {
             mCameraView = new CameraView(this, mCamera, saved, segmentatedHand1, liveView,
-                    segmentatedHand3, segmentatedHand4, segmentatedHand5, segmentatedHand6);//create a SurfaceView to show camera data
+                    segmentatedHand3, segmentatedHand4, segmentatedHand5, segmentatedHand6,
+                    backgroundBtn);//create a SurfaceView to show camera data
             FrameLayout camera_view = (FrameLayout)findViewById(R.id.camera_view);
             camera_view.addView(mCameraView);//add the SurfaceView to the layout
         }

@@ -15,6 +15,8 @@ package com.app.checkpresence;
         import android.util.Log;
         import android.view.SurfaceHolder;
         import android.view.SurfaceView;
+        import android.view.View;
+        import android.widget.Button;
         import android.widget.ImageView;
         import android.widget.TextView;
 
@@ -50,9 +52,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private ImageView segmentatedHand1, segmentatedHand3, segmentatedHand4, segmentatedHand5, segmentatedHand6;
     private ImageView liveView;
     private Bitmap bmpBackground, subtractingResult;
+    private Button backgroundBtn;
 
     public CameraView(Context context, Camera camera, TextView saved, ImageView segmentatedHand1, ImageView liveView,
-                      ImageView segmentatedHand3, ImageView segmentatedHand4, ImageView segmentatedHand5, ImageView segmentatedHand6){
+                      ImageView segmentatedHand3, ImageView segmentatedHand4, ImageView segmentatedHand5, ImageView segmentatedHand6,
+                      Button backgroundBtn){
         super(context);
 
         this.savedPic = saved;
@@ -62,6 +66,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         this.segmentatedHand5 = segmentatedHand5;
         this.segmentatedHand6 = segmentatedHand6;
         this.liveView = liveView;
+        this.backgroundBtn = backgroundBtn;
         mCamera = camera;
         mCamera.setDisplayOrientation(90);
         //get the holder and set this class as the callback, so we can get camera data here
@@ -70,7 +75,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_NORMAL);
         //this.saved = (TextView) findViewById(R.id.saved);
         //this.saved.setText("0 saved");
+        backgroundBtn.setOnClickListener(new View.OnClickListener(){
 
+            @Override
+            public void onClick(View v) {
+                getBackgroundFrame();
+            }
+        });
     }
 
     static {
@@ -351,6 +362,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
     public void setImageToImageView(ImageView imageView, Bitmap bitmap){
         imageView.setImageBitmap(bitmap);
+    }
+
+    public void getBackgroundFrame(){
+        this.frames = 0;
     }
 
 }
