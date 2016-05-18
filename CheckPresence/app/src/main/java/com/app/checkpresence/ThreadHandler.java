@@ -48,6 +48,14 @@ final public class ThreadHandler {
             }
         }
 
+        //clearLists();
+    }
+
+    public static List<Runnable> getRunnables(){
+        return associatedRunnables;
+    }
+
+    public static void clearLists(){
         //cleaning lists
         threads = new ArrayList<Thread>();
         associatedRunnables = new ArrayList<Runnable>();
