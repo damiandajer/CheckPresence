@@ -8,8 +8,8 @@ import java.util.List;
  */
 final public class ThreadHandler {
 
-    static List<Runnable> associatedRunnables;
-    static List<Thread> threads;
+    private static List<Runnable> associatedRunnables;
+    private static List<Thread> threads;
 
     private ThreadHandler(){}
 

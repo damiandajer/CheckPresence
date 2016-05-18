@@ -7,6 +7,8 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
+import java.util.List;
+
 import static org.opencv.core.Core.subtract;
 import static org.opencv.imgproc.Imgproc.cvtColor;
 
@@ -16,21 +18,23 @@ import static org.opencv.imgproc.Imgproc.cvtColor;
 public class OpenCVSubtraction implements Runnable {
     private volatile Bitmap bmp;
     Bitmap inputBitmap, backgroundBitmap;
-    int height, width;
+    int height, width, threshold;
     Mat imgToProcess1, imgToProcess2, imgToProcess, mask;
     int[] intARGBArray;
+    List<Integer> thresholds;
 
     /**
      *
      * @param inputBitmap Bitmap to process
      * @param backgroundBitmap Bitmap with background
      */
-    public OpenCVSubtraction(Bitmap inputBitmap, Bitmap backgroundBitmap) {
+    public OpenCVSubtraction(Bitmap inputBitmap, Bitmap backgroundBitmap, int threshold) {
         this.inputBitmap = inputBitmap;
         this.backgroundBitmap = backgroundBitmap;
 
         this.height = inputBitmap.getHeight();
         this.width = inputBitmap.getWidth();
+        this.threshold = threshold;
 
         this.imgToProcess = new Mat(height, width, CvType.CV_8UC4);
         this.imgToProcess1 = new Mat(height, width, CvType.CV_8UC4);
@@ -63,7 +67,7 @@ public class OpenCVSubtraction implements Runnable {
         subtract(imgToProcess2, imgToProcess1, imgToProcess);
 
         cvtColor(imgToProcess, mask, Imgproc.COLOR_RGBA2GRAY, 1); //your conversion specifier may vary
-        Imgproc.threshold(mask, mask, 50, 255, Imgproc.THRESH_BINARY);
+        Imgproc.threshold(mask, mask, threshold, 255, Imgproc.THRESH_BINARY);
     }
 
     private void createBitmapFromMat(){

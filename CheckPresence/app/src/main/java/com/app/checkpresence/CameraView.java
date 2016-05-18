@@ -6,12 +6,7 @@ package com.app.checkpresence;
 
         import android.content.Context;
         import android.graphics.Bitmap;
-        import android.graphics.BitmapFactory;
-        import android.graphics.Matrix;
         import android.hardware.Camera;
-        import android.os.AsyncTask;
-        import android.os.Environment;
-        import android.util.Base64;
         import android.util.Log;
         import android.view.SurfaceHolder;
         import android.view.SurfaceView;
@@ -20,41 +15,25 @@ package com.app.checkpresence;
         import android.widget.ImageView;
         import android.widget.TextView;
 
-        import org.opencv.android.BaseLoaderCallback;
-        import org.opencv.android.LoaderCallbackInterface;
         import org.opencv.android.OpenCVLoader;
-        import org.opencv.android.Utils;
-        import org.opencv.core.CvType;
-        import org.opencv.core.Mat;
-        import org.opencv.imgproc.Imgproc;
-        import org.opencv.video.BackgroundSubtractorMOG2;
 
-        import java.io.ByteArrayOutputStream;
-        import java.io.File;
-        import java.io.FileOutputStream;
         import java.io.IOException;
-        import java.nio.Buffer;
-        import java.util.ArrayList;
         import java.util.List;
-        import java.util.concurrent.ExecutionException;
 
         import static org.opencv.core.Core.absdiff;
         import static org.opencv.core.Core.subtract;
         import static org.opencv.imgproc.Imgproc.cvtColor;
-        import static org.opencv.imgproc.Imgproc.threshold;
 
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private SurfaceHolder mHolder;
     private Camera mCamera;
+    private Camera.Size size;
     private int frames = 1;
     private int pictureSaved = 0;
     private TextView savedPic;
-    private ImageView segmentatedHand1, segmentatedHand3, segmentatedHand4, segmentatedHand5, segmentatedHand6;
-    private ImageView liveView;
-    private Bitmap bmpBackground, subtractingResult;
-    private Button backgroundBtn;
+    private ImageView bottomRight, bottomLeft, topLeft, topCenter, topRight, bottomCenter;
+    private Bitmap bmpBackground;
     Boolean getBckg = true;
-    List<Integer> listOfConditions;
 
     public CameraView(Context context, Camera camera, TextView saved, ImageView segmentatedHand1, ImageView liveView,
                       ImageView segmentatedHand3, ImageView segmentatedHand4, ImageView segmentatedHand5, ImageView segmentatedHand6,
@@ -62,21 +41,19 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         super(context);
 
         this.savedPic = saved;
-        this.segmentatedHand1 = segmentatedHand1;
-        this.segmentatedHand3 = segmentatedHand3;
-        this.segmentatedHand4 = segmentatedHand4;
-        this.segmentatedHand5 = segmentatedHand5;
-        this.segmentatedHand6 = segmentatedHand6;
-        this.liveView = liveView;
-        this.backgroundBtn = backgroundBtn;
+        this.bottomRight = segmentatedHand1;
+        this.bottomLeft = segmentatedHand3;
+        this.topLeft = segmentatedHand4;
+        this.topCenter = segmentatedHand5;
+        this.topRight = segmentatedHand6;
+        this.bottomCenter = liveView;
         mCamera = camera;
         mCamera.setDisplayOrientation(90);
         //get the holder and set this class as the callback, so we can get camera data here
         mHolder = getHolder();
         mHolder.addCallback(this);
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_NORMAL);
-        //this.saved = (TextView) findViewById(R.id.saved);
-        //this.saved.setText("0 saved");
+        setCameraParameters();
         backgroundBtn.setOnClickListener(new View.OnClickListener(){
 
             @Override
@@ -120,16 +97,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
             //this will happen when you are trying the camera if it's not running
         }
 
-        // set preview size and make any resize, rotate or
-        // reformatting changes here
-
-        //Setting camera parameters
-        Camera.Parameters parameters = mCamera.getParameters();
-        Camera.Size size = parameters.getPreviewSize();
-        parameters.set("orientation", "portrait");
-        parameters.setRotation(90);
-        parameters.setPreviewSize(size.width / 2, size.height / 2);
-        mCamera.setParameters(parameters);
+        //setCameraParameters();
 
         //now, recreate the camera preview
         try{
@@ -140,85 +108,126 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         }
 
 
-            mCamera.setPreviewCallback(new Camera.PreviewCallback() {
-                public void onPreviewFrame(byte[] data, Camera _camera) {
-                    //getting once bitmap with background
-                    if(getBckg){
-                        Camera.Parameters parameters = mCamera.getParameters();
-                        Camera.Size size = parameters.getPreviewSize();
+        mCamera.setPreviewCallback(new Camera.PreviewCallback() {
+            public void onPreviewFrame(byte[] data, Camera _camera) {
+            //getting once bitmap with background
+            if(getBckg){
+                int[] intBackground = createIntArrayFromPreviewFrame(data);
+                bmpBackground = getBitmapsFromIntArray(intBackground);
+                getBckg = false;
+            }
 
-                        int[] intBackground = createIntArrayFromPreviewFrame(data, size);
+            if(frames == 1) {
+                //number of processed pictures
+                ++pictureSaved;
+                savedPic.setText(pictureSaved + " processed");
 
-                        //creating colored bitmap from frame, cropping it (in new thread) and setting to imageView
-                        /*CreateBitmapFromPixels colouredBitmapFromPixelsBackground = new CreateBitmapFromPixels(intBackground, size.height, size.width);
-                        ThreadHandler.createThread(colouredBitmapFromPixelsBackground);
-                        ThreadHandler.startThreads();
-                        try {
-                            ThreadHandler.joinThreads();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        bmpBackground = colouredBitmapFromPixelsBackground.getBitmap();*/
+                segmentateImagesGivenAsBytes(data);
 
-                        BitmapFromPixelsThreads bitmapFromPixelsThreads = BitmapFromPixelsThreads.getNewObject();
-                        bitmapFromPixelsThreads.addNewThread(intBackground, size.height, size.width);
-                        bitmapFromPixelsThreads.executeThreads();
+                //set frames to 0 (return to the beginning of loop)
+                frames = 0;
+            }
+            //number of frames
+            ++frames;
+            }
+        });
+    }
 
-                        bmpBackground = bitmapFromPixelsThreads.getBitmaps().get(0);
+    /**
+     * Setting camera parameters
+     */
+    public void setCameraParameters(){
+        Camera.Parameters parameters = mCamera.getParameters();
+        parameters.set("orientation", "portrait");
+        parameters.setRotation(90);
 
-                        //number of frames
-                        //++frames;
-                        getBckg = false;
-                    }
+        Camera.Size size = parameters.getPreviewSize();
+        parameters.setPreviewSize(size.width / 2, size.height / 2);
+        mCamera.setParameters(parameters);
+        this.size = parameters.getPreviewSize();
+    }
 
-                    if(frames == 1) {
-                        //number of processed pictures
-                        ++pictureSaved;
-                        savedPic.setText(pictureSaved + " processed");
+    /**
+     * Process segmentation of data from camera preview, sets results to ImageViews
+     * @param data byte Array
+     */
+    public void segmentateImagesGivenAsBytes(byte[] data){
+        int[] argb = createIntArrayFromPreviewFrame(data);
 
-                        Camera.Parameters parameters = mCamera.getParameters();
-                        Camera.Size size = parameters.getPreviewSize();
+        Bitmap liveViewBitmap = getBitmapsFromIntArray(argb);
+        setImageToImageView(bottomCenter, liveViewBitmap);
 
-                        int[] argb = createIntArrayFromPreviewFrame(data, size);
+        //-----------------OpenCV part (substracting background)----------------------------------------------
+        List<Bitmap> openCVBitmaps = getBitmapsProcessedWithOpenCV(liveViewBitmap);
+        //CopyManager.saveBitmapToDisk(openCVBitmaps.get(0), pictureSaved, "OpenCV");
 
-                        BitmapFromPixelsThreads bitmapFromPixelsThreads = BitmapFromPixelsThreads.getNewObject();
-                        bitmapFromPixelsThreads.addNewThread(argb, size.height, size.width);
-                        bitmapFromPixelsThreads.executeThreads();
+        //processing frame segmentation
+        List<int[]> segmentatedIntArray = getBitmapsProcessedWithCpp(argb, 4);
 
-                        setImageToImageView(liveView, bitmapFromPixelsThreads.getBitmaps().get(0));
+        //getting results of processing
+        List<Bitmap> processedFramesBitmaps = getBitmapsFromIntArray(segmentatedIntArray);
 
-                        //-----------------OpenCV part (substracting background)----------------------------------------------
-                        OpenCVSubtractionThreads openCVSubtractionThreads = OpenCVSubtractionThreads.getNewObject();
-                        openCVSubtractionThreads.addNewThread(bitmapFromPixelsThreads.getBitmaps().get(0), bmpBackground);
-                        openCVSubtractionThreads.executeThreads();
+        setImageToImageView(bottomRight, processedFramesBitmaps.get(0));
+        setImageToImageView(bottomLeft, processedFramesBitmaps.get(1));
+        setImageToImageView(topLeft, processedFramesBitmaps.get(2));
+        setImageToImageView(topCenter, openCVBitmaps.get(0));
+        setImageToImageView(topRight, openCVBitmaps.get(1));
+    }
 
-                        setImageToImageView(segmentatedHand6, openCVSubtractionThreads.getBitmaps().get(0));
-                        //saveBitmapToDisk(openCVSubtraction.getBitmap(), pictureSaved, "OpenCV");
-                        //---------------------------------------------------------------
+    /**
+     * Returns Bitmap created from int Array of pixels
+     * @param argb int Array of pixels
+     * @return Bitmap
+     */
+    public Bitmap getBitmapsFromIntArray(int[] argb){
+        BitmapFromPixelsThreads bitmapFromPixelsThreads = BitmapFromPixelsThreads.getNewObject();
+        bitmapFromPixelsThreads.addNewThread(argb, size.height, size.width);
+        bitmapFromPixelsThreads.executeThreads();
 
-                        //processing frame segmentation
-                        createListOfConditions(4);
-                        SegmentationThreads segmentationThreads = SegmentationThreads.getNewObject();
-                        segmentationThreads.addNewThread(argb, size.height, size.width, listOfConditions);
-                        segmentationThreads.executeThreads();
+        return bitmapFromPixelsThreads.getBitmaps().get(0);
+    }
 
-                        //getting results of processing
-                        bitmapFromPixelsThreads.addNewThread(segmentationThreads.getIntArrays(), size.height, size.width);
-                        bitmapFromPixelsThreads.executeThreads();
+    /**
+     * Returns List of Bitmap created from List of int Arrays of pixels
+     * @param argb int Array of pixels
+     * @return List of Bitmaps
+     */
+    public List<Bitmap> getBitmapsFromIntArray(List<int[]> argb){
+        BitmapFromPixelsThreads bitmapFromPixelsThreads = BitmapFromPixelsThreads.getNewObject();
+        bitmapFromPixelsThreads.addNewThread(argb, size.height, size.width);
+        bitmapFromPixelsThreads.executeThreads();
 
-                        setImageToImageView(segmentatedHand1, bitmapFromPixelsThreads.getBitmaps().get(0));
-                        setImageToImageView(segmentatedHand3, bitmapFromPixelsThreads.getBitmaps().get(1));
-                        setImageToImageView(segmentatedHand4, bitmapFromPixelsThreads.getBitmaps().get(2));
-                        setImageToImageView(segmentatedHand5, bitmapFromPixelsThreads.getBitmaps().get(3));
+        return bitmapFromPixelsThreads.getBitmaps();
+    }
 
-                        //set frames to 0 (return to the beginning of loop)
-                        frames = 0;
-                    }
+    /**
+     * Returns List of segmentated Bitmaps in OpenCV, created from Bitmap of preview frame, background Bitmap
+     * and List of thresholds
+     * @param liveViewBitmap Bitmap of preview frame
+     * @return List of segmentated Bitmaps
+     */
+    public List<Bitmap> getBitmapsProcessedWithOpenCV(Bitmap liveViewBitmap){
+        OpenCVSubtractionThreads openCVSubtractionThreads = OpenCVSubtractionThreads.getNewObject();
+        openCVSubtractionThreads.createListOfThresholds(50, 100, 2);
+        openCVSubtractionThreads.addNewThread(liveViewBitmap, bmpBackground);
+        openCVSubtractionThreads.executeThreads();
 
-                    //number of frames
-                    ++frames;
-                }
-            });
+        return openCVSubtractionThreads.getBitmaps();
+    }
+
+    /**
+     * Returns List of segmentated Bitmaps in Native code with many conditions
+     * @param argb int Array of pixels
+     * @param numberOfConditions number of conditions (1-4)
+     * @return List of segmentated Bitmaps
+     */
+    public List<int[]> getBitmapsProcessedWithCpp(int[] argb, int numberOfConditions){
+        SegmentationThreads segmentationThreads = SegmentationThreads.getNewObject();
+        segmentationThreads.createListOfConditions(numberOfConditions);
+        segmentationThreads.addNewThread(argb, size.height, size.width);
+        segmentationThreads.executeThreads();
+
+        return segmentationThreads.getIntArrays();
     }
 
     @Override
@@ -227,57 +236,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         //if you are unsing with more screens, please move this code your activity
         mCamera.stopPreview();
         mCamera.release();
-    }
-
-    /**
-     * Method is saving bmp file to memory
-     * @param image Bitmap
-     * @param licznik int number of picture
-     * @param fileName name of file
-     */
-    public void saveBitmapToDisk(Bitmap image, int licznik, String fileName){
-
-        //String backupDBPath = "backupBMP/TomekB"+licznik+".bmp";
-        String extr = Environment.getExternalStorageDirectory().toString();
-        File mFolder = new File(extr + "/backupBMP");
-        if (!mFolder.exists()) {
-            mFolder.mkdir();
-        }
-
-        //String s = "/zdjecie" + licznik + ".bmp";
-        String s = fileName + licznik + ".bmp";
-
-        File backupImage = new File(mFolder.getAbsolutePath(), s);
-
-        FileOutputStream fos = null;
-
-        if(!backupImage.exists()){
-            System.out.println("Tworzę backupDB");
-            try {
-                backupImage.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        if(backupImage.exists()) {
-            try {
-                fos = new FileOutputStream(backupImage);
-                image.compress(Bitmap.CompressFormat.PNG, 100, fos);
-                fos.flush();
-                fos.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    if (fos != null) {
-                        System.out.println("Zamykam OutputStream");
-                        fos.close();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
     }
 
     /**
@@ -319,12 +277,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     /**
      * Returns int array of pixels in ARGB configuration
      * @param data byte array from PreviewFrame
-     * @param size Size parameters of camera in device
      * @return int array
      */
-    public int[] createIntArrayFromPreviewFrame(byte[] data, Camera.Size size){
-        int[] argb;
-        argb = new int[size.height * size.width];
+    public int[] createIntArrayFromPreviewFrame(byte[] data){
+        int[] argb = new int[size.height * size.width];
         YUV_NV21_TO_RGB(argb, data, size.width, size.height);
 
         return argb;
@@ -346,16 +302,5 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         this.getBckg = true;
         System.out.println("Pobrano nową próbkę tła...");
     }
-
-    /**
-     * Create list of conditions of segmentation (min value is 1)
-     * @param n number of conditions to process
-     */
-    public void createListOfConditions(int n){
-        listOfConditions = new ArrayList<>();
-        for(int i = 1; i <= n; i++)
-            listOfConditions.add(i);
-    }
-
 }
 
