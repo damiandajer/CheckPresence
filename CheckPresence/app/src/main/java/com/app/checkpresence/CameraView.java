@@ -46,13 +46,15 @@ package com.app.checkpresence;
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private SurfaceHolder mHolder;
     private Camera mCamera;
-    private int frames = 0;
+    private int frames = 1;
     private int pictureSaved = 0;
     private TextView savedPic;
     private ImageView segmentatedHand1, segmentatedHand3, segmentatedHand4, segmentatedHand5, segmentatedHand6;
     private ImageView liveView;
     private Bitmap bmpBackground, subtractingResult;
     private Button backgroundBtn;
+    Boolean getBckg = true;
+    List<Integer> listOfConditions;
 
     public CameraView(Context context, Camera camera, TextView saved, ImageView segmentatedHand1, ImageView liveView,
                       ImageView segmentatedHand3, ImageView segmentatedHand4, ImageView segmentatedHand5, ImageView segmentatedHand6,
@@ -141,14 +143,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
             mCamera.setPreviewCallback(new Camera.PreviewCallback() {
                 public void onPreviewFrame(byte[] data, Camera _camera) {
                     //getting once bitmap with background
-                    if(frames == 0){
+                    if(getBckg){
                         Camera.Parameters parameters = mCamera.getParameters();
                         Camera.Size size = parameters.getPreviewSize();
 
                         int[] intBackground = createIntArrayFromPreviewFrame(data, size);
 
                         //creating colored bitmap from frame, cropping it (in new thread) and setting to imageView
-                        CreateBitmapFromPixels colouredBitmapFromPixelsBackground = new CreateBitmapFromPixels(intBackground, size.height, size.width);
+                        /*CreateBitmapFromPixels colouredBitmapFromPixelsBackground = new CreateBitmapFromPixels(intBackground, size.height, size.width);
                         ThreadHandler.createThread(colouredBitmapFromPixelsBackground);
                         ThreadHandler.startThreads();
                         try {
@@ -156,10 +158,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-                        bmpBackground = colouredBitmapFromPixelsBackground.getBitmap();
+                        bmpBackground = colouredBitmapFromPixelsBackground.getBitmap();*/
+
+                        BitmapFromPixelsThreads bitmapFromPixelsThreads = BitmapFromPixelsThreads.getNewObject();
+                        bitmapFromPixelsThreads.addNewThread(intBackground, size.height, size.width);
+                        bitmapFromPixelsThreads.executeThreads();
+
+                        bmpBackground = bitmapFromPixelsThreads.getBitmaps().get(0);
 
                         //number of frames
-                        ++frames;
+                        //++frames;
+                        getBckg = false;
                     }
 
                     if(frames == 1) {
@@ -172,74 +181,35 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
                         int[] argb = createIntArrayFromPreviewFrame(data, size);
 
-                        //creating colored bitmap from frame, cropping it (in new thread) and setting to imageView
-                        CreateBitmapFromPixels colouredBitmapFromPixels = new CreateBitmapFromPixels(argb, size.height, size.width);
-                        ThreadHandler.createThread(colouredBitmapFromPixels);
-                        ThreadHandler.startThreads();
-                        try {
-                            ThreadHandler.joinThreads();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        setImageToImageView(liveView, colouredBitmapFromPixels.getBitmap());
+                        BitmapFromPixelsThreads bitmapFromPixelsThreads = BitmapFromPixelsThreads.getNewObject();
+                        bitmapFromPixelsThreads.addNewThread(argb, size.height, size.width);
+                        bitmapFromPixelsThreads.executeThreads();
+
+                        setImageToImageView(liveView, bitmapFromPixelsThreads.getBitmaps().get(0));
 
                         //-----------------OpenCV part (substracting background)----------------------------------------------
-                        OpenCVSubtraction openCVSubtraction = new OpenCVSubtraction(colouredBitmapFromPixels.getBitmap(), bmpBackground);
-                        ThreadHandler.createThread(openCVSubtraction);
-                        ThreadHandler.startThreads();
-                        try {
-                            ThreadHandler.joinThreads();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        setImageToImageView(segmentatedHand6, openCVSubtraction.getBitmap());
+                        OpenCVSubtractionThreads openCVSubtractionThreads = OpenCVSubtractionThreads.getNewObject();
+                        openCVSubtractionThreads.addNewThread(bitmapFromPixelsThreads.getBitmaps().get(0), bmpBackground);
+                        openCVSubtractionThreads.executeThreads();
+
+                        setImageToImageView(segmentatedHand6, openCVSubtractionThreads.getBitmaps().get(0));
                         //saveBitmapToDisk(openCVSubtraction.getBitmap(), pictureSaved, "OpenCV");
                         //---------------------------------------------------------------
 
-                        //processing frame segmentation (in new thread)
-                        Segmentation[] segmentations = new Segmentation[4];
-                        for(int i=1; i<5;i++){
-                            Segmentation newSegmentation = new Segmentation(argb,size.height,size.width,i);
-                            segmentations[i-1] = newSegmentation;
-                            ThreadHandler.createThread(newSegmentation);
-                        }
-                        /*Segmentation newSegmentation = new Segmentation(openCVSubtraction.getARGBIntArray(),size.height,size.width,4);
-                        segmentations[3] = newSegmentation;
-                        ThreadHandler.createThread(newSegmentation);*/
-
-                        ThreadHandler.startThreads();
-
-                        //wait for threads end
-                        try {
-                            ThreadHandler.joinThreads();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                        //processing frame segmentation
+                        createListOfConditions(4);
+                        SegmentationThreads segmentationThreads = SegmentationThreads.getNewObject();
+                        segmentationThreads.addNewThread(argb, size.height, size.width, listOfConditions);
+                        segmentationThreads.executeThreads();
 
                         //getting results of processing
-                        List<int[]> segmentationDataPictures = new ArrayList<int[]>();
-                        for(int i=0;i<4;i++)
-                            segmentationDataPictures.add(segmentations[i].getSegmentatedPicture());
+                        bitmapFromPixelsThreads.addNewThread(segmentationThreads.getIntArrays(), size.height, size.width);
+                        bitmapFromPixelsThreads.executeThreads();
 
-                        //creating segmentated bitmap from int array and cropping it (in new thread)
-                        CreateBitmapFromPixels[] bitmaps = new CreateBitmapFromPixels[4];
-                        for(int i=0; i<4;i++){
-                            CreateBitmapFromPixels bitmap = new CreateBitmapFromPixels(segmentationDataPictures.get(i),size.height,size.width);
-                            bitmaps[i] = bitmap;
-                            ThreadHandler.createThread(bitmap);
-                        }
-                        ThreadHandler.startThreads();
-
-                        //wait for threads end and set bitmap to ImageView
-                        try {
-                            ThreadHandler.joinThreads();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        setImageToImageView(segmentatedHand1, bitmaps[0].getBitmap());
-                        setImageToImageView(segmentatedHand3, bitmaps[1].getBitmap());
-                        setImageToImageView(segmentatedHand4, bitmaps[2].getBitmap());
-                        setImageToImageView(segmentatedHand5, bitmaps[3].getBitmap());
+                        setImageToImageView(segmentatedHand1, bitmapFromPixelsThreads.getBitmaps().get(0));
+                        setImageToImageView(segmentatedHand3, bitmapFromPixelsThreads.getBitmaps().get(1));
+                        setImageToImageView(segmentatedHand4, bitmapFromPixelsThreads.getBitmaps().get(2));
+                        setImageToImageView(segmentatedHand5, bitmapFromPixelsThreads.getBitmaps().get(3));
 
                         //set frames to 0 (return to the beginning of loop)
                         frames = 0;
@@ -360,12 +330,31 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         return argb;
     }
 
+    /**
+     * Sets Bitmap to selected ImageView
+     * @param imageView selected imageView
+     * @param bitmap Bitmap to show
+     */
     public void setImageToImageView(ImageView imageView, Bitmap bitmap){
         imageView.setImageBitmap(bitmap);
     }
 
+    /**
+     * Set new background
+     */
     public void getBackgroundFrame(){
-        this.frames = 0;
+        this.getBckg = true;
+        System.out.println("Pobrano nową próbkę tła...");
+    }
+
+    /**
+     * Create list of conditions of segmentation (min value is 1)
+     * @param n number of conditions to process
+     */
+    public void createListOfConditions(int n){
+        listOfConditions = new ArrayList<>();
+        for(int i = 1; i <= n; i++)
+            listOfConditions.add(i);
     }
 
 }

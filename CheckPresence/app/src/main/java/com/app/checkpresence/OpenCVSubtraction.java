@@ -40,6 +40,7 @@ public class OpenCVSubtraction implements Runnable {
 
     @Override
     public void run() {
+        System.out.println("Thread is processing frame with OpenCV");
         setConfToBitmap();
         createMatsFromBitmap();
         processMats();

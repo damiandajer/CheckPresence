@@ -26,6 +26,7 @@ public class CreateBitmapFromPixels implements Runnable {
 
     @Override
     public void run() {
+        System.out.println("Thread is creating Bitmap from array");
         this.bmp = createProcessedBitmap(inputColorSegmentationDataPicture, height, width);
     }
 
