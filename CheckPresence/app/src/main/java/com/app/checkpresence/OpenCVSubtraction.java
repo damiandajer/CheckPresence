@@ -7,6 +7,8 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
+import java.nio.IntBuffer;
+
 import static org.opencv.core.Core.subtract;
 import static org.opencv.imgproc.Imgproc.cvtColor;
 
@@ -19,6 +21,9 @@ public class OpenCVSubtraction implements Runnable {
     int height, width;
     Mat imgToProcess1, imgToProcess2, imgToProcess, mask;
     int[] intARGBArray;
+    int[] intARGBArrayAfter;
+
+    private native int[] deleteSmallAreas(int[] argb, int rows, int cols);
 
     /**
      *
@@ -46,6 +51,26 @@ public class OpenCVSubtraction implements Runnable {
         processMats();
         createBitmapFromMat();
         convertBitmapToIntArray();
+        //double test = 0;
+        /*intARGBArrayAfter = intARGBArray.clone();
+        for (int i = 0; i < height/2; ++i)
+            for (int j = 0; j < width/2; ++j) {
+                test += intARGBArray[i * width/2 + j];
+                intARGBArrayAfter[i * width / 2 + j] = 0;
+            }
+        System.out.println("wartosc przed: " + test);*/
+        intARGBArray = deleteSmallAreas(this.intARGBArray, this.height, this.width);
+        //intARGBArray = intARGBArrayAfter.clone();
+        /*test = 0;
+        for (int i = 0; i < height/2; ++i)
+            for (int j = 0; j < width/2; ++j)
+                test += intARGBArray[i * width/2 + j];
+        System.out.println("wartosc po: " + test);*/
+        /*for (int i = 0; i < height; ++i)
+            for (int j = 0; j < width; ++j) {
+                intARGBArray[i * width + j] = 0xffffaaaa;
+            }*/
+        bmp.copyPixelsFromBuffer(IntBuffer.wrap(intARGBArray));
     }
 
     private void setConfToBitmap(){

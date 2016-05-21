@@ -128,7 +128,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         Camera.Size size = parameters.getPreviewSize();
         parameters.set("orientation", "portrait");
         parameters.setRotation(90);
-        parameters.setPreviewSize(size.width / 2, size.height / 2);
+        parameters.setPreviewSize(size.width / 4, size.height / 4);
         mCamera.setParameters(parameters);
 
         //now, recreate the camera preview

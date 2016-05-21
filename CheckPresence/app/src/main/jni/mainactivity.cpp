@@ -25,7 +25,7 @@
 void PaPaMobile_HandRecognization(int* image_out, std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB);
 
 extern "C" {
-JNIEXPORT void JNICALL Java_com_app_checkpresence_Segmentation_deleteSmallAreas(JNIEnv *env, jobject instance, jintArray argb_,
+JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_OpenCVSubtraction_deleteSmallAreas(JNIEnv *env, jobject instance, jintArray argb_,
                                                                                  jint rows, jint cols) {
     // reprezentacja przekazanej tablicy z java do kodu natywnego
     jint *argb = (*env).GetIntArrayElements(argb_, NULL);
@@ -41,7 +41,10 @@ JNIEXPORT void JNICALL Java_com_app_checkpresence_Segmentation_deleteSmallAreas(
         for (j = 0; j < cols; ++j) {
             // kopiowanie 1 kanału
             pixel_copier.argb = argb[static_cast<int>(cols * i + j)];
-            b_out[i][j] = pixel_copier.chanels[1];
+            if (pixel_copier.chanels[1] == 0)
+                b_out[i][j] = 255;
+            else
+                b_out[i][j] = 0;
         }
     }
 
@@ -54,7 +57,7 @@ JNIEXPORT void JNICALL Java_com_app_checkpresence_Segmentation_deleteSmallAreas(
 
     //"czyszczenie" obrazu, znajdz wszystkie  biale klastry i wyczyść jej jesli sa male
 
-    int minimum = 220;
+    int minimum = 110;//220;
 
     unsigned int cls_count;
     unsigned int a_xt, a_yt, a_xb, a_yb;
@@ -135,15 +138,36 @@ JNIEXPORT void JNICALL Java_com_app_checkpresence_Segmentation_deleteSmallAreas(
             }
 
         }
-    }/**
+    }
+
+    /**
      * kopiowanie do tablicy przekazanej z javasd
      */
+    // przygotawanie tablicy dla plixeli obrazu po binaryzacji
+    // taka tablize mozna zwrucic do kodu java
+    jintArray result;
+    result = (*env).NewIntArray(rows*cols);
+    if (result == NULL) {
+    return NULL; /* out of memory error thrown */
+    }
+    // pobranie wskaznika na utworzona tablice (jint - java int = int(c++))
+    jint *result_tab= (*env).GetIntArrayElements(result, NULL);
+
+    int ilea = 0;
+    int ileb = 0;
     for (i = 0; i< rows; ++i) {
         for (j = 0; j < cols; ++j) {
             // kopiowanie 1 kanału
-            pixel_copier.argb = argb[static_cast<int>(cols * i + j)];
-            pixel_copier.chanels[1] = b_out[i][j];
-            argb[static_cast<int>(cols * i + j)] = pixel_copier.argb;
+            int index = cols * i + j;
+            //pixel_copier.argb = argb[index];
+            if (b_out[i][j] == 0) {
+                result_tab[index] = 0xFFFFFFFF;
+                ++ilea;
+            }
+            else {
+                result_tab[index] = 0xFF000000;
+                ++ileb;
+            }
         }
     }
 
@@ -152,6 +176,10 @@ JNIEXPORT void JNICALL Java_com_app_checkpresence_Segmentation_deleteSmallAreas(
 
     delete b2[0];
     delete b2;
+
+    (*env).ReleaseIntArrayElements(argb_, argb,0);
+
+    return result;
 }
 JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_Segmentation_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
                                                                                jint rows, jint cols, jint warunek){
