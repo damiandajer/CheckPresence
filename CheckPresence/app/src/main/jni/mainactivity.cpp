@@ -25,7 +25,7 @@
 void PaPaMobile_HandRecognization(int* image_out, std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB);
 
 extern "C" {
-JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_Segmentation_deleteSmallAreas(JNIEnv *env, jobject instance, jintArray argb_,
+JNIEXPORT void JNICALL Java_com_app_checkpresence_Segmentation_deleteSmallAreas(JNIEnv *env, jobject instance, jintArray argb_,
                                                                                  jint rows, jint cols) {
     // reprezentacja przekazanej tablicy z java do kodu natywnego
     jint *argb = (*env).GetIntArrayElements(argb_, NULL);
@@ -35,6 +35,7 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_Segmentation_deleteSmallA
     //przygotowanie czarno-bialej tablicy wyjsciowej
     unsigned char **b_out = new_char_image(rows, cols);
 
+    // kopiowanie tablicy ARGB do tablicy tylko z kanalem R
     UPixel pixel_copier;
     for (i = 0; i< rows; ++i) {
         for (j = 0; j < cols; ++j) {
@@ -44,7 +45,7 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_Segmentation_deleteSmallA
         }
     }
 
-    (*env).ReleaseIntArrayElements(argb_, argb,0);
+    //(*env).ReleaseIntArrayElements(argb_, argb,0);
 
     int w = static_cast<int>(cols);
     int h = static_cast<int>(rows);
@@ -146,7 +147,11 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_Segmentation_deleteSmallA
         }
     }
 
+    delete b_out[0];// = new unsigned char[rows*cols];
+    delete b_out;// = new unsigned char*[rows];
 
+    delete b2[0];
+    delete b2;
 }
 JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_Segmentation_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
                                                                                jint rows, jint cols, jint warunek){
@@ -402,8 +407,12 @@ void PaPaMobile_HandRecognization(int* image_out, std::string fileData, size_t f
     delete[] R;
     delete[] G;
     delete[] B;
-    delete[] b_out;
-    delete[] b2;
+
+    delete b_out[0];// = new unsigned char[rows*cols];
+    delete b_out;// = new unsigned char*[rows];
+
+    delete b2[0];
+    delete b2;
 
     /* UWAGA:
        Wynik do nastepnego etapu znajduje sie w zmiennej std::string daneAfterSegmentation
