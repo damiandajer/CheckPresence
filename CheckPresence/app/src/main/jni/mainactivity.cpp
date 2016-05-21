@@ -25,10 +25,133 @@
 void PaPaMobile_HandRecognization(int* image_out, std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB);
 
 extern "C" {
+JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_Segmentation_deleteSmallAreas(JNIEnv *env, jobject instance, jintArray argb_,
+                                                                                 jint rows, jint cols) {
+    // reprezentacja przekazanej tablicy z java do kodu natywnego
+    jint *argb = (*env).GetIntArrayElements(argb_, NULL);
+
+    int i, j;
+
+    //przygotowanie czarno-bialej tablicy wyjsciowej
+    unsigned char **b_out = new_char_image(rows, cols);
+
+    UPixel pixel_copier;
+    for (i = 0; i< rows; ++i) {
+        for (j = 0; j < cols; ++j) {
+            // kopiowanie 1 kanału
+            pixel_copier.argb = argb[static_cast<int>(cols * i + j)];
+            b_out[i][j] = pixel_copier.chanels[1];
+        }
+    }
+
+    (*env).ReleaseIntArrayElements(argb_, argb,0);
+
+    int w = static_cast<int>(cols);
+    int h = static_cast<int>(rows);
+    unsigned char tlo = 0;
+    unsigned char* b1 = b_out[0];
+
+    //"czyszczenie" obrazu, znajdz wszystkie  biale klastry i wyczyść jej jesli sa male
+
+    int minimum = 220;
+
+    unsigned int cls_count;
+    unsigned int a_xt, a_yt, a_xb, a_yb;
+    int dx, dy;
+
+    CLSV clusters;
+    T_FindAllClusters(b_out, cols, rows, 255, clusters);
+
+
+    //algorytm czyszczenia wymaga aby conajmniej jeden piksel brzegowy był koloru tła - zapobiega to sprawdzaniu za każdym razem czy nie wyszlismy poza granice obrazka
+    for (i = 0; i<w; ++i)	b1[i] = b1[(h - 1)*w + i] = tlo;		//pierwszy i ostatni wiersz
+    for (i = 0; i<h; ++i)	b1[i*w] = b1[i*w + (w - 1)] = tlo;		//pierwsza i ostatnia kolumna
+
+    cls_count = clusters.size();
+    for (int n = 0; n<cls_count; n++)
+    {
+        CLS a = clusters[n];
+
+        a_xt = a.minx_index % w;
+        a_yt = a.miny_index / w;
+        a_xb = a.maxx_index % w;
+        a_yb = a.maxy_index / w;
+
+        dx = abs((int)(a_xb - a_xt));
+        dy = abs((int)(a_yb - a_yt));
+
+        if (dx<minimum || dy<minimum) {
+            T_ClearOneClaster(b_out[0], w, h, 255, 0, a.miny_index);			//wyczysc biale jak sa mniejsze od zadanej wielkości
+        };
+    }
+
+    //"czyszczenie 2" obrazu, znajdz wszystkie  czarne klastry i zapelnij je jesli sa male
+    CLSV clusters2;
+    T_FindAllClusters(b_out, cols, rows, 0, clusters2);
+
+    //algorytm czyszczenia wymaga aby conajmniej jeden piksel brzegowy był koloru tła - teraz tlo jest 255
+    for (i = 0; i<w; ++i)	b1[i] = b1[(h - 1)*w + i] = 255;		//pierwszy i ostatni wiersz
+    for (i = 0; i<h; ++i)	b1[i*w] = b1[i*w + (w - 1)] = 255;		//pierwsza i ostatnia kolumna
+
+    minimum = 50;
+
+    cls_count = clusters2.size();
+    for (int n = 0; n<cls_count; n++)
+    {
+        CLS a = clusters2[n];
+
+        a_xt = a.minx_index % w;
+        a_yt = a.miny_index / w;
+        a_xb = a.maxx_index % w;
+        a_yb = a.maxy_index / w;
+
+        dx = abs((int)(a_xb - a_xt));
+        dy = abs((int)(a_yb - a_yt));
+
+        if (dx<minimum || dy<minimum) {
+            T_ClearOneClaster(b_out[0], w, h, 0, 255, a.miny_index);			//wyczysc biale jak sa mniejsze od zadanej wielkości
+        };
+    }
+
+    //powroc do czarnych ramek
+    for (i = 0; i<w; ++i)	b1[i] = b1[(h - 1)*w + i] = tlo;		//pierwszy i ostatni wiersz
+    for (i = 0; i<h; ++i)	b1[i*w] = b1[i*w + (w - 1)] = tlo;		//pierwsza i ostatnia kolumna
+
+    //wygladzanie lini
+    //tworzymy kopie robocza obrazka wejsciowego poniewaz bedziemy zmieniac wartosci pikseli
+    unsigned char **b2 = new_char_image(h, w);
+    unsigned char *b1_data = b_out[0];
+    unsigned char *b2_data = b2[0];
+    for (i = 0; i < w*h; i++)	b2_data[i] = b1_data[i];
+
+
+    for (i = 1; i< rows - 1; ++i) {
+        for (j = 1; j< cols - 1; ++j) {
+
+            if (b2[i][j] == 0) {
+                int n = test_how_much_neighburs_pixel(b2, i, j, 255);
+                if (n > 3) b_out[i][j]=255;
+            }
+
+        }
+    }/**
+     * kopiowanie do tablicy przekazanej z javasd
+     */
+    for (i = 0; i< rows; ++i) {
+        for (j = 0; j < cols; ++j) {
+            // kopiowanie 1 kanału
+            pixel_copier.argb = argb[static_cast<int>(cols * i + j)];
+            pixel_copier.chanels[1] = b_out[i][j];
+            argb[static_cast<int>(cols * i + j)] = pixel_copier.argb;
+        }
+    }
+
+
+}
 JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_Segmentation_myNativeCode(JNIEnv *env, jobject instance, jintArray argb_,
                                                                                jint rows, jint cols, jint warunek){
 
-    // zebrezentacja przekazanej tablicy z java do kodu natywnego
+    // reprezentacja przekazanej tablicy z java do kodu natywnego
     jint *argb = (*env).GetIntArrayElements(argb_, NULL);
     unsigned char* plikDaneARGB = (unsigned char*)argb;
 
@@ -253,7 +376,7 @@ void PaPaMobile_HandRecognization(int* image_out, std::string fileData, size_t f
 
             if (b2[i][j] == 0) {
                 int n = test_how_much_neighburs_pixel(b2, i, j, 255);
-                //if (n > 3) b_out[i][j]=255;
+                if (n > 3) b_out[i][j]=255;
             }
 
         }

@@ -39,4 +39,5 @@ public class Segmentation implements Runnable {
     }
 
     private native int[] myNativeCode(int[] argb, int rows, int cols, int warunek);
+    private native int[] deleteSmallAreas(int[] argb, int rows, int cols);
 }

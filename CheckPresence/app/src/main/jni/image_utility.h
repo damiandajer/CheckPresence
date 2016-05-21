@@ -11,6 +11,11 @@
 #define MIN(a,b) ((a)<(b)?(a):(b))
 #define MAX(a,b) ((a)>(b)?(a):(b))
 
+union UPixel {
+    int argb;
+    char chanels[4];
+};
+
 std::vector<float> hsv2rgb(float hue, float sat, float val) {
     float red, grn, blu;
     float i, f, p, q, t;
