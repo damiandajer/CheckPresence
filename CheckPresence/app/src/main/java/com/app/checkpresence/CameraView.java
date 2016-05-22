@@ -139,6 +139,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
         //-----------------OpenCV part (substracting background)----------------------------------------------
         frame.setBackground(bmpBackground);
+        frame.setThresholds(10, 60, 4);
         frame.segmentateFrameWithOpenCV();
         List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
         setBitmapsToViews(openCVViews, openCVBitmaps);
@@ -198,12 +199,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         this.cppViews.add(bottomLeft);
     }
 
-    /**
-     * Set new background
-     */
-    public void getBackgroundFrame(){
-        this.getBckg = true;
-        System.out.println("Pobrano nową próbkę tła...");
+    private void setOpenCVViewsList(){
+        this.openCVViews.add(topRight);
+        this.openCVViews.add(topCenter);
+        this.openCVViews.add(topLeft);
     }
 
     public void setBitmapsToViews(List<ImageView> views, List<Bitmap> bitmaps){
