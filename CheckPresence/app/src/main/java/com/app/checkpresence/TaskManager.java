@@ -9,8 +9,8 @@ import java.util.List;
  * Created by Damian on 17.05.2016.
  */
 public abstract class TaskManager {
-    List<Bitmap> bitmaps;
-    List<int[]> intArrays;
+    protected List<Bitmap> bitmaps;
+    protected List<int[]> intArrays;
 
     /**
      * Executing threads
@@ -26,9 +26,4 @@ public abstract class TaskManager {
             e.printStackTrace();
         }
     }
-
-    //public List<Bitmap> getBitmaps(){return bitmaps;}
-
-    //public List<int[]> getIntArrays(){return intArrays;}
-
 }

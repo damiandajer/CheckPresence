@@ -2,6 +2,7 @@ package com.app.checkpresence;
 
 import android.graphics.Bitmap;
 
+import java.util.ArrayList;
 import java.util.IllegalFormatConversionException;
 import java.util.List;
 
@@ -11,6 +12,7 @@ import java.util.List;
 public class OpenCVSubtractionThreads extends TaskManager {
 
     private static OpenCVSubtractionThreads instance = null;
+    private static List<Integer> thresholds;
 
     private OpenCVSubtractionThreads(){}
 
@@ -50,24 +52,30 @@ public class OpenCVSubtractionThreads extends TaskManager {
     }
 
     /**
-     * Add new thread to process OpenCV Subtraction with submitted parameters
+     * Add new threads to process OpenCV Subtraction with submitted parameters
      * @param frameBitmap Bitmap with frame to process
      * @param backgroundBitmap Bitmap with background to substract
      */
     public void addNewThread(Bitmap frameBitmap, Bitmap backgroundBitmap){
-        OpenCVSubtraction openCVSubtraction = new OpenCVSubtraction(frameBitmap, backgroundBitmap);
-        ThreadHandler.createThread(openCVSubtraction);
+        for (int threshold:thresholds) {
+            OpenCVSubtraction openCVSubtraction = new OpenCVSubtraction(frameBitmap, backgroundBitmap, threshold);
+            ThreadHandler.createThread(openCVSubtraction);
+        }
     }
 
     /**
-     * Add new threads to process OpenCV Subtraction with submitted parameters
-     * @param frameBitmaps List of Bitmaps with frame to process
-     * @param backgroundBitmap Bitmap with background to substract
+     * Create List of thresholds to subtraction with OpenCV
+     * For example with values (50, 100, 3) thresholds will be: 50, 75, 100)
+     * @param min minimum value of threshold (0-255)
+     * @param max maximum value of threshold (0-255)
+     * @param n number of thresholds to process with
      */
-    public void addNewThread(List<Bitmap> frameBitmaps, Bitmap backgroundBitmap){
-        for (Bitmap frameBitmap:frameBitmaps) {
-            OpenCVSubtraction openCVSubtraction = new OpenCVSubtraction(frameBitmap, backgroundBitmap);
-            ThreadHandler.createThread(openCVSubtraction);
-        }
+    public void createListOfThresholds(int min, int max, int n){
+        thresholds = new ArrayList<>();
+        int iterator = 1;
+        if(n > 1)
+            iterator = Math.abs(max - min) / (n - 1);
+        for(int minimum = min; minimum <= max; minimum+=iterator)
+            thresholds.add(minimum);
     }
 }

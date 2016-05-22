@@ -2,6 +2,7 @@ package com.app.checkpresence;
 
 import android.graphics.Bitmap;
 
+import java.util.ArrayList;
 import java.util.IllegalFormatConversionException;
 import java.util.List;
 
@@ -11,6 +12,7 @@ import java.util.List;
 public class SegmentationThreads extends TaskManager {
 
     private static SegmentationThreads instance = null;
+    private static List<Integer> listOfConditions;
 
     private SegmentationThreads(){}
 
@@ -51,10 +53,9 @@ public class SegmentationThreads extends TaskManager {
      * @param argb int array with ARGB pixels
      * @param height height of picture
      * @param width width of picture
-     * @param conditions List of conditions to check
      */
-    public void addNewThread(int[] argb, int height, int width, List<Integer> conditions){
-        for (int cond:conditions) {
+    public void addNewThread(int[] argb, int height, int width){
+        for (int cond:listOfConditions) {
             Segmentation newSegmentation = new Segmentation(argb, height, width, cond);
             ThreadHandler.createThread(newSegmentation);
         }
@@ -65,14 +66,23 @@ public class SegmentationThreads extends TaskManager {
      * @param argb List of int arrays with ARGB pixels
      * @param height height of picture
      * @param width width of picture
-     * @param conditions List of conditions to check
      */
-    public void addNewThread(List<int[]> argb, int height, int width, List<Integer> conditions){
+    public void addNewThread(List<int[]> argb, int height, int width){
         for (int[] array:argb) {
-            for (int cond:conditions) {
+            for (int cond:listOfConditions) {
                 Segmentation newSegmentation = new Segmentation(array, height, width, cond);
                 ThreadHandler.createThread(newSegmentation);
             }
         }
+    }
+
+    /**
+     * Create list of conditions of segmentation (min value is 1)
+     * @param n number of conditions to process
+     */
+    public void createListOfConditions(int n){
+        listOfConditions = new ArrayList<>();
+        for(int i = 1; i <= n; i++)
+            listOfConditions.add(i);
     }
 }

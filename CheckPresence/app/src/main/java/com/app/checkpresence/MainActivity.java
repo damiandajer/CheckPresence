@@ -18,13 +18,8 @@ import org.opencv.android.OpenCVLoader;
 
 
 public class MainActivity extends Activity {
-    //private static final String TAG = "OCV::Activity";
     private Camera mCamera = null;
     private CameraView mCameraView = null;
-    public TextView saved;
-    public ImageView segmentatedHand1, segmentatedHand3, segmentatedHand4, segmentatedHand5, segmentatedHand6;
-    public ImageView liveView;
-    public Button backgroundBtn;
     private DataBase dataBase;
     private Context context;
 
@@ -35,14 +30,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         context = this;
 
-        saved = (TextView) findViewById(R.id.saved);
-        segmentatedHand1 = (ImageView) findViewById(R.id.segmentatedHand1);
-        segmentatedHand3 = (ImageView) findViewById(R.id.segmentatedHand3);
-        segmentatedHand4 = (ImageView) findViewById(R.id.segmentatedHand4);
-        segmentatedHand5 = (ImageView) findViewById(R.id.segmentatedHand5);
-        segmentatedHand6 = (ImageView) findViewById(R.id.segmentatedHand6);
-        liveView = (ImageView) findViewById(R.id.liveView);
-        backgroundBtn = (Button) findViewById(R.id.backgroundBtn);
+
 
         try{
             mCamera = Camera.open(1);//you can use open(int) to use different cameras
@@ -51,9 +39,7 @@ public class MainActivity extends Activity {
         }
 
         if(mCamera != null) {
-            mCameraView = new CameraView(this, mCamera, saved, segmentatedHand1, liveView,
-                    segmentatedHand3, segmentatedHand4, segmentatedHand5, segmentatedHand6,
-                    backgroundBtn);//create a SurfaceView to show camera data
+            mCameraView = new CameraView(this, this, mCamera);//create a SurfaceView to show camera data
             FrameLayout camera_view = (FrameLayout)findViewById(R.id.camera_view);
             camera_view.addView(mCameraView);//add the SurfaceView to the layout
         }
