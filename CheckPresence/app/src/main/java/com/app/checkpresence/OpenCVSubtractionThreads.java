@@ -36,6 +36,7 @@ public class OpenCVSubtractionThreads extends TaskManager {
         for (Runnable r:ThreadHandler.getRunnables()) {
             try {
                 bitmaps.add(((OpenCVSubtraction) r).getBitmap());
+                intArrays.add(((OpenCVSubtraction) r).getARGBIntArray());
             }catch (IllegalFormatConversionException e){
                 e.printStackTrace();
             }
@@ -49,6 +50,10 @@ public class OpenCVSubtractionThreads extends TaskManager {
      */
     public List<Bitmap> getBitmaps() {
         return bitmaps;
+    }
+
+    public List<int[]> getListOfIntArrays() {
+        return intArrays;
     }
 
     /**
