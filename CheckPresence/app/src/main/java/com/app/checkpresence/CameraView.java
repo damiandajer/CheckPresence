@@ -4,59 +4,73 @@ package com.app.checkpresence;
  * Created by Damian on 04.04.2016.
  */
 
-        import android.app.Activity;
-        import android.content.Context;
-        import android.graphics.Bitmap;
-        import android.graphics.BitmapFactory;
-        import android.graphics.ImageFormat;
-        import android.graphics.Rect;
-        import android.graphics.YuvImage;
-        import android.hardware.Camera;
-        import android.os.Environment;
-        import android.util.Base64;
-        import android.util.Log;
-        import android.view.Surface;
-        import android.view.SurfaceHolder;
-        import android.view.SurfaceView;
-        import android.view.View;
-        import android.widget.TextView;
-        import android.widget.Toast;
+import android.app.Activity;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.hardware.Camera;
+import android.util.Log;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
 
-        import java.io.ByteArrayOutputStream;
-        import java.io.File;
-        import java.io.FileInputStream;
-        import java.io.FileOutputStream;
-        import java.io.IOException;
-        import java.io.StringWriter;
-        import java.nio.Buffer;
-        import java.nio.channels.FileChannel;
-        import java.util.concurrent.ExecutionException;
+import org.opencv.android.OpenCVLoader;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.opencv.core.Core.absdiff;
+import static org.opencv.core.Core.subtract;
+import static org.opencv.imgproc.Imgproc.cvtColor;
 
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
+    Activity mainActivity;
     private SurfaceHolder mHolder;
     private Camera mCamera;
-    private int frames = 0;
+    public static Camera.Size size;
+    private int frames = 1;
     private int pictureSaved = 0;
     private TextView savedPic;
-    private Bitmap result;
-    Buffer buffer;
-    public native int[] myNativeCode(int[] argb, int[] returnedInputSegmentationFileData, int rows, int cols, int warunek);
+    private ImageView bottomRight, bottomLeft, topLeft, topCenter, topRight, bottomCenter;
+    private Button backgroundBtn;
+    private Bitmap bmpBackground;
+    Boolean getBckg = true;
+    List<ImageView> cppViews, openCVViews;
+    Frame frame, backgroundFrame;
 
-    public CameraView(Context context, Camera camera, TextView saved){
+    public CameraView(Context context, Activity activity, Camera camera){
         super(context);
-
-        this.savedPic = saved;
+        this.mainActivity = activity;
+        this.backgroundBtn = (Button) this.mainActivity.findViewById(R.id.backgroundBtn);
+        this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
         mCamera = camera;
-        mCamera.setDisplayOrientation(90);
         //get the holder and set this class as the callback, so we can get camera data here
         mHolder = getHolder();
         mHolder.addCallback(this);
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_NORMAL);
+        mCamera.setDisplayOrientation(90);
+        setCameraParameters();
+        this.backgroundBtn.setOnClickListener(new View.OnClickListener(){
 
-        //this.saved = (TextView) findViewById(R.id.saved);
-        //this.saved.setText("0 saved");
-
+            @Override
+            public void onClick(View v) {
+                getBckg = true;
+            }
+        });
+        initiateOpenCV();
+        this.cppViews = new ArrayList<>();
+        this.openCVViews = new ArrayList<>();
+        this.frame = new Frame();
+        this.backgroundFrame = new Frame();
+        setAllViewsToVariables();
+        setCppViewsList();
+        setOpenCVViewsList();
     }
+
+
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
@@ -76,102 +90,68 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         if(mHolder.getSurface() == null)//check if the surface is ready to receive camera data
             return;
 
-        try{
-            mCamera.stopPreview();
-        } catch (Exception e){
-            //this will happen when you are trying the camera if it's not running
-        }
+        mCamera.setPreviewCallback(new Camera.PreviewCallback() {
+            public void onPreviewFrame(byte[] data, Camera _camera) {
+                //getting once bitmap with background
+                if(isGetBackgroundButtonClicked()){
+                    getBackgroundFrame(data);
+                }
 
-        // set preview size and make any resize, rotate or
-        // reformatting changes here
+                if(frames == 5) {
+                    //number of processed pictures
+                    ++pictureSaved;
+                    savedPic.setText(pictureSaved + " processed");
 
-        //Setting camera parameters
+                    segmentateImagesGivenAsBytes(data);
+
+                    //set frames to 0 (return to the beginning of loop)
+                    frames = 0;
+                }
+                //number of frames
+                ++frames;
+            }
+        });
+    }
+
+    /**
+     * Setting camera parameters
+     */
+    public void setCameraParameters(){
         Camera.Parameters parameters = mCamera.getParameters();
-        Camera.Size size = parameters.getPreviewSize();
         parameters.set("orientation", "portrait");
         parameters.setRotation(90);
-        //parameters.setPreviewFormat(ImageFormat.);
+
+        Camera.Size size = parameters.getPreviewSize();
+        parameters.setPreviewSize(size.width / 2, size.height / 2);
         mCamera.setParameters(parameters);
+        this.size = parameters.getPreviewSize();
+    }
 
-        //now, recreate the camera preview
-        try{
-            mCamera.setPreviewDisplay(mHolder);
-            mCamera.startPreview();
-        } catch (IOException e) {
-            Log.d("ERROR", "Camera error on surfaceChanged " + e.getMessage());
-        }
+    /**
+     * Process segmentation of data from camera preview, sets results to ImageViews
+     * @param data byte Array
+     */
+    public void segmentateImagesGivenAsBytes(byte[] data){
+        frame.setActualFrame(data);
 
+        Bitmap liveViewBitmap = frame.getActualBitmap();
+        setImageToImageView(bottomCenter, liveViewBitmap);
 
-            mCamera.setPreviewCallback(new Camera.PreviewCallback() {
-                public void onPreviewFrame(byte[] data, Camera _camera) {
-                    //number of frames
-                    ++frames;
+        //-----------------OpenCV part (substracting background)----------------------------------------------
+        frame.setBackground(bmpBackground);
+        frame.setThresholds(10, 60, 4);
+        frame.segmentateFrameWithOpenCV();
+        List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
+        setBitmapsToViews(openCVViews, openCVBitmaps);
+        //CopyManager.saveBitmapToDisk(openCVBitmaps.get(0), pictureSaved, "OpenCV1-");
+        //CopyManager.saveBitmapToDisk(openCVBitmaps.get(1), pictureSaved, "OpenCV2-");
 
-                    if(frames == 1) {
-                        //number of saved pictures
-                        ++pictureSaved;
-                        savedPic.setText(pictureSaved + " saved");
-                        //Log.d("surfaceChanged",String.format("Got %d bytes of camera data", _data.length));
-                        //System.out.println("Got bytes of camera data: " + data.length);
-                        //Bitmap previewBitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+        //processing frame segmentation
+        frame.setNumberOfConditions(3);
+        frame.segmentateFrameWithCpp();
+        List<Bitmap> cppBitmaps = frame.getCppBitmaps();
 
-                        Camera.Parameters parameters = mCamera.getParameters();
-                        Camera.Size size = parameters.getPreviewSize();
-
-                        /*for(int i =0; i<data.length; i++)
-                            System.out.println(data[i]);*/
-                        //String dane = "jestem z javy";
-                        //System.out.println(myNativeCode(dane, dane.length()));
-/*
-                        //Creating classes with parameters and asynchronic converting picture
-                        ConvertPictureAsyncParams params = new ConvertPictureAsyncParams(data, parameters, size);
-                        ConvertPictureAsync convertPictureAsync = new ConvertPictureAsync();
-
-                        //running new thread which convert picture
-                        try {
-                            result = convertPictureAsync.execute(params).get();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        } catch (ExecutionException e) {
-                            e.printStackTrace();
-                        }
-                        //hgfg
-*/
-                        int[] argb;
-                        argb = new int[size.height * size.width];
-                        YUV_NV21_TO_RGB(argb, data, size.width, size.height);
-                        //Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
-                        //String temp= BitMapToString(result);
-                        //System.out.println(temp);
-
-                        int warunek = 2;
-                        //for(int warunek = 2; warunek < 1; ++warunek) {
-                            int[] inputColorSermentationDataPicture = new int[size.height * size.width];
-                        for (int i = 0; i < size.height * size.width; ++i) {
-                            inputColorSermentationDataPicture[i] = 0;
-                        }
-                            int[] sermentationDataPicture = myNativeCode(argb, inputColorSermentationDataPicture, size.height, size.width, warunek);
-                            for (int i = 0; i < 10; ++i) {
-                                System.out.println(sermentationDataPicture[i] + " " + inputColorSermentationDataPicture[i]);
-                            }
-                            /* segmentatedBitmap */
-                        Bitmap.Config conf = Bitmap.Config.ARGB_8888; // see other conf types
-                        Bitmap bmp = Bitmap.createBitmap(size.width, size.height, conf);
-                        bmp.setPixels(sermentationDataPicture, 0, size.width, 0, 0, size.width, size.height);
-                        addCopy(bmp, pictureSaved, "wiedmo" + pictureSaved  + "_" + warunek + ".png");
-                        System.out.println("Zapisno:" + "wiedmo" + pictureSaved  + "_" + warunek + ".png");
-
-                        /* input outpuColor Bitmap */
-                        Bitmap bmpColor = Bitmap.createBitmap(size.width, size.height, conf);
-                        bmpColor.setPixels(inputColorSermentationDataPicture, 0, size.width, 0, 0, size.width, size.height);
-                        addCopy(bmpColor, pictureSaved, "wiedmo" + pictureSaved  + "_" + warunek + "Color.png");
-                        System.out.println("Zapisno:" + "wiedmoColor" + pictureSaved  + "_" + warunek + "Color.png");
-                        //}
-
-                        frames = 0;
-                    }
-                }
-            });
+        setBitmapsToViews(cppViews, cppBitmaps);
     }
 
     @Override
@@ -183,117 +163,64 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     }
 
     /**
-     * Method is saving bmp file to memory
-     * @param image Bitmap
+     * Sets Bitmap to selected ImageView
+     * @param imageView selected imageView
+     * @param bitmap Bitmap to show
      */
-    public void addCopy(Bitmap image, int licznik, String fileName){
+    public void setImageToImageView(ImageView imageView, Bitmap bitmap){
+        imageView.setImageBitmap(bitmap);
+    }
 
-       // FileOutputStream out = null;
-        //File sd = Environment.getExternalStorageDirectory();
-        //String backupDBPath = "backupBMP/TomekB"+licznik+".bmp";
-        String extr = Environment.getExternalStorageDirectory().toString();
-        File mFolder = new File(extr + "/backupBMP");
-        if (!mFolder.exists()) {
-            mFolder.mkdir();
-        }
+    /**
+     * Get new background frame
+     */
+    public void getBackgroundFrame(byte[] data){
+        backgroundFrame.setActualFrame(data);
+        this.bmpBackground = backgroundFrame.getActualBitmap();
+        this.getBckg = false;
+        System.out.println("Pobrano nową próbkę tła...");
+    }
 
-        //String s = "/zdjecie" + licznik + ".bmp";
-        String s = fileName;
+    private Boolean isGetBackgroundButtonClicked(){
+        return this.getBckg;
+    }
 
-        File backupImage = new File(mFolder.getAbsolutePath(), s);
-        //System.out.println("Utworzoni plik: " + s + " w lokalizacji: " + mFolder.getAbsolutePath().toString());
+    private void setAllViewsToVariables(){
+        this.bottomRight = (ImageView) this.mainActivity.findViewById(R.id.segmentatedHand1);
+        this.bottomLeft = (ImageView) this.mainActivity.findViewById(R.id.segmentatedHand3);
+        this.topLeft = (ImageView) this.mainActivity.findViewById(R.id.segmentatedHand4);
+        this.topCenter = (ImageView) this.mainActivity.findViewById(R.id.segmentatedHand5);
+        this.topRight = (ImageView) this.mainActivity.findViewById(R.id.segmentatedHand6);
+        this.bottomCenter = (ImageView) this.mainActivity.findViewById(R.id.liveView);
+    }
 
-        FileOutputStream fos = null;
+    private void setCppViewsList(){
+        this.cppViews.add(bottomRight);
+        this.cppViews.add(bottomLeft);
+    }
 
-        /*String backupDBPath = "backupBMP/zdjecie.bmp";
-        File backupImage = new File(sd, backupDBPath);*/
-        //System.out.println(backupImage.toString());
-        if(!backupImage.exists()){
-            System.out.println("Tworzę backupDB");
-            try {
-                backupImage.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        if(backupImage.exists()) {
-            try {
-                //out = new FileOutputStream(backupImage);
-                //StringWriter writer = new StringWriter();
-                fos = new FileOutputStream(backupImage);
-                //System.out.println("Kompresuję...");
-                image.compress(Bitmap.CompressFormat.PNG, 100, fos);
-                fos.flush();
-                fos.close();
-                //image.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
-                // PNG is a lossless format, the compression factor (100) is ignored
-                /*image.compressToJpeg(
-                        new Rect(0, 0, image.getWidth(), image.getHeight()), 90,
-                        out);*/
-                //System.out.println(image.toString());
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    if (fos != null) {
-                        System.out.println("Zamykam OutputStream");
-                        fos.close();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+    private void setOpenCVViewsList(){
+        this.openCVViews.add(topRight);
+        this.openCVViews.add(topCenter);
+        this.openCVViews.add(topLeft);
+    }
+
+    public void setBitmapsToViews(List<ImageView> views, List<Bitmap> bitmaps){
+        int counter = 0;
+        for (ImageView view:views) {
+            setImageToImageView(view, bitmaps.get(counter));
+            ++counter;
         }
     }
 
-    public Bitmap StringToBitMap(String encodedString) {
-        try {
-            byte[] encodeByte = Base64.decode(encodedString, Base64.DEFAULT);
-            Bitmap bitmap = BitmapFactory.decodeByteArray(encodeByte, 0,
-                    encodeByte.length);
-            return bitmap;
-        } catch (Exception e) {
-            e.getMessage();
-            return null;
+    private static void initiateOpenCV(){
+        if (!OpenCVLoader.initDebug()) {
+            Log.e("TEST", "OpenCVLoader Failed");
+        }else {
+            Log.e("TEST", "OpenCVLoader Succeeded");
+            //System.loadLibrary("CameraVision");
+            System.loadLibrary("opencv_java3");
         }
     }
-
-    public String BitMapToString(Bitmap bitmap) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
-        byte[] b = baos.toByteArray();
-        String temp = Base64.encodeToString(b, Base64.DEFAULT);
-        return temp;
-    }
-
-    public static void YUV_NV21_TO_RGB(int[] argb, byte[] yuv, int width, int height) {
-        final int frameSize = width * height;
-
-        final int ii = 0;
-        final int ij = 0;
-        final int di = +1;
-        final int dj = +1;
-
-        int a = 0;
-        for (int i = 0, ci = ii; i < height; ++i, ci += di) {
-            for (int j = 0, cj = ij; j < width; ++j, cj += dj) {
-                int y = (0xff & ((int) yuv[ci * width + cj]));
-                int v = (0xff & ((int) yuv[frameSize + (ci >> 1) * width + (cj & ~1) + 0]));
-                int u = (0xff & ((int) yuv[frameSize + (ci >> 1) * width + (cj & ~1) + 1]));
-                y = y < 16 ? 16 : y;
-
-                int r = (int) (1.164f * (y - 16) + 1.596f * (v - 128));
-                int g = (int) (1.164f * (y - 16) - 0.813f * (v - 128) - 0.391f * (u - 128));
-                int b = (int) (1.164f * (y - 16) + 2.018f * (u - 128));
-
-                r = r < 0 ? 0 : (r > 255 ? 255 : r);
-                g = g < 0 ? 0 : (g > 255 ? 255 : g);
-                b = b < 0 ? 0 : (b > 255 ? 255 : b);
-
-                argb[a++] = 0xff000000 | (r << 16) | (g << 8) | b;
-            }
-        }
-    }
-
 }
 

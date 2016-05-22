@@ -2,24 +2,24 @@ package com.app.checkpresence;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.res.Configuration;
 import android.hardware.Camera;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.Surface;
 import android.view.View;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
+
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
 
 
 public class MainActivity extends Activity {
     private Camera mCamera = null;
     private CameraView mCameraView = null;
-    public TextView saved;
     private DataBase dataBase;
     private Context context;
 
@@ -30,7 +30,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         context = this;
 
-        saved = (TextView) findViewById(R.id.saved);
+
 
         try{
             mCamera = Camera.open(1);//you can use open(int) to use different cameras
@@ -39,7 +39,7 @@ public class MainActivity extends Activity {
         }
 
         if(mCamera != null) {
-            mCameraView = new CameraView(this, mCamera, saved);//create a SurfaceView to show camera data
+            mCameraView = new CameraView(this, this, mCamera);//create a SurfaceView to show camera data
             FrameLayout camera_view = (FrameLayout)findViewById(R.id.camera_view);
             camera_view.addView(mCameraView);//add the SurfaceView to the layout
         }
@@ -61,9 +61,6 @@ public class MainActivity extends Activity {
         System.loadLibrary("native");
     }
 
-    //public native String myNativeCode();
-    //public static String myNativeCodasde();
-
     /**
      * Metoda tworzy i otwiera bazę danych
      */
@@ -80,5 +77,10 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         dataBase.close();
+    }
+
+    @Override
+    public void onBackPressed(){
+        System.exit(0);
     }
 }
