@@ -145,6 +145,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         setBitmapsToViews(openCVViews, openCVBitmaps);
         //CopyManager.saveBitmapToDisk(openCVBitmaps.get(0), pictureSaved, "OpenCV1-");
         //CopyManager.saveBitmapToDisk(openCVBitmaps.get(1), pictureSaved, "OpenCV2-");
+        //CopyManager.saveBitmapToDisk(openCVBitmaps.get(2), pictureSaved, "OpenCV3-");
 
         //processing frame segmentation
         frame.setNumberOfConditions(3);
