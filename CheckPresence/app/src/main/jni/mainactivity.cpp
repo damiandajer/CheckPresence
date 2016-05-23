@@ -22,22 +22,17 @@
  * @param fileData: "plik" do przetwozenia
  * @param image_out: liczba bajtow "pliku"
  */
-void PaPaMobile_HandRecognization(int* image_out, std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB);
+void PaPaMobile_HandRecognization(int* image_out, std::string fileData, int rows, int cols, int warunek, int avgR, int avgG, int avgB);
 
 extern "C" {
-JNIEXPORT jfloatArray JNICALL Java_com_app_checkpresence_OpenCVSubtraction_find_hand_geometry_features(JNIEnv *env, jobject instance, jintArray argb_,
+JNIEXPORT jfloatArray JNICALL Java_com_app_checkpresence_OpenCVSubtraction_findHandFeatures(JNIEnv *env, jobject instance, jintArray argb_,
 jint rows, jint cols)
 {
     int h, w;
     int max_color;
-    int hpos, i, j, ret;
+    int i, j, ret;
+    int hpos = 0;
     std::vector<float> featureVectors;
-
-    //tworzenie nazw plikow wejsciowych i wyjsciowych
-    /*std::string fullfname = findir + fname;
-    std::string test_image = foutdir + fname;
-    replace(test_image, ".pgm", "_test.ppm");
-    std::string features_file = foutdir + "feature_vectors.dat";*/
 
     // reprezentacja przekazanej tablicy z java do kodu natywnego
     jint *argb = (*env).GetIntArrayElements(argb_, NULL);
@@ -48,11 +43,11 @@ jint rows, jint cols)
         fileData[i] = temp.chanels[1];
     }
 
+    (*env).ReleaseIntArrayElements(argb_, argb,0);
+
     PGMFile pgmFile(fileData, cols * rows);
 
     //wczytaj obrazek
-    //if ((hpos = pgmFile.readPGMB_header(&h, &w, &max_color)) <= 0)
-    //return ERROR;
     h = rows;
     w = cols;
     max_color = 255;
@@ -61,11 +56,6 @@ jint rows, jint cols)
         return NULL;
 
     unsigned char **b = new_char_image(h, w);
-
-    #if defined (_MSC_VER)
-    if (pgmFile.writePGMB_image_to_file(std::string("E:\\img_\\wynik_etap2_d_before_contur.pgm"), a[0], h, w, 255) == 0) exit(1);
-        //if (writePPMB_image(test_image.c_str(), R[0], G[0], B[0], h, w, 255) == 0) exit(1);
-    #endif // defined (_MSC_VER)
 
     //znajdz kontur i zwroc jego pierwszy piksel
     int index = create_contour(a, b, h, w);
@@ -80,12 +70,6 @@ jint rows, jint cols)
     finger f[5];
     float szerokosc_dloni = 0;
     int szerokosc_dloni_index = 0;
-
-    //writePGMB_image("contur.pgm", b[0], h, w, 255);
-    #if defined (_MSC_VER)
-    if (pgmFile.writePGMB_image_to_file(std::string("E:\\img_\\wynik_etap2_d_contur.pgm"), R[0], h, w, 255) == 0) exit(1);
-        //if (writePPMB_image(test_image.c_str(), R[0], G[0], B[0], h, w, 255) == 0) exit(1);
-    #endif // defined (_MSC_VER)
 
     for (;;) {		//petla for tylko po to zeby wyjsc z wyszukiwania cech jesli ktorejs nie znajdziemy po drodze
 
@@ -135,27 +119,6 @@ jint rows, jint cols)
         int ex_i[12]; for (int i = 0; i<12; i++) ex_i[i] = cpv[ex[i]];		//wyznacz indeksy punktow extremalnych
         calc_fingers_feature(f, a, ex_i, h, w);
 
-        ////"Visual Debug"
-        for (j = 0; j<5; j++) {
-            //draw_circle(R, G, B, h, w, f[j].base_center_point, 5, 255, 0, 0);
-            //draw_line(R, G, B, h, w, f[j].base_first_point, f[j].base_last_point, 0, 255, 0);
-            //if (j>0) {;} // draw_line(R, G, B, h, w, f[0].base_last_point, f[j].base_center_point, 0, 0, 255);
-            //draw_line(R, G, B, h, w, f[0].base_last_point, szerokosc_dloni_index, 0, 0, 255);
-            //draw_line(R, G, B, h, w, f[1].base_first_point, f[4].base_last_point, 255, 0, 0);
-            //draw_line(R, G, B, h, w, f[j].base_center_point, f[j].top_point, 255, 0, 0);
-            //draw_circle(R, G, B, h, w, f[j].circle_top_centre, f[j].circle_top_radius, 255, 170, 200);
-            //draw_circle(R, G, B, h, w, f[j].circle_bottom_centre, f[j].circle_bottom_radius, 255, 170, 200);
-        }
-
-        //draw_circles(R, G, B, h, w, cpv, ex, 7, 12, 255, 0, 0);
-        //draw_circles(R, G, B, h, w, cpv, ex, 0, 7, 0, 255, 0);
-
-        #if defined (_MSC_VER)
-        if (pgmFile.writePPMB_image_to_file(std::string("E:\\img_\\wynik_etap2_d_2.ppm"), R[0], G[0], B[0], h, w, 255) == 0)
-                    return NULL;
-                //if (writePPMB_image(test_image.c_str(), R[0], G[0], B[0], h, w, 255) == 0) exit(1);
-        #endif // defined (_MSC_VER)
-
         break;
     }//for
 
@@ -200,28 +163,31 @@ jint rows, jint cols)
                 featureVectors.push_back(fv[i]);
             }
         }
-        /* UWAGA:
-           W featureVectors przekazanym do funkcji jako referencja mamy zapiane dane na temat cech ręki
-           mozna przzejsc do nastepnego etapu...*/
 
-        /*if (i == 30) {		//jesli wszystko dopisz cechy do pliku feature_vectors.dat
-            FILE *FeaturesFile = fopen(features_file.c_str(), "wb+");
-            fwrite(fv, sizeof(float), i, FeaturesFile);
-            fclose(FeaturesFile);
-        }*/
-    }
+        // przygotawanie tablicy dla plixeli obrazu po binaryzacji
+        // taka tablize mozna zwrucic do kodu java
+        if (i == 30) {
+            jfloatArray result;
+            result = (*env).NewFloatArray(30);
+            if (result == NULL) {
+                return NULL; /* out of memory error thrown */
+            }
+            // pobranie wskaznika na utworzona tablice (jint - java int = int(c++))
+            jfloat *result_tab = (*env).GetFloatArrayElements(result, NULL);
+            for (int i = 0; i < 30 /*featureVectors.size()*/; ++i) {
+                result_tab[i] = featureVectors[i];
+            }
 
-    // przygotawanie tablicy dla plixeli obrazu po binaryzacji
-    // taka tablize mozna zwrucic do kodu java
-    jfloatArray result;
-    result = (*env).NewFloatArray(rows*cols);
-    if (result == NULL) {
-        return NULL; /* out of memory error thrown */
-    }
-    // pobranie wskaznika na utworzona tablice (jint - java int = int(c++))
-    jfloat *result_tab= (*env).GetFloatArrayElements(result, NULL);
-    for (int i = 0; i < 30 /*featureVectors.size()*/; ++i) {
-        result_tab[i] = featureVectors[i];
+            /* Tu pewnie znow zla dealokacja!!! pasuje porpawic!!!*/
+            delete[] a;
+            delete[] b;
+
+            delete[] R;
+            delete[] G;
+            delete[] B;
+
+            return result;
+        }
     }
 
     /* Tu pewnie znow zla dealokacja!!! pasuje porpawic!!!*/
@@ -232,9 +198,7 @@ jint rows, jint cols)
     delete[] G;
     delete[] B;
 
-    (*env).ReleaseIntArrayElements(argb_, argb,0);
-
-    return result;
+    return NULL;
 }
 
 
@@ -408,9 +372,9 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_Segmentation_myNativeCode
 
     // przygotowanie naglowka pliku(jako (w zmiennej) std::stringstream fileData)
     std::stringstream fileData;
-    fileData << "P6\n" << cols << " " << rows << "\n# eyetom.com\n" << 255 << "\n";
-    int headerLength = fileData.str().size();
-    dataLength += headerLength;
+    //fileData << "P6\n" << cols << " " << rows << "\n# eyetom.com\n" << 255 << "\n";
+    //int headerLength = fileData.str().size();
+    //dataLength += headerLength;
 
     int avgR = 0;
     int avgG = 0;
@@ -452,7 +416,7 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_Segmentation_myNativeCode
 
     // 1'szy etap projektu
     //
-    PaPaMobile_HandRecognization((int*)result_tab, fileData.str(), dataLength, warunek, avgR, avgG, avgB);
+    PaPaMobile_HandRecognization((int*)result_tab, fileData.str(), rows, cols, warunek, avgR, avgG, avgB);
 
     // dealokujemy pamiec dla tablicy przechowujacej obraz z aparatu(kolorowy)
     (*env).ReleaseIntArrayElements(argb_, argb,0);
@@ -461,15 +425,15 @@ JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_Segmentation_myNativeCode
     }
 }
 
-void PaPaMobile_HandRecognization(int* image_out, std::string fileData, size_t fileLength, int warunek, int avgR, int avgG, int avgB) {
-    int rows, cols;
-    int max_color;
-    int hpos, i, j;
-    PGMFile pgmFile(fileData.c_str(), fileLength);
+void PaPaMobile_HandRecognization(int* image_out, std::string fileData, int rows, int cols, int warunek, int avgR, int avgG, int avgB) {
+    //int rows, cols;
+    int max_color = 255;
+    int hpos = 0, i, j;
+    PGMFile pgmFile(fileData.c_str(), rows * cols);
     //return "test happy 01";
 
-    if ((hpos = pgmFile.readPGMB_header(&rows, &cols, &max_color)) <= 0)
-        return ;//"nie udało się wczytać nagłówka";
+    //if ((hpos = pgmFile.readPGMB_header(&rows, &cols, &max_color)) <= 0)
+        //return ;//"nie udało się wczytać nagłówka";
 
     unsigned char **R = new_char_image(rows, cols);
     unsigned char **G = new_char_image(rows, cols);
