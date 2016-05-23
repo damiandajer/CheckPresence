@@ -1,6 +1,7 @@
 package com.app.checkpresence;
 
 import android.graphics.Bitmap;
+import android.util.Log;
 
 import org.opencv.android.Utils;
 import org.opencv.core.CvType;
@@ -63,8 +64,12 @@ public class OpenCVSubtraction implements Runnable {
     }
 
     private void createMatsFromBitmap(){
-        Utils.bitmapToMat(inputBitmap, imgToProcess1);
-        Utils.bitmapToMat(backgroundBitmap, imgToProcess2);
+        try {
+            Utils.bitmapToMat(inputBitmap, imgToProcess1);
+            Utils.bitmapToMat(backgroundBitmap, imgToProcess2);
+        } catch(Exception e){
+            Log.d("Warning", "Bitmap to Mat err: " + e.getMessage());
+        }
     }
 
     private void processMats(){
