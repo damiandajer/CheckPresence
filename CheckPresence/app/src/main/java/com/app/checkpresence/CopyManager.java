@@ -6,6 +6,7 @@ import android.os.Environment;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Created by Damian on 19.05.2016.
@@ -58,6 +59,17 @@ final public class CopyManager {
                     e.printStackTrace();
                 }
             }
+        }
+    }
+
+    public static void saveBitmapToDisk(List<Bitmap> images, int licznik, String fileName){
+        int i = 1;
+        String newFileName;
+        for (Bitmap bmp:images
+             ) {
+            newFileName = fileName + i + "-";
+            saveBitmapToDisk(bmp, licznik, newFileName);
+            ++i;
         }
     }
 }
