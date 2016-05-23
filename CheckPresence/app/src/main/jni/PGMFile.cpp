@@ -55,6 +55,32 @@ int PGMFile::readPGMB_header(int * rows, int * cols, int * max_color)
 	return hlen;
 }
 
+int PGMFile::readPGMB_data(unsigned char * image, int hlen, int rows, int cols, int max_color)
+{
+	/*FILE *fp;
+	if ((fp = fopen(fname, "rb")) == NULL)
+		return 0;*/
+
+	this->seek(hlen, SEEK_SET);
+	int from = this->tellg();
+	for (size_t i = 0; i < this->getFileLength() - from; ++i) {
+		unsigned char pixel = this->getc();
+		if (i > 614390)
+		if (i % (1) == 0) {
+			int x = pixel;
+			x = pixel;
+		}
+		image[i] = static_cast<unsigned char>(pixel);
+	}
+	//int readedrows = fread(image, cols, rows, fp);
+	//fclose(fp);
+
+	/*if (rows != readedrows)
+		return 0;*/
+
+	return 1;
+}
+
 int PGMFile::readPPMB_header(int * rows, int * cols, int * max_color)
 {
 	size_t hlen;
