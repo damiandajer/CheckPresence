@@ -459,27 +459,6 @@ void PaPaMobile_HandRecognization(int* image_out, std::string fileData, int rows
                 int stop = 1;
             }
 
-            //warunek = (r > 65 && r>g && r > b - 10) || (i < 200 && r>25 && r > g && r > b - 10);
-            //warunek = (r > 80 && r>g && r > b - 10);
-            // dla ciemnego tła ten pasuje
-            //warunek = (r>50 && r>g && r>b) || (r>90 && r>g && r>g - 10);
-            //warunek = (r>65 && r>g && r>b-10) || (i<200 && r>25 && r>g && r>b-10);
-            /*if (index == 93484) { warunek = r>120 && r>g && r>b; }
-            if (index == 112302) {warunek = (r>50 && r>g && r>b) || (r>90 && r>g && r>g-10) ; } // W miare OK
-            if (index == 112305) {warunek = (r>100 && r>g && r>b) || (r>200 )  ; }
-            if (index == 112310) {warunek = (r>65 && r>g && r>b-10) || (i<200 && r>25 && r>g && r>b-10);}
-            if (index == 112311) {warunek = (r>100 && r>g && r>b-10) ;}
-            if (index == 112319) {warunek = ( r>120 && r>g && r>b) ;}
-            if (index == 112320) {warunek = ( r>80 && r>g && r>b) || (r>100 && r>g && r>b-20) ;}*/
-            /*if (warunek == 0) { warunek = r>120 && r>g && r>b; }
-            if (warunek == 1) { warunek = (r>50 && r>g && r>b) || (r>90 && r>g && r>g - 10); }
-            if (warunek == 2) { warunek = (r>100 && r>g && r>b) || (r>200); }
-            if (warunek == 3) { warunek = (r>65 && r>g && r>b - 10) || (i<200 && r>25 && r>g && r>b - 10); }
-            if (warunek == 4) { warunek = (r>100 && r>g && r>b - 10); }
-            if (warunek == 5) { warunek = (r>120 && r>g && r>b); }
-            if (warunek == 6) { warunek = (r>80 && r>g && r>b) || (r>100 && r>g && r>b - 20); }*/
-            //warunek = !(r > 170 && g > 170 && b > 170);
-
             // ramka obrazu zawsze czarna
             if ((i < 10 || i > rows - 20)
                 && (j < 10 || j > cols - 10)) {
@@ -618,14 +597,5 @@ void PaPaMobile_HandRecognization(int* image_out, std::string fileData, int rows
 
     delete b2[0];
     delete b2;
-
-    /* UWAGA:
-       Wynik do nastepnego etapu znajduje sie w zmiennej std::string daneAfterSegmentation
-    */
-
-    /***********************************
-    Tu powinno być wywołanie funkcji odpowiedzialen za następny etap przetwarzania!
-    int etap2(daneAfterSegmentation, daneAfterSegmentation.size());
-    ************************************/
 
 }

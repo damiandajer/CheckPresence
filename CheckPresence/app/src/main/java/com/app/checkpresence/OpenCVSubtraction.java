@@ -25,6 +25,7 @@ public class OpenCVSubtraction implements Runnable {
     int[] intARGBArray;
     List<Integer> thresholds;
     private native int[] deleteSmallAreas(int[] intARGBArray, int height, int width);
+    private native float[] findHandFeatures(int[] intARGBArray, int rows, int cols);
 
 
     /**
@@ -48,14 +49,23 @@ public class OpenCVSubtraction implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Thread is processing frame with OpenCV");
+        //System.out.println("Thread is processing frame with OpenCV");
         setConfToBitmap();
         createMatsFromBitmap();
         processMats();
         createBitmapFromMat();
         convertBitmapToIntArray();
-        clearIntArrayFromSmallAreas();
-        convertIntArrayToBitmap();
+        /*clearIntArrayFromSmallAreas();
+        convertIntArrayToBitmap();*/
+        this.intARGBArray = deleteSmallAreas(this.intARGBArray, this.height, this.width);
+        bmp.copyPixelsFromBuffer(IntBuffer.wrap(intARGBArray));
+        float[] handFeatures = findHandFeatures(this.intARGBArray.clone(), this.height, this.width);
+        if (handFeatures == null) {
+            //System.out.println("Problem z etapem 2. Nie odnaleziono wszystkich cech!");
+        }
+        else {
+            System.out.println("Odnaleziono wszystkie cechy!. Czekamy na etap 3!!!!!");
+        }
     }
 
     private void setConfToBitmap(){

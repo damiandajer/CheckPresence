@@ -122,7 +122,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         parameters.setRotation(90);
 
         Camera.Size size = parameters.getPreviewSize();
-        parameters.setPreviewSize(size.width / 2, size.height / 2);
+        parameters.setPreviewSize(size.width / 4, size.height / 4);
         mCamera.setParameters(parameters);
         this.size = parameters.getPreviewSize();
     }
@@ -148,11 +148,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         //CopyManager.saveBitmapToDisk(openCVBitmaps.get(2), pictureSaved, "OpenCV3-");
 
         //processing frame segmentation
-        frame.setNumberOfConditions(3);
+        /*frame.setNumberOfConditions(3);
         frame.segmentateFrameWithCpp();
         List<Bitmap> cppBitmaps = frame.getCppBitmaps();
 
-        setBitmapsToViews(cppViews, cppBitmaps);
+        setBitmapsToViews(cppViews, cppBitmaps);*/
     }
 
     @Override
