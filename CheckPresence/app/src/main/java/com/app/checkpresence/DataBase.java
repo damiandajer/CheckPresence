@@ -3,7 +3,6 @@ package com.app.checkpresence;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
@@ -16,7 +15,7 @@ public class DataBase extends SQLiteOpenHelper{
     private Context context;
 
     public static final String DATABASE_NAME = "baza.db";
-    private static final int DB_VERSION = 1;
+    private static final int DB_VERSION = 3;
 
     public static final String TABLE_NAME_USERS = "users";
     public static final String COLUMN_NAME_ID_USER = "id_user";
@@ -29,6 +28,10 @@ public class DataBase extends SQLiteOpenHelper{
     public static final String COLUMN_NAME_ID_GROUP = "id_group";
     public static final String COLUMN_NAME_GROUP_NAME = "group_name";
 
+    public static final String TABLE_NAME_TRAIT = "studentTrait";
+    public static final String COLUMN_NAME_ID_TRAIT = "id_Trait";
+    public static final String COLUMN_NAME_ID_USER_IN_TRAIT = "id_user_in_trait";
+
     public static final String ON_CREATE_USERS =
             "CREATE TABLE " + TABLE_NAME_USERS + " (" +
                     COLUMN_NAME_ID_USER + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -38,6 +41,14 @@ public class DataBase extends SQLiteOpenHelper{
                     COLUMN_NAME_SECOND_NAME + " TEXT, " +
                     "FOREIGN KEY(" + COLUMN_NAME_ID_GROUP_IN_USER + ") REFERENCES " +
                     TABLE_NAME_GROUP + "("+COLUMN_NAME_ID_GROUP+")" +
+                    " )";
+
+    public static final String ON_CREATE_TRAIT =
+            "CREATE TABLE " + TABLE_NAME_TRAIT + " ( " +
+                    COLUMN_NAME_ID_TRAIT + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    COLUMN_NAME_ID_USER_IN_TRAIT + " INTEGER, " +
+                    "FOREIGN KEY(" + COLUMN_NAME_ID_USER_IN_TRAIT + ") REFERENCES " +
+                    TABLE_NAME_USERS + "("+COLUMN_NAME_ID_USER+")" +
                     " )";
 
     public static final String ON_CREATE_GROUP = String.format(
@@ -50,6 +61,8 @@ public class DataBase extends SQLiteOpenHelper{
     public static final String ON_DELETE_GROUP =
             "DROP TABLE IF EXISTS " + TABLE_NAME_GROUP;
 
+    public static final String ON_DELETE_TRAIT =
+            "DROP TABLE IF EXISTS " + TABLE_NAME_TRAIT;
 
 
 
@@ -72,19 +85,28 @@ public class DataBase extends SQLiteOpenHelper{
     public void onCreate(SQLiteDatabase db) {
         createTableGroup(db);
         createTableUsers(db);
+        createTableTrait(db);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         dropUsers();
         dropGroup();
-        onCreate(db);
+        dropTrait();
+        createTableGroup(db);
+        createTableUsers(db);
+        createTableTrait(db);
     }
 
+    /**
+     * Dodawanie i usuwanie poszczegolnych tabel.
+     */
     public void createTableUsers(SQLiteDatabase db){ db.execSQL(ON_CREATE_USERS); }
     public void dropUsers(){ dataBase.execSQL(ON_DELETE_USERS); }
     public void createTableGroup(SQLiteDatabase db){ db.execSQL(ON_CREATE_GROUP);}
     public void dropGroup(){ dataBase.execSQL(ON_DELETE_GROUP);}
+    public void createTableTrait(SQLiteDatabase db){ db.execSQL(ON_CREATE_TRAIT);}
+    private void dropTrait() { dataBase.execSQL(ON_DELETE_TRAIT);}
 
     /**
      * Dodaje do bazy grupę o podanej nazwie i zwraca id
