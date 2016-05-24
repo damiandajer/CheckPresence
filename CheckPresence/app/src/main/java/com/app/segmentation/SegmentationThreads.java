@@ -1,6 +1,7 @@
-package com.app.checkpresence;
+package com.app.segmentation;
 
-import android.graphics.Bitmap;
+import com.app.threads.TaskManager;
+import com.app.threads.ThreadHandler;
 
 import java.util.ArrayList;
 import java.util.IllegalFormatConversionException;
@@ -32,7 +33,7 @@ public class SegmentationThreads extends TaskManager {
     public void executeThreads() {
         super.executeThreads();
 
-        for (Runnable r:ThreadHandler.getRunnables()) {
+        for (Runnable r: ThreadHandler.getRunnables()) {
             try {
                 intArrays.add(((Segmentation) r).getSegmentatedPicture());
             }catch (IllegalFormatConversionException e){

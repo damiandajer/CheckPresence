@@ -1,4 +1,4 @@
-package com.app.checkpresence;
+package com.app.segmentation;
 
 import android.graphics.Bitmap;
 import android.util.Log;
@@ -25,7 +25,6 @@ public class OpenCVSubtraction implements Runnable {
     int[] intARGBArray;
     float[] handFeatures;
     private native int[] deleteSmallAreas(int[] intARGBArray, int height, int width);
-    private native float[] findHandFeatures(int[] intARGBArray, int rows, int cols);
 
 
     /**
@@ -56,7 +55,6 @@ public class OpenCVSubtraction implements Runnable {
         convertBitmapToIntArray();
         clearIntArrayFromSmallAreas();
         convertIntArrayToBitmap();
-        findHandFeatures();
     }
 
     private void setConfToBitmap(){
@@ -114,9 +112,4 @@ public class OpenCVSubtraction implements Runnable {
         bmp.copyPixelsFromBuffer(IntBuffer.wrap(intARGBArray));
     }
 
-    private void findHandFeatures(){
-        this.handFeatures = findHandFeatures(this.intARGBArray.clone(), this.height, this.width);
-        if (handFeatures != null)
-            System.out.println("Odnaleziono wszystkie cechy!");
-    }
 }

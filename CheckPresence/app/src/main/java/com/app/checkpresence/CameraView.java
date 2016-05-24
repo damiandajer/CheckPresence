@@ -16,6 +16,8 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.app.picture.Frame;
+
 import org.opencv.android.OpenCVLoader;
 
 import java.io.IOException;
@@ -37,9 +39,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private ImageView bottomRight, bottomLeft, topLeft, topCenter, topRight, bottomCenter;
     private Button backgroundBtn;
     private Bitmap bmpBackground;
-    Boolean getBckg = true;
-    List<ImageView> cppViews, openCVViews;
-    Frame frame, backgroundFrame;
+    private Boolean getBckg = true;
+    private List<ImageView> cppViews, openCVViews;
+    private Frame frame, backgroundFrame;
+    private List<float[]> handFeatures;
 
     public CameraView(Context context, Activity activity, Camera camera){
         super(context);
@@ -63,6 +66,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         initiateOpenCV();
         this.cppViews = new ArrayList<>();
         this.openCVViews = new ArrayList<>();
+        this.handFeatures = new ArrayList<>();
         this.frame = new Frame();
         this.backgroundFrame = new Frame();
         setAllViewsToVariables();
@@ -103,6 +107,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     savedPic.setText(pictureSaved + " processed");
 
                     segmentateImagesGivenAsBytes(data);
+                    findHandFeaturesFromSegmentatedHands();
 
                     //set frames to 0 (return to the beginning of loop)
                     frames = 0;
@@ -136,13 +141,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         Bitmap liveViewBitmap = frame.getActualBitmap();
         setImageToImageView(bottomCenter, liveViewBitmap);
 
-        //-----------------OpenCV part (substracting background)----------------------------------------------
         frame.setBackground(bmpBackground);
         frame.setThresholds(10, 60, 4);
         frame.segmentateFrameWithOpenCV();
         List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
         setBitmapsToViews(openCVViews, openCVBitmaps);
         //CopyManager.saveBitmapToDisk(openCVBitmaps, pictureSaved, "OpenCV");
+    }
+
+    public void findHandFeaturesFromSegmentatedHands(){
+        frame.findHandFeatures();
+        this.handFeatures = frame.getHandFeatures();
     }
 
     @Override

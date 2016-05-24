@@ -1,4 +1,4 @@
-package com.app.checkpresence;
+package com.app.picture;
 
 import android.graphics.Bitmap;
 import android.graphics.Matrix;

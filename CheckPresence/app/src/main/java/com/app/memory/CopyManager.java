@@ -1,4 +1,4 @@
-package com.app.checkpresence;
+package com.app.memory;
 
 import android.graphics.Bitmap;
 import android.os.Environment;

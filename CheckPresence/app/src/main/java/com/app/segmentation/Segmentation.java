@@ -1,4 +1,4 @@
-package com.app.checkpresence;
+package com.app.segmentation;
 
 /**
  * Created by Damian on 16.05.2016.

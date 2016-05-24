@@ -1,4 +1,4 @@
-package com.app.checkpresence;
+package com.app.threads;
 
 import android.graphics.Bitmap;
 
@@ -11,6 +11,7 @@ import java.util.List;
 public abstract class TaskManager {
     protected List<Bitmap> bitmaps;
     protected List<int[]> intArrays;
+    protected List<float[]> floatArrays;
 
     /**
      * Executing threads
@@ -18,6 +19,7 @@ public abstract class TaskManager {
     public void executeThreads(){
         bitmaps = new ArrayList<>();
         intArrays = new ArrayList<>();
+        floatArrays = new ArrayList<>();
 
         ThreadHandler.startThreads();
         try {

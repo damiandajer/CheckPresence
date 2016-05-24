@@ -1,6 +1,9 @@
-package com.app.checkpresence;
+package com.app.picture;
 
 import android.graphics.Bitmap;
+
+import com.app.threads.TaskManager;
+import com.app.threads.ThreadHandler;
 
 import java.util.IllegalFormatConversionException;
 import java.util.List;
@@ -30,7 +33,7 @@ public class BitmapFromPixelsThreads extends TaskManager {
     public void executeThreads() {
         super.executeThreads();
 
-        for (Runnable r:ThreadHandler.getRunnables()) {
+        for (Runnable r: ThreadHandler.getRunnables()) {
             try {
                 bitmaps.add(((CreateBitmapFromPixels) r).getBitmap());
             }catch (IllegalFormatConversionException e){
