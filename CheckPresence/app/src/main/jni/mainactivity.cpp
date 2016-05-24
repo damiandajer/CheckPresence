@@ -25,7 +25,7 @@
 void PaPaMobile_HandRecognization(int* image_out, std::string fileData, int rows, int cols, int warunek, int avgR, int avgG, int avgB);
 
 extern "C" {
-JNIEXPORT jfloatArray JNICALL Java_com_app_checkpresence_HandFeatures_findHandFeatures(JNIEnv *env, jobject instance, jintArray argb_,
+JNIEXPORT jfloatArray JNICALL Java_com_app_handFeatures_HandFeatures_findHandFeatures(JNIEnv *env, jobject instance, jintArray argb_,
 jint rows, jint cols)
 {
     int h, w;
@@ -202,7 +202,7 @@ jint rows, jint cols)
 }
 
 
-JNIEXPORT jintArray JNICALL Java_com_app_checkpresence_OpenCVSubtraction_deleteSmallAreas(JNIEnv *env, jobject instance, jintArray argb_,
+JNIEXPORT jintArray JNICALL Java_com_app_segmentation_OpenCVSubtraction_deleteSmallAreas(JNIEnv *env, jobject instance, jintArray argb_,
                                                                                  jint rows, jint cols) {
     // reprezentacja przekazanej tablicy z java do kodu natywnego
     jint *argb = (*env).GetIntArrayElements(argb_, NULL);
