@@ -6,6 +6,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by Szymon on 2016-04-10.
  */
@@ -15,7 +18,8 @@ public class DataBase extends SQLiteOpenHelper{
     private Context context;
 
     public static final String DATABASE_NAME = "baza.db";
-    private static final int DB_VERSION = 3;
+    public static int NUMBER_OF_TRAITS = 30;
+    private static final int DB_VERSION = 4;
 
     public static final String TABLE_NAME_USERS = "users";
     public static final String COLUMN_NAME_ID_USER = "id_user";
@@ -47,7 +51,37 @@ public class DataBase extends SQLiteOpenHelper{
             "CREATE TABLE " + TABLE_NAME_TRAIT + " ( " +
                     COLUMN_NAME_ID_TRAIT + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                     COLUMN_NAME_ID_USER_IN_TRAIT + " INTEGER, " +
-                    "FOREIGN KEY(" + COLUMN_NAME_ID_USER_IN_TRAIT + ") REFERENCES " +
+                    "T0" + " REAL, " +
+                    "T1" + " REAL, " +
+                    "T2" + " REAL, " +
+                    "T3" + " REAL, " +
+                    "T4" + " REAL, " +
+                    "T5" + " REAL, " +
+                    "T6" + " REAL, " +
+                    "T7" + " REAL, " +
+                    "T8" + " REAL, " +
+                    "T9" + " REAL, " +
+                    "T10" + " REAL, " +
+                    "T11" + " REAL, " +
+                    "T12" + " REAL, " +
+                    "T13" + " REAL, " +
+                    "T14" + " REAL, " +
+                    "T15" + " REAL, " +
+                    "T16" + " REAL, " +
+                    "T17" + " REAL, " +
+                    "T18" + " REAL, " +
+                    "T19" + " REAL, " +
+                    "T20" + " REAL, " +
+                    "T21" + " REAL, " +
+                    "T22" + " REAL, " +
+                    "T23" + " REAL, " +
+                    "T24" + " REAL, " +
+                    "T25" + " REAL, " +
+                    "T26" + " REAL, " +
+                    "T27" + " REAL, " +
+                    "T28" + " REAL, " +
+                    "T29" + " REAL, " +
+                    " FOREIGN KEY(" + COLUMN_NAME_ID_USER_IN_TRAIT + ") REFERENCES " +
                     TABLE_NAME_USERS + "("+COLUMN_NAME_ID_USER+")" +
                     " )";
 
@@ -90,11 +124,7 @@ public class DataBase extends SQLiteOpenHelper{
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        dropUsers();
-        dropGroup();
         dropTrait();
-        createTableGroup(db);
-        createTableUsers(db);
         createTableTrait(db);
     }
 
@@ -162,6 +192,25 @@ public class DataBase extends SQLiteOpenHelper{
     }
 
     /**
+     * Dodaje nowego użytkownika do bazy
+     * @param user - nowy użytkownik
+     * @return long id - zwraca id dodanego użytkownika, -1 jeśli nie udało sie dodać
+     */
+    public long insertUser(User user){
+        insertGroup(user.getGroupName());
+        long groupId = getGroupId(user.getGroupName());
+        if(groupId == -1) { return -1; }
+
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_NAME_INDEX, user.getIndexNumber());
+        values.put(COLUMN_NAME_FIRST_NAME, user.getFirstName());
+        values.put(COLUMN_NAME_SECOND_NAME, user.getSecondName());
+        values.put(COLUMN_NAME_ID_GROUP_IN_USER, groupId);
+
+        return dataBase.insert(TABLE_NAME_USERS, null, values);
+    }
+
+    /**
      * Zwraca id użytkownika o podanym numerze indeksu
      * @param indexNumber - wyszukiwany numer indeksu
      * @return long id - odnalezione id, -1 jeżeli podany użytkownik nie istnieje
@@ -169,14 +218,136 @@ public class DataBase extends SQLiteOpenHelper{
     public long getUserId(int indexNumber){
         long id = -1;
         String selectQuery = "SELECT " + COLUMN_NAME_ID_USER
-                            + " FROM " + TABLE_NAME_USERS
-                            + " WHERE " + COLUMN_NAME_INDEX + "=" +indexNumber;
+                + " FROM " + TABLE_NAME_USERS
+                + " WHERE " + COLUMN_NAME_INDEX + "=" +indexNumber;
 
         Cursor cursor = dataBase.rawQuery(selectQuery, null);
         if(cursor.moveToFirst()){
             id = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID_USER));
         }
         return id;
+    }
+
+    /**
+     * Zwraca id pierwszego użytkownika o podanym imieniu i nazwisku.
+     * Imie i nazwisko w przeciwieństwie do indeksu nie są unikatowe!
+     * @param fName - imie
+     * @param sName - nazwisko
+     * @return long id - odnalezione id, -1 jeżeli podany użytkownik nie istnieje
+     */
+    public long getUserId(String fName, String sName){
+        long id = -1;
+        String selectQuery = "SELECT " + COLUMN_NAME_ID_USER
+                + " FROM " + TABLE_NAME_USERS
+                + " WHERE " + COLUMN_NAME_FIRST_NAME + "='" + fName + "' "
+                + " AND " + COLUMN_NAME_SECOND_NAME + "='" + sName + "'";
+
+        Cursor cursor = dataBase.rawQuery(selectQuery, null);
+        if(cursor.moveToFirst()){
+            id = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID_USER));
+        }
+        return id;
+    }
+
+    /**
+     * Zwraca obiekt klasy user - użytkownika o podanym ID
+     * @param idUser - ID użytkownika do zwrócenia
+     * @return User - Obiekt user o podanym ID
+     */
+    public User getUser(long idUser){
+
+        List<double[]> traits = new ArrayList<double[]>();
+        User user;
+
+        String selectQuery = "SELECT " + COLUMN_NAME_FIRST_NAME
+                + ", " + COLUMN_NAME_SECOND_NAME
+                + ", " + COLUMN_NAME_INDEX
+                + ", " + COLUMN_NAME_GROUP_NAME
+                + " FROM " + TABLE_NAME_USERS
+                + " join " + TABLE_NAME_GROUP
+                + " on " + COLUMN_NAME_ID_GROUP + "=" + COLUMN_NAME_ID_GROUP_IN_USER
+                + " WHERE " + COLUMN_NAME_ID_USER + "=" + idUser + "";
+
+        Cursor cursor = dataBase.rawQuery(selectQuery, null);
+        if(cursor.moveToFirst()){
+            user = new User(cursor.getString(cursor.getColumnIndex(COLUMN_NAME_FIRST_NAME)),
+                    cursor.getString(cursor.getColumnIndex(COLUMN_NAME_SECOND_NAME)),
+                    cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_INDEX)),
+                    cursor.getString(cursor.getColumnIndex(COLUMN_NAME_GROUP_NAME)),
+                    getUserTraits(idUser));
+        } else {
+            user = null;
+        }
+
+        return user;
+    }
+
+    /**
+     * Zwraca wszystkich użytkowników
+     * @return List<User> - lista użytkowników
+     */
+    public List<User> getAllUsers(){
+
+        List<User> users = new ArrayList<User>();
+
+        String selectQuery = "SELECT " + COLUMN_NAME_ID_USER
+                + " FROM " + TABLE_NAME_USERS;
+
+        Cursor cursor = dataBase.rawQuery(selectQuery, null);
+
+        if(cursor != null && cursor.moveToFirst()) {
+            do{
+                users.add(getUser(cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID_USER))));
+            }while(cursor.moveToNext());
+        }
+
+        return users;
+    }
+
+    /**
+     * Dodaje liste cech do użytkownika o podanym ID
+     * @param userID - ID użytkownika
+     * @param traits - tablica double[] z cechami
+     * @return long id - zwraca id dodanych cech, -1 jeśli nie udało sie dodać
+     */
+    public long insertTraits(long userID, double[] traits){
+
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_NAME_ID_USER_IN_TRAIT, userID);
+        for(int i = 0 ; i < NUMBER_OF_TRAITS ; i++) {
+            values.put("T" + i, traits[i]);
+        }
+
+        return dataBase.insert(TABLE_NAME_TRAIT, null, values);
+    }
+
+    /**
+     * Zwraca liste tablic double[] z cechami użytkownika
+     * @param userID - ID Użytkownika do pobrania
+     * @return List<double[]> - lista tablic cech
+     */
+    public List<double[]> getUserTraits(long userID){
+
+        List<double[]> traits = new ArrayList<double[]>();
+        double[] traitArray;
+
+        String selectQuery = "SELECT * "
+                + " FROM " + TABLE_NAME_TRAIT
+                + " WHERE " + COLUMN_NAME_ID_USER_IN_TRAIT + "=" + userID;
+
+        Cursor cursor = dataBase.rawQuery(selectQuery, null);
+
+        if(cursor != null && cursor.moveToFirst()) {
+            do{
+                traitArray = new double[NUMBER_OF_TRAITS];
+                for(int i = 0 ; i < NUMBER_OF_TRAITS ; i++){
+                    traitArray[i] = cursor.getFloat(cursor.getColumnIndex("T" + i));
+                }
+                traits.add(traitArray);
+            }while(cursor.moveToNext());
+        }
+
+        return traits;
     }
 
 }
