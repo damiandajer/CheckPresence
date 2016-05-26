@@ -168,7 +168,7 @@ jint rows, jint cols)
         // taka tablize mozna zwrucic do kodu java
         if (i == 30) {
             jfloatArray result;
-            result = (*env).NewFloatArray(30);
+            result = (*env).NewFloatArray(cols * rows);
             if (result == NULL) {
                 return NULL; /* out of memory error thrown */
             }

@@ -16,6 +16,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.app.memory.CopyManager;
 import com.app.picture.Frame;
 
 import org.opencv.android.OpenCVLoader;
@@ -42,10 +43,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private Boolean getBckg = true;
     private List<ImageView> cppViews, openCVViews;
     private Frame frame, backgroundFrame;
-    private List<float[]> handFeatures;
+    private List<float[]> actualHandFeatures, allHandFeatures;
+    private Context context;
 
     public CameraView(Context context, Activity activity, Camera camera){
         super(context);
+        this.context = context;
         this.mainActivity = activity;
         this.backgroundBtn = (Button) this.mainActivity.findViewById(R.id.backgroundBtn);
         this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
@@ -66,7 +69,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         initiateOpenCV();
         this.cppViews = new ArrayList<>();
         this.openCVViews = new ArrayList<>();
-        this.handFeatures = new ArrayList<>();
+        this.actualHandFeatures = new ArrayList<>();
+        this.allHandFeatures = new ArrayList<>();
         this.frame = new Frame();
         this.backgroundFrame = new Frame();
         setAllViewsToVariables();
@@ -151,7 +155,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
     public void findHandFeaturesFromSegmentatedHands(){
         frame.findHandFeatures();
-        this.handFeatures = frame.getHandFeatures();
+        this.actualHandFeatures = frame.getHandFeatures();
+        for (float[] features:frame.getHandFeatures()
+             ) {
+            this.allHandFeatures.add(features);
+        }
     }
 
     @Override
@@ -221,6 +229,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
             //System.loadLibrary("CameraVision");
             System.loadLibrary("opencv_java3");
         }
+    }
+
+    public void saveFeaturesToFile(){
+        if(actualHandFeatures != null)
+            CopyManager.saveHandFeaturesToTxt(allHandFeatures, "HandFeatures-3");
     }
 }
 
