@@ -18,7 +18,9 @@ import java.util.List;
  * Created by Damian on 19.05.2016.
  */
 final public class CopyManager {
-    private CopyManager(){};
+    private CopyManager(){}
+    private static File mFolder, file;
+
 
     /**
      * Method is saving bmp file to memory
@@ -28,44 +30,11 @@ final public class CopyManager {
      */
     public static void saveBitmapToDisk(Bitmap image, int licznik, String fileName){
 
-        //String backupDBPath = "backupBMP/TomekB"+licznik+".bmp";
-        String extr = Environment.getExternalStorageDirectory().toString();
-        File mFolder = new File(extr + "/backupBMP");
-        if (!mFolder.exists()) {
-            mFolder.mkdir();
-        }
+        createDir("backupBMP");
 
         String newFileFullName = fileName + licznik + ".bmp";
-        File backupImage = new File(mFolder.getAbsolutePath(), newFileFullName);
+        createFile(newFileFullName);
 
-        if(!backupImage.exists()){
-            System.out.println("Tworzę backupDB");
-            try {
-                backupImage.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        if(backupImage.exists()) {
-            FileOutputStream fos = null;
-            try {
-                fos = new FileOutputStream(backupImage);
-                image.compress(Bitmap.CompressFormat.PNG, 100, fos);
-                fos.flush();
-                fos.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    if (fos != null) {
-                        System.out.println("Zamykam OutputStream");
-                        fos.close();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
     }
 
     public static void saveBitmapToDisk(List<Bitmap> images, int licznik, String fileName){
@@ -80,30 +49,42 @@ final public class CopyManager {
     }
 
     public static void saveHandFeaturesToTxt(List<float[]> handFeatures, String fileName){
+        createDir("handFeatures");
+
+        String newFileFullName = fileName + ".txt";
+        createFile(newFileFullName);
+        saveFeaturesToFile(handFeatures);
+    }
+
+    private static void createDir(String nameOfDirectory){
         String extr = Environment.getExternalStorageDirectory().toString();
-        File mFolder = new File(extr + "/handFeatures");
+        mFolder = new File(extr + "/" + nameOfDirectory);
         if (!mFolder.exists()) {
             mFolder.mkdir();
         }
+    }
 
-        String newFileFullName = fileName + ".txt";
-        File results = new File(mFolder.getAbsolutePath(), newFileFullName);
+    private static void createFile(String nameOfFile){
+        file = new File(mFolder.getAbsolutePath(), nameOfFile);
 
-        if(!results.exists()){
-            System.out.println("Tworzę "+ newFileFullName);
+        if(!file.exists()){
+            System.out.println("Tworzę "+ file);
             try {
-                results.createNewFile();
+                file.createNewFile();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        if(results.exists()) {
+    }
+
+    private static void saveFeaturesToFile(List<float[]> handFeatures){
+        if(file.exists()) {
             FileOutputStream fos = null;
             try {
-                fos = new FileOutputStream(results);
+                fos = new FileOutputStream(file);
                 PrintWriter pw = new PrintWriter(fos);
                 for (float[] feature:handFeatures
-                     ) {
+                        ) {
                     System.out.println("Zapisuje dane");
                     for(int i = 0; i<30; i++){
                         pw.print(String.valueOf(feature[i]) + " ");
@@ -128,5 +109,26 @@ final public class CopyManager {
         }
     }
 
-
+    private static void saveBitmapToFile(Bitmap image){
+        if(file.exists()) {
+            FileOutputStream fos = null;
+            try {
+                fos = new FileOutputStream(file);
+                image.compress(Bitmap.CompressFormat.PNG, 100, fos);
+                fos.flush();
+                fos.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    if (fos != null) {
+                        System.out.println("Zamykam OutputStream");
+                        fos.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 }

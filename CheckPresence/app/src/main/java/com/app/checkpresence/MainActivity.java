@@ -76,7 +76,7 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed(){
-        mCameraView.saveFeaturesToFile();
+        //mCameraView.saveFeaturesToFile();
         System.exit(0);
     }
 }
