@@ -21,7 +21,7 @@ public class DataBase extends SQLiteOpenHelper{
 
     public static final String DATABASE_NAME = "baza.db";
     public static int NUMBER_OF_TRAITS = 30;
-    private static final int DB_VERSION = 4;
+    private static final int DB_VERSION = 5;
 
     public static final String TABLE_NAME_USERS = "users";
     public static final String COLUMN_NAME_ID_USER = "id_user";
@@ -53,36 +53,36 @@ public class DataBase extends SQLiteOpenHelper{
             "CREATE TABLE " + TABLE_NAME_TRAIT + " ( " +
                     COLUMN_NAME_ID_TRAIT + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                     COLUMN_NAME_ID_USER_IN_TRAIT + " INTEGER, " +
-                    "T0" + " REAL, " +
-                    "T1" + " REAL, " +
-                    "T2" + " REAL, " +
-                    "T3" + " REAL, " +
-                    "T4" + " REAL, " +
-                    "T5" + " REAL, " +
-                    "T6" + " REAL, " +
-                    "T7" + " REAL, " +
-                    "T8" + " REAL, " +
-                    "T9" + " REAL, " +
-                    "T10" + " REAL, " +
-                    "T11" + " REAL, " +
-                    "T12" + " REAL, " +
-                    "T13" + " REAL, " +
-                    "T14" + " REAL, " +
-                    "T15" + " REAL, " +
-                    "T16" + " REAL, " +
-                    "T17" + " REAL, " +
-                    "T18" + " REAL, " +
-                    "T19" + " REAL, " +
-                    "T20" + " REAL, " +
-                    "T21" + " REAL, " +
-                    "T22" + " REAL, " +
-                    "T23" + " REAL, " +
-                    "T24" + " REAL, " +
-                    "T25" + " REAL, " +
-                    "T26" + " REAL, " +
-                    "T27" + " REAL, " +
-                    "T28" + " REAL, " +
-                    "T29" + " REAL, " +
+                    "T0" + " FLOAT, " +
+                    "T1" + " FLOAT, " +
+                    "T2" + " FLOAT, " +
+                    "T3" + " FLOAT, " +
+                    "T4" + " FLOAT, " +
+                    "T5" + " FLOAT, " +
+                    "T6" + " FLOAT, " +
+                    "T7" + " FLOAT, " +
+                    "T8" + " FLOAT, " +
+                    "T9" + " FLOAT, " +
+                    "T10" + " FLOAT, " +
+                    "T11" + " FLOAT, " +
+                    "T12" + " FLOAT, " +
+                    "T13" + " FLOAT, " +
+                    "T14" + " FLOAT, " +
+                    "T15" + " FLOAT, " +
+                    "T16" + " FLOAT, " +
+                    "T17" + " FLOAT, " +
+                    "T18" + " FLOAT, " +
+                    "T19" + " FLOAT, " +
+                    "T20" + " FLOAT, " +
+                    "T21" + " FLOAT, " +
+                    "T22" + " FLOAT, " +
+                    "T23" + " FLOAT, " +
+                    "T24" + " FLOAT, " +
+                    "T25" + " FLOAT, " +
+                    "T26" + " FLOAT, " +
+                    "T27" + " FLOAT, " +
+                    "T28" + " FLOAT, " +
+                    "T29" + " FLOAT, " +
                     " FOREIGN KEY(" + COLUMN_NAME_ID_USER_IN_TRAIT + ") REFERENCES " +
                     TABLE_NAME_USERS + "("+COLUMN_NAME_ID_USER+")" +
                     " )";
@@ -126,19 +126,25 @@ public class DataBase extends SQLiteOpenHelper{
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        dropTrait();
-        createTableTrait(db);
+        if(oldVersion < 5){
+            dropTrait(db);
+            dropGroup(db);
+            dropUsers(db);
+            createTableGroup(db);
+            createTableUsers(db);
+            createTableTrait(db);
+        }
     }
 
     /**
      * Dodawanie i usuwanie poszczegolnych tabel.
      */
-    public void createTableUsers(SQLiteDatabase db){ db.execSQL(ON_CREATE_USERS); }
-    public void dropUsers(){ dataBase.execSQL(ON_DELETE_USERS); }
-    public void createTableGroup(SQLiteDatabase db){ db.execSQL(ON_CREATE_GROUP);}
-    public void dropGroup(){ dataBase.execSQL(ON_DELETE_GROUP);}
-    public void createTableTrait(SQLiteDatabase db){ db.execSQL(ON_CREATE_TRAIT);}
-    private void dropTrait() { dataBase.execSQL(ON_DELETE_TRAIT);}
+    private void createTableUsers(SQLiteDatabase db){ db.execSQL(ON_CREATE_USERS); }
+    private void dropUsers(SQLiteDatabase db){ db.execSQL(ON_DELETE_USERS); }
+    private void createTableGroup(SQLiteDatabase db){ db.execSQL(ON_CREATE_GROUP);}
+    private void dropGroup(SQLiteDatabase db){ db.execSQL(ON_DELETE_GROUP);}
+    private void createTableTrait(SQLiteDatabase db){ db.execSQL(ON_CREATE_TRAIT);}
+    private void dropTrait(SQLiteDatabase db) { db.execSQL(ON_DELETE_TRAIT);}
 
     /**
      * Dodaje do bazy grupę o podanej nazwie i zwraca id
@@ -258,7 +264,7 @@ public class DataBase extends SQLiteOpenHelper{
      */
     public User getUser(long idUser){
 
-        List<double[]> traits = new ArrayList<double[]>();
+        List<float[]> traits = new ArrayList<float[]>();
         User user;
 
         String selectQuery = "SELECT " + COLUMN_NAME_FIRST_NAME
@@ -309,10 +315,10 @@ public class DataBase extends SQLiteOpenHelper{
     /**
      * Dodaje liste cech do użytkownika o podanym ID
      * @param userID - ID użytkownika
-     * @param traits - tablica double[] z cechami
+     * @param traits - tablica float[] z cechami
      * @return long id - zwraca id dodanych cech, -1 jeśli nie udało sie dodać
      */
-    public long insertTraits(long userID, double[] traits){
+    public long insertTraits(long userID, float[] traits){
 
         ContentValues values = new ContentValues();
         values.put(COLUMN_NAME_ID_USER_IN_TRAIT, userID);
@@ -324,14 +330,14 @@ public class DataBase extends SQLiteOpenHelper{
     }
 
     /**
-     * Zwraca liste tablic double[] z cechami użytkownika
+     * Zwraca liste tablic float[] z cechami użytkownika
      * @param userID - ID Użytkownika do pobrania
-     * @return List<double[]> - lista tablic cech
+     * @return List<float[]> - lista tablic cech
      */
-    public List<double[]> getUserTraits(long userID){
+    public List<float[]> getUserTraits(long userID){
 
-        List<double[]> traits = new ArrayList<double[]>();
-        double[] traitArray;
+        List<float[]> traits = new ArrayList<float[]>();
+        float[] traitArray;
 
         String selectQuery = "SELECT * "
                 + " FROM " + TABLE_NAME_TRAIT
@@ -341,7 +347,7 @@ public class DataBase extends SQLiteOpenHelper{
 
         if(cursor != null && cursor.moveToFirst()) {
             do{
-                traitArray = new double[NUMBER_OF_TRAITS];
+                traitArray = new float[NUMBER_OF_TRAITS];
                 for(int i = 0 ; i < NUMBER_OF_TRAITS ; i++){
                     traitArray[i] = cursor.getFloat(cursor.getColumnIndex("T" + i));
                 }

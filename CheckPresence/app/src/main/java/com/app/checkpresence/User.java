@@ -12,9 +12,9 @@ public class User {
     private int indexNumber;
     private String groupName;
 
-    private List<double[]> traits;
+    private List<float[]> traits;
 
-    public User(String firstName, String secondName, int indexNumber, String groupName, List<double[]> traits) {
+    public User(String firstName, String secondName, int indexNumber, String groupName, List<float[]> traits) {
         this.firstName = firstName;
         this.secondName = secondName;
         this.indexNumber = indexNumber;
@@ -40,9 +40,9 @@ public class User {
 
     /**
      * Zwraca listę z tablicami double - cechami użytkownika
-     * @return List<double[]>
+     * @return List<float[]>
      */
-    public List<double[]> getTraits() {
+    public List<float[]> getTraits() {
         return traits;
     }
 
