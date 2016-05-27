@@ -1,4 +1,4 @@
-package com.app.checkpresence;
+package com.app.segmentation;
 
 import android.graphics.Bitmap;
 import android.util.Log;
@@ -23,7 +23,7 @@ public class OpenCVSubtraction implements Runnable {
     int height, width, threshold;
     Mat imgToProcess1, imgToProcess2, imgToProcess, mask;
     int[] intARGBArray;
-    List<Integer> thresholds;
+    float[] handFeatures;
     private native int[] deleteSmallAreas(int[] intARGBArray, int height, int width);
 
 
@@ -48,7 +48,6 @@ public class OpenCVSubtraction implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Thread is processing frame with OpenCV");
         setConfToBitmap();
         createMatsFromBitmap();
         processMats();
@@ -112,4 +111,5 @@ public class OpenCVSubtraction implements Runnable {
     private void convertIntArrayToBitmap(){
         bmp.copyPixelsFromBuffer(IntBuffer.wrap(intARGBArray));
     }
+
 }

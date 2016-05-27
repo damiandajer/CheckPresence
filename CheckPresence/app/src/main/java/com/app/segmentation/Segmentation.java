@@ -1,4 +1,4 @@
-package com.app.checkpresence;
+package com.app.segmentation;
 
 /**
  * Created by Damian on 16.05.2016.
@@ -26,7 +26,7 @@ public class Segmentation implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Thread is processing frame with condition: " + warunek);
+        //System.out.println("Thread is processing frame with condition: " + warunek);
         this.segmentatedPicture = myNativeCode(argb, height, width, warunek);
     }
 

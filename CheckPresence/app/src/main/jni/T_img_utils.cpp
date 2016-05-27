@@ -1,7 +1,5 @@
 #include "T_img_utils.h"
 
-#include <string>
-
 bool replace(std::string& str, const std::string& from, const std::string& to)
 {
 	size_t start_pos = str.find(from);
@@ -121,6 +119,14 @@ double **new_double_image(int rows, int cols)
 	for (i = 1; i < rows; i++)
 		a[i] = a[i - 1] + cols;
 	return a;
+}
+
+unsigned char **get_copy_char_image(unsigned char **a, int h, int w)
+{
+	int i;
+	unsigned char **b = new_char_image(h, w);
+	for (int y = 0; y<h; y++) for (int x = 0; x<w; x++) b[y][x] = a[y][x];
+	return b;
 }
 
 

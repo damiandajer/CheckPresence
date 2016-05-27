@@ -1,4 +1,4 @@
-package com.app.checkpresence;
+package com.app.picture;
 
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
@@ -26,7 +26,7 @@ public class CreateBitmapFromPixels implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Thread is creating Bitmap from array");
+        //System.out.println("Thread is creating Bitmap from array");
         this.bmp = createProcessedBitmap(inputColorSegmentationDataPicture, height, width);
     }
 

@@ -1,4 +1,4 @@
-package com.app.checkpresence;
+package com.app.database;
 
 import android.content.ContentValues;
 import android.content.Context;

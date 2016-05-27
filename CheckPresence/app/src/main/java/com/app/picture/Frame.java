@@ -1,7 +1,12 @@
-package com.app.checkpresence;
+package com.app.picture;
 
 import android.graphics.Bitmap;
 import android.hardware.Camera;
+
+import com.app.checkpresence.CameraView;
+import com.app.handFeatures.HandFeaturesThreads;
+import com.app.segmentation.OpenCVSubtractionThreads;
+import com.app.segmentation.SegmentationThreads;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,8 +20,11 @@ public class Frame {
     Bitmap bmpBackground, actualFrame;
     private List<Bitmap> openCVBitmaps;
     private List<Bitmap> cppBitmaps;
+    private List<int[]> openCVIntArrays;
+    private List<float[]> handFeatures;
     private int numberOfConditions;
     private int min, max, numberOfThresholds;
+    private int segmentatedHeight, segmentatedWidth;
 
     public Frame(){}
 
@@ -89,6 +97,11 @@ public class Frame {
         return bitmapFromPixelsThreads.getBitmaps();
     }
 
+    private void setSizeOfSegmentatedBitmaps(int height, int width){
+        this.segmentatedHeight = height;
+        this.segmentatedWidth = width;
+    }
+
     public void setBackground(Bitmap bmpBackground){
         this.bmpBackground = bmpBackground;
     }
@@ -106,15 +119,28 @@ public class Frame {
         return this.argb;
     }
 
+    public void findHandFeatures(){
+        handFeatures = new ArrayList<>();
+
+        HandFeaturesThreads handFeaturesThreads = HandFeaturesThreads.getNewObject();
+        handFeaturesThreads.addNewThread(openCVIntArrays, this.segmentatedHeight, this.segmentatedWidth);
+        handFeaturesThreads.executeThreads();
+
+        this.handFeatures = handFeaturesThreads.getListOfArraysWithHandFeatures();
+    }
+
     public void segmentateFrameWithOpenCV(){
         openCVBitmaps = new ArrayList<>();
+        openCVIntArrays = new ArrayList<>();
 
         OpenCVSubtractionThreads openCVSubtractionThreads = OpenCVSubtractionThreads.getNewObject();
         openCVSubtractionThreads.createListOfThresholds(this.min, this.max, this.numberOfThresholds);
         openCVSubtractionThreads.addNewThread(actualFrame, bmpBackground);
         openCVSubtractionThreads.executeThreads();
 
+        openCVIntArrays = openCVSubtractionThreads.getListOfIntArrays();
         openCVBitmaps = openCVSubtractionThreads.getBitmaps();
+        setSizeOfSegmentatedBitmaps(openCVBitmaps.get(0).getHeight(), openCVBitmaps.get(0).getWidth());
     }
 
     public void segmentateFrameWithCpp(){
@@ -144,5 +170,9 @@ public class Frame {
         this.min = min;
         this.max = max;
         this.numberOfThresholds = numberOfThresholds;
+    }
+
+    public List<float[]> getHandFeatures() {
+        return handFeatures;
     }
 }

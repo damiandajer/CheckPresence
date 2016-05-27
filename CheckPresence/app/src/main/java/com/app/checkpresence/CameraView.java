@@ -1,4 +1,4 @@
-package com.app.checkpresence;
+﻿package com.app.checkpresence;
 
 /**
  * Created by Damian on 04.04.2016.
@@ -15,6 +15,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.app.memory.CopyManager;
+import com.app.picture.Frame;
 
 import org.opencv.android.OpenCVLoader;
 
@@ -37,12 +40,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private ImageView bottomRight, bottomLeft, topLeft, topCenter, topRight, bottomCenter;
     private Button backgroundBtn;
     private Bitmap bmpBackground;
-    Boolean getBckg = true;
-    List<ImageView> cppViews, openCVViews;
-    Frame frame, backgroundFrame;
+    private Boolean getBckg = true;
+    private List<ImageView> cppViews, openCVViews;
+    private Frame frame, backgroundFrame;
+    private List<float[]> actualHandFeatures, allHandFeatures;
+    private Context context;
 
     public CameraView(Context context, Activity activity, Camera camera){
         super(context);
+        this.context = context;
         this.mainActivity = activity;
         this.backgroundBtn = (Button) this.mainActivity.findViewById(R.id.backgroundBtn);
         this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
@@ -63,6 +69,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         initiateOpenCV();
         this.cppViews = new ArrayList<>();
         this.openCVViews = new ArrayList<>();
+        this.actualHandFeatures = new ArrayList<>();
+        this.allHandFeatures = new ArrayList<>();
         this.frame = new Frame();
         this.backgroundFrame = new Frame();
         setAllViewsToVariables();
@@ -103,6 +111,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     savedPic.setText(pictureSaved + " processed");
 
                     segmentateImagesGivenAsBytes(data);
+                    findHandFeaturesFromSegmentatedHands();
 
                     //set frames to 0 (return to the beginning of loop)
                     frames = 0;
@@ -120,7 +129,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         Camera.Parameters parameters = mCamera.getParameters();
         parameters.set("orientation", "portrait");
         parameters.setRotation(90);
-
         Camera.Size size = parameters.getPreviewSize();
         parameters.setPreviewSize(size.width / 2, size.height / 2);
         mCamera.setParameters(parameters);
@@ -137,22 +145,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         Bitmap liveViewBitmap = frame.getActualBitmap();
         setImageToImageView(bottomCenter, liveViewBitmap);
 
-        //-----------------OpenCV part (substracting background)----------------------------------------------
         frame.setBackground(bmpBackground);
         frame.setThresholds(10, 60, 4);
         frame.segmentateFrameWithOpenCV();
         List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
         setBitmapsToViews(openCVViews, openCVBitmaps);
-        //CopyManager.saveBitmapToDisk(openCVBitmaps.get(0), pictureSaved, "OpenCV1-");
-        //CopyManager.saveBitmapToDisk(openCVBitmaps.get(1), pictureSaved, "OpenCV2-");
-        //CopyManager.saveBitmapToDisk(openCVBitmaps.get(2), pictureSaved, "OpenCV3-");
 
-        //processing frame segmentation
-        frame.setNumberOfConditions(3);
-        frame.segmentateFrameWithCpp();
-        List<Bitmap> cppBitmaps = frame.getCppBitmaps();
+        //CopyManager.saveBitmapToDisk(openCVBitmaps, pictureSaved, "OpenCV");
+    }
 
-        setBitmapsToViews(cppViews, cppBitmaps);
+    public void findHandFeaturesFromSegmentatedHands(){
+        frame.findHandFeatures();
+        this.actualHandFeatures = frame.getHandFeatures();
+        for (float[] features:frame.getHandFeatures()
+             ) {
+            this.allHandFeatures.add(features);
+        }
     }
 
     @Override
@@ -222,6 +230,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
             //System.loadLibrary("CameraVision");
             System.loadLibrary("opencv_java3");
         }
+    }
+
+    public void saveFeaturesToFile(){
+        if(actualHandFeatures != null)
+            CopyManager.saveHandFeaturesToTxt(allHandFeatures, "HandFeatures-3");
     }
 }
 

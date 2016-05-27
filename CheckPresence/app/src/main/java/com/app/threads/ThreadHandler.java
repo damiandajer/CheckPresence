@@ -1,4 +1,4 @@
-package com.app.checkpresence;
+package com.app.threads;
 
 import java.util.ArrayList;
 import java.util.List;
