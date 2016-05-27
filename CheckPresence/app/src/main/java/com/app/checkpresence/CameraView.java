@@ -1,4 +1,4 @@
-﻿package com.app.checkpresence;
+package com.app.checkpresence;
 
 /**
  * Created by Damian on 04.04.2016.
