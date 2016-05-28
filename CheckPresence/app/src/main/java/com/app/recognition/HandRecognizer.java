@@ -31,8 +31,11 @@ public class HandRecognizer {
      * Default constructor which provides our default normalization
      */
     public HandRecognizer() {
-        // norm = new StandardNormalizer();
-        norm = (List l) -> {};
+        norm = new Normalizer() {
+           @Override
+           public void process(List vector) {
+           }
+       };
     }
     /**
      * It recognizes which of the samples provided by data fits ours scales best
@@ -52,9 +55,10 @@ public class HandRecognizer {
         Map<String,List<FloatWrapper>> usersIDandVectors = getStringFloatWrapperMapFromStringFloatMap(data);
         List<FloatWrapper> vector = getFloatWrapperListFromFloatArray(values);
         norm.process(vector);
-        usersIDandVectors.forEach( (k,v) -> {
-            norm.process(v);
-        });
+        for (Map.Entry<String, List<FloatWrapper>> entry : usersIDandVectors.entrySet())
+        {
+                norm.process(entry.getValue());
+        }
         double min = 0;
         for(int i = 0; i < vector.size(); i++)
         {
@@ -90,10 +94,11 @@ public class HandRecognizer {
     private Map<String,List<FloatWrapper>> getStringFloatWrapperMapFromStringFloatMap(Map<String,float[]> usersIDandVectors)
     {
         Map<String,List<FloatWrapper>> result = new HashMap<>();
-        usersIDandVectors.forEach( (k,v) -> {
-            List<FloatWrapper> vec = getFloatWrapperListFromFloatArray(v);
-            result.put(k, vec);
-        });
+        for (Map.Entry<String, float[]> entry : usersIDandVectors.entrySet())
+        {
+            List<FloatWrapper> vec = getFloatWrapperListFromFloatArray(entry.getValue());
+                result.put(entry.getKey(), vec);
+        }
         return result;
     }
     /**
