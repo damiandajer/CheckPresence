@@ -9,7 +9,9 @@ import android.database.sqlite.SQLiteOpenHelper;
 import com.app.checkpresence.User;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Szymon on 2016-04-10.
@@ -356,6 +358,26 @@ public class DataBase extends SQLiteOpenHelper{
         }
 
         return traits;
+    }
+
+    public Map<String, List<float[]>> getAllUsersWithTraits(){
+        List<User> users = new ArrayList<>();
+        List<float[]> traits = new ArrayList<>();
+        int indexNumber;
+        Map<String, List<float[]>> usersWithTraits = new HashMap<>();
+        users = getAllUsers();
+
+        for (User u:users
+             ) {
+            //TODO
+            /*Ogólnie taka koncepcja, żeby tutaj od kazdego użytkownika pobierało
+            jego wszystkie cechy i dodawalo do mapy. Widziałem, że mamy w bazie i ID i nrAlbumu
+            dlatego nie kończętego sam bo nie chcę się wpieprzać w bazę, którą zarządza @Szymon.
+            Metodę rozpisz wg własnej koncepcji, tak jak to będzie najwygodniej dla Ciebie,
+            tylko żeby zwracało mapę taką jak zadeklarowana ta wyżej.
+             */
+        }
+        return usersWithTraits;
     }
 
 }

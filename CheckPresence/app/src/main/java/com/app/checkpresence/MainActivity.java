@@ -15,7 +15,7 @@ import com.app.database.DataBase;
 public class MainActivity extends Activity {
     private Camera mCamera = null;
     private CameraView mCameraView = null;
-    private DataBase dataBase;
+    private static DataBase dataBase;
     private Context context;
 
 
@@ -49,7 +49,6 @@ public class MainActivity extends Activity {
         });
 
         openDB();
-        //System.out.println(myNativeCode());
     }
 
     static {
@@ -78,5 +77,9 @@ public class MainActivity extends Activity {
     public void onBackPressed(){
         //mCameraView.saveFeaturesToFile();
         System.exit(0);
+    }
+
+    public static DataBase getDataBase(){
+        return dataBase;
     }
 }

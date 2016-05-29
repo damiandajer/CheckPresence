@@ -13,17 +13,22 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.app.database.DataBase;
 import com.app.memory.CopyManager;
 import com.app.picture.Frame;
+import com.app.recognition.HandRecognizer;
 
 import org.opencv.android.OpenCVLoader;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.opencv.core.Core.absdiff;
 import static org.opencv.core.Core.subtract;
@@ -38,19 +43,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private int pictureSaved = 0;
     private TextView savedPic;
     private ImageView bottomRight, bottomLeft, topLeft, topCenter, topRight, bottomCenter;
-    private Button backgroundBtn;
+    private ImageButton backgroundBtn;
     private Bitmap bmpBackground;
     private Boolean getBckg = true;
     private List<ImageView> cppViews, openCVViews;
     private Frame frame, backgroundFrame;
     private List<float[]> actualHandFeatures, allHandFeatures;
-    private Context context;
+    private HandRecognizer handRecognizer;
+    private Map<String, List<float[]>> usersWithTraits;
+    private DataBase dataBase;
+    private List<String> recognisedUsers;
 
     public CameraView(Context context, Activity activity, Camera camera){
         super(context);
-        this.context = context;
+
         this.mainActivity = activity;
-        this.backgroundBtn = (Button) this.mainActivity.findViewById(R.id.backgroundBtn);
+        this.backgroundBtn = (ImageButton) this.mainActivity.findViewById(R.id.backgroundBtn);
         this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
         mCamera = camera;
         //get the holder and set this class as the callback, so we can get camera data here
@@ -59,6 +67,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_NORMAL);
         mCamera.setDisplayOrientation(90);
         setCameraParameters();
+        this.dataBase = MainActivity.getDataBase();
         this.backgroundBtn.setOnClickListener(new View.OnClickListener(){
 
             @Override
@@ -71,8 +80,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         this.openCVViews = new ArrayList<>();
         this.actualHandFeatures = new ArrayList<>();
         this.allHandFeatures = new ArrayList<>();
+        this.recognisedUsers = new ArrayList<>();
+        this.usersWithTraits = new HashMap<>();
         this.frame = new Frame();
         this.backgroundFrame = new Frame();
+        this.handRecognizer = new HandRecognizer();
         setAllViewsToVariables();
         setCppViewsList();
         setOpenCVViewsList();
@@ -112,6 +124,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
                     segmentateImagesGivenAsBytes(data);
                     findHandFeaturesFromSegmentatedHands();
+                    recognizeUser();
 
                     //set frames to 0 (return to the beginning of loop)
                     frames = 0;
@@ -161,6 +174,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
              ) {
             this.allHandFeatures.add(features);
         }
+    }
+
+    public void recognizeUser(){
+        //recognisedUsers = handRecognizer.recognise(actualHandFeatures, usersWithTraits);
     }
 
     @Override
@@ -235,6 +252,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     public void saveFeaturesToFile(){
         if(actualHandFeatures != null)
             CopyManager.saveHandFeaturesToTxt(allHandFeatures, "HandFeatures-3");
+    }
+
+    private void getAllUsersWithTraits(){
+        usersWithTraits = this.dataBase.getAllUsersWithTraits();
     }
 }
 
