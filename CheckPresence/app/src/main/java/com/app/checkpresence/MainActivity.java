@@ -87,6 +87,12 @@ public class MainActivity extends Activity {
         System.exit(0);
     }
 
+    @Override
+    public void onResume(){
+        super.onResume();
+        //openCamera();
+    }
+
     public void openCamera(){
         try{
             mCamera = Camera.open(1);//you can use open(int) to use different cameras
@@ -100,10 +106,12 @@ public class MainActivity extends Activity {
     }
 
     private void startActivityAddNewUser(){
-        mCamera.setPreviewCallback(null);
-        mCamera.stopPreview();
-        mCamera.release();
-        mCamera = null;
+        if(mCamera != null) {
+            mCamera.setPreviewCallback(null);
+            mCamera.stopPreview();
+            mCamera.release();
+            mCamera = null;
+        }
         mCameraView.setMarkerCameraNull();
         Intent intent = new Intent(this, AddUserActivity.class);
         startActivity(intent);

@@ -7,8 +7,6 @@ import android.hardware.Camera;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -16,8 +14,6 @@ import com.app.database.DataBase;
 import com.app.memory.CopyManager;
 import com.app.picture.Frame;
 import com.app.recognition.HandRecognizer;
-
-import org.opencv.android.OpenCVLoader;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,6 +26,7 @@ import java.util.Map;
  */
 public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Callback {
     Activity mainActivity;
+    AddUserActivity addUserActivity;
     protected SurfaceHolder mHolder;
     protected Camera mCamera;
     public static Camera.Size size;
@@ -45,11 +42,16 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     private Map<String, List<float[]>> usersWithTraits;
     private DataBase dataBase;
     private List<String> recognisedUsers;
+    private String firstName;
+    private String secondName;
+    private String groupName;
+    private int indexUser;
 
-    public AddUserCameraView(Context context, Activity activity, Camera camera){
+    public AddUserCameraView(Context context, Activity activity, AddUserActivity addUserActivity, Camera camera){
         super(context);
 
         this.mainActivity = activity;
+        this.addUserActivity = addUserActivity;
         this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
         mCamera = camera;
         //get the holder and set this class as the callback, so we can get camera data here
@@ -105,7 +107,8 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
                     findHandFeaturesFromSegmentatedHands();
                     if(checkIfAllFeatures()){
                         addUser();
-                        closeActivity();
+                        //createUser();
+                        //addUserActivity.closeActivity();
                     }
 
                     //set frames to 0 (return to the beginning of loop)
@@ -140,7 +143,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         setImageToImageView(bottomCenter, liveViewBitmap);
 
         frame.setBackground(bmpBackground);
-        frame.setThresholds(10, 60, 4);
+        frame.setThresholds(10, 110, 3);
         frame.segmentateFrameWithOpenCV();
         //List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
 
@@ -224,14 +227,34 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     }
 
     private void addUser(){
-        //dataBase.
+        mCamera.stopPreview();
+        addUserActivity.addUserData();
+    }
+
+    public void createUser(){
+        User user = new User(firstName, secondName, indexUser, groupName, actualHandFeatures);
+        dataBase.insertUser(user);
     }
 
     public void closeActivity(){
         mCamera.setPreviewCallback(null);
         mCamera.stopPreview();
         mCamera.release();
-        mCamera = null;
-        mainActivity.finish();
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public void setSecondName(String secondName) {
+        this.secondName = secondName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+
+    public void setIndexUser(int indexUser) {
+        this.indexUser = indexUser;
     }
 }

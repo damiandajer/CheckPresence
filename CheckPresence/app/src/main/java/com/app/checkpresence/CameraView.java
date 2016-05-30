@@ -132,6 +132,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     segmentateImagesGivenAsBytes(data);
                     findHandFeaturesFromSegmentatedHands();
                     recognizeUser();
+                    if(recognisedUsers.size() != 0)
+                        System.out.println(recognisedUsers.get(0));
 
                     //set frames to 0 (return to the beginning of loop)
                     frames = 0;
@@ -184,7 +186,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
     public void recognizeUser(){
         getAllUsersWithTraits();
-        recognisedUsers = handRecognizer.recognise(actualHandFeatures.get(0), usersWithTraits);
+        if (actualHandFeatures.size() != 0)
+            recognisedUsers = handRecognizer.recognise(actualHandFeatures.get(0), usersWithTraits);
     }
 
     @Override
@@ -272,6 +275,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
     private void openCameraAndSetParameters(){
         try{
+            mCamera.release();
+            mCamera = null;
             mCamera = Camera.open(1);//you can use open(int) to use different cameras
         } catch (Exception e){
             Log.d("ERROR", "Failed to get camera: " + e.getMessage());
