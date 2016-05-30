@@ -224,7 +224,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     }
 
     private void addUser(){
-
+        //dataBase.
     }
 
     public void closeActivity(){

@@ -21,6 +21,7 @@ import com.app.database.DataBase;
 import com.app.memory.CopyManager;
 import com.app.picture.Frame;
 import com.app.recognition.HandRecognizer;
+import com.app.recognition.StandardNormalizer;
 
 import org.opencv.android.OpenCVLoader;
 
@@ -86,7 +87,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         this.usersWithTraits = new HashMap<>();
         this.frame = new Frame();
         this.backgroundFrame = new Frame();
-        this.handRecognizer = new HandRecognizer();
+        this.handRecognizer = new HandRecognizer(new StandardNormalizer());
         setAllViewsToVariables();
         setCppViewsList();
         setOpenCVViewsList();
@@ -183,7 +184,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
     public void recognizeUser(){
         getAllUsersWithTraits();
-        //recognisedUsers = handRecognizer.recognise(actualHandFeatures, usersWithTraits);
+        recognisedUsers = handRecognizer.recognise(actualHandFeatures.get(0), usersWithTraits);
     }
 
     @Override

@@ -31,33 +31,70 @@ public class HandRecognizer {
      * Default constructor which provides our default normalization
      */
     public HandRecognizer() {
+        // norm = new StandardNormalizer();
+        //norm = (List l) -> {};
         norm = new Normalizer() {
-           @Override
-           public void process(List vector) {
-           }
-       };
+            @Override
+            public void process(List vector) {
+            }
+        };
     }
+
+    public List<String> recognise(float[] values, Map<String,List<float[]>> data)
+    {
+        int numberOfSamples = 0;
+        for (Map.Entry<String, List<float[]>> entry : data.entrySet())
+        {
+            numberOfSamples = entry.getValue().size();
+            break; //assumming that vectors are equal in size
+        }
+        Map<String,float[]> passer = new HashMap<>();
+        List<List<String>> result = new ArrayList<>();
+
+        for(int i = 0; i < numberOfSamples; i++)
+        {
+            for (Map.Entry<String, List<float[]>> entry : data.entrySet())
+            {
+                passer.put(entry.getKey(),entry.getValue().get(i));
+
+            }
+            result.add(recogniseVector(values,passer));
+            passer.clear();
+        }
+
+        List<String> processedResult = getFinalIdsList(result);
+        return processedResult;
+    }
+
+
+
     /**
      * It recognizes which of the samples provided by data fits ours scales best
-     * @param values float[] Scales previously taken by our app
-     * @param data Map<String,float[]> Map which pairs unique user id (String) and
+     * @param values float[]  Scales previously taken by our app
+     * @param  data Map<String,float[]> Map which pairs unique user id (String) and
      * array with his scales
      * @return List<String> result.Ranking(maximum 5 results) of matches that fits best. It contains
      * user ids provided by data param. Result list is sorted by probability of proper match.
      * e.g. result.get(0)  has scales that matches pattern best. result.get(1) had less proper
      * matches etc.
      */
-    public List<String> recognise(float[] values, Map<String,float[]> data)
+    private List<String> recogniseVector(float[] values, Map<String,float[]> data)
     {
         List<String> result = new ArrayList<String>();
         for(int i = 0; i < values.length; i++)
             result.add("None"); //default values
         Map<String,List<FloatWrapper>> usersIDandVectors = getStringFloatWrapperMapFromStringFloatMap(data);
         List<FloatWrapper> vector = getFloatWrapperListFromFloatArray(values);
+
         norm.process(vector);
+
+        /*usersIDandVectors.forEach( (k,v) -> {
+            norm.process(v);
+        });
+        */
         for (Map.Entry<String, List<FloatWrapper>> entry : usersIDandVectors.entrySet())
         {
-                norm.process(entry.getValue());
+            norm.process(entry.getValue());
         }
         double min = 0;
         for(int i = 0; i < vector.size(); i++)
@@ -77,7 +114,7 @@ public class HandRecognizer {
                 }
             }
         }
-        result = getStringIdsListFromStringFitIdsList(result);
+
         return result;
     }
     /** Private stuff *************************/
@@ -88,22 +125,28 @@ public class HandRecognizer {
 
     /**
      * Function used to transform Map<String,float[]> to Map<String,List<FloatWrapper>>
-     * @param usersIDandVectors Map<String,float[]>
+     * @param  usersIDandVectors Map<String,float[]>
      * @return Map<String,List<FloatWrapper>>
      */
     private Map<String,List<FloatWrapper>> getStringFloatWrapperMapFromStringFloatMap(Map<String,float[]> usersIDandVectors)
     {
         Map<String,List<FloatWrapper>> result = new HashMap<>();
+        /*
+        usersIDandVectors.forEach( (k,v) -> {
+                List<FloatWrapper> vec = getFloatWrapperListFromFloatArray(v);
+                result.put(k, vec);
+        });
+        */
         for (Map.Entry<String, float[]> entry : usersIDandVectors.entrySet())
         {
             List<FloatWrapper> vec = getFloatWrapperListFromFloatArray(entry.getValue());
-                result.put(entry.getKey(), vec);
+            result.put(entry.getKey(), vec);
         }
         return result;
     }
     /**
      * Function used to transform float[] to List<FloatWrapper>
-     * @param vector float[]
+     * @param  vector float[]
      * @return List<FloatWrapper>
      */
     private List<FloatWrapper> getFloatWrapperListFromFloatArray(float[] vector)
@@ -134,9 +177,10 @@ public class HandRecognizer {
     }
     /**
      *
-     * @param fitIdsList
+     * @param
      * @return
      */
+    /*
     private List<String> getStringIdsListFromStringFitIdsList(List<String> fitIdsList)
     {
         List<String> result = new ArrayList<>(5);
@@ -150,6 +194,30 @@ public class HandRecognizer {
                 fitIdsCounter.put(tmpId, fitIdsCounter.get(tmpId) + 1);
         }
 
+        for (Map.Entry<String, Integer> entry : fitIdsCounter.entrySet())
+        	listOfIdCounterPairs.add(new InnerPair(entry.getKey(),entry.getValue()));
+        SortInnerPairList(listOfIdCounterPairs);
+        for(int i = 0; i < listOfIdCounterPairs.size() && i < 5 ; i++)
+            result.add(listOfIdCounterPairs.get(i).getId());
+        return result;
+    }
+    */
+    private List<String> getFinalIdsList(List<List<String>> listOfLists)
+    {
+        List<String> result = new ArrayList<>(5);
+        Map<String,Integer> fitIdsCounter = new HashMap<>();
+        List<InnerPair> listOfIdCounterPairs = new ArrayList<>();
+
+        for(List<String> list:listOfLists)
+        {
+            for(String el: list)
+            {
+                if(fitIdsCounter.get(el) == null)
+                    fitIdsCounter.put(el, 1);
+                else
+                    fitIdsCounter.put(el, fitIdsCounter.get(el) + 1);
+            }
+        }
         for (Map.Entry<String, Integer> entry : fitIdsCounter.entrySet())
             listOfIdCounterPairs.add(new InnerPair(entry.getKey(),entry.getValue()));
         SortInnerPairList(listOfIdCounterPairs);
