@@ -25,10 +25,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.opencv.core.Core.absdiff;
-import static org.opencv.core.Core.subtract;
-import static org.opencv.imgproc.Imgproc.cvtColor;
-
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     Activity mainActivity;
     private SurfaceHolder mHolder;

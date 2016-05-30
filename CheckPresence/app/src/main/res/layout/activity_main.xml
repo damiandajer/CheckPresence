@@ -12,6 +12,25 @@
 
     </FrameLayout>
 
+    <android.support.v4.widget.DrawerLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/drawer_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ListView
+            android:id="@+id/navList"
+            android:layout_width="80dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="right"
+            android:background="#33383c">
+
+
+        </ListView>
+
+    </android.support.v4.widget.DrawerLayout>
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -106,5 +125,6 @@
         android:layout_gravity="left|bottom"
         android:background="@android:drawable/ic_menu_close_clear_cancel"
         android:padding="20dp"/>
+
 
 </FrameLayout>
