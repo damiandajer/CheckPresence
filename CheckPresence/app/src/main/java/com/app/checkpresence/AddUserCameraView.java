@@ -1,9 +1,5 @@
 package com.app.checkpresence;
 
-/**
- * Created by Damian on 04.04.2016.
- */
-
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -12,7 +8,6 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -30,11 +25,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.opencv.core.Core.absdiff;
-import static org.opencv.core.Core.subtract;
-import static org.opencv.imgproc.Imgproc.cvtColor;
-
-public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
+/**
+ * Created by Damian on 30.05.2016.
+ */
+public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Callback {
     Activity mainActivity;
     protected SurfaceHolder mHolder;
     protected Camera mCamera;
@@ -42,24 +36,20 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     protected int frames = 1;
     protected int pictureSaved = 0;
     protected TextView savedPic;
-    private ImageView bottomRight, bottomLeft, topLeft, topCenter, topRight, bottomCenter;
-    private ImageButton backgroundBtn;
+    private ImageView bottomCenter;
     private Bitmap bmpBackground;
     private Boolean getBckg = true;
-    private List<ImageView> cppViews, openCVViews;
     private Frame frame, backgroundFrame;
     private List<float[]> actualHandFeatures, allHandFeatures;
     private HandRecognizer handRecognizer;
     private Map<String, List<float[]>> usersWithTraits;
     private DataBase dataBase;
     private List<String> recognisedUsers;
-    private boolean cameraNull;
 
-    public CameraView(Context context, Activity activity, Camera camera){
+    public AddUserCameraView(Context context, Activity activity, Camera camera){
         super(context);
 
         this.mainActivity = activity;
-        this.backgroundBtn = (ImageButton) this.mainActivity.findViewById(R.id.backgroundBtn);
         this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
         mCamera = camera;
         //get the holder and set this class as the callback, so we can get camera data here
@@ -69,17 +59,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         mCamera.setDisplayOrientation(90);
         setCameraParameters();
         this.dataBase = MainActivity.getDataBase();
-        this.cameraNull = false;
-        this.backgroundBtn.setOnClickListener(new View.OnClickListener(){
-
-            @Override
-            public void onClick(View v) {
-                getBckg = true;
-            }
-        });
-        initiateOpenCV();
-        this.cppViews = new ArrayList<>();
-        this.openCVViews = new ArrayList<>();
         this.actualHandFeatures = new ArrayList<>();
         this.allHandFeatures = new ArrayList<>();
         this.recognisedUsers = new ArrayList<>();
@@ -88,8 +67,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         this.backgroundFrame = new Frame();
         this.handRecognizer = new HandRecognizer();
         setAllViewsToVariables();
-        setCppViewsList();
-        setOpenCVViewsList();
     }
 
 
@@ -97,10 +74,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
         try{
-            if(cameraNull == true){
-                openCameraAndSetParameters();
-                cameraNull = false;
-            }
             //when the surface is created, we can set the camera to draw images in this surfaceholder
             mCamera.setPreviewDisplay(surfaceHolder);
             mCamera.startPreview();
@@ -126,11 +99,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                 if(frames == 5) {
                     //number of processed pictures
                     ++pictureSaved;
-                    savedPic.setText(pictureSaved + " processed");
+                    //savedPic.setText(pictureSaved + " processed");
 
                     segmentateImagesGivenAsBytes(data);
                     findHandFeaturesFromSegmentatedHands();
-                    recognizeUser();
+                    if(checkIfAllFeatures()){
+                        addUser();
+                        closeActivity();
+                    }
 
                     //set frames to 0 (return to the beginning of loop)
                     frames = 0;
@@ -166,8 +142,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         frame.setBackground(bmpBackground);
         frame.setThresholds(10, 60, 4);
         frame.segmentateFrameWithOpenCV();
-        List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
-        setBitmapsToViews(openCVViews, openCVBitmaps);
+        //List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
 
         //CopyManager.saveBitmapToDisk(openCVBitmaps, pictureSaved, "OpenCV");
     }
@@ -176,7 +151,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         frame.findHandFeatures();
         this.actualHandFeatures = frame.getHandFeatures();
         for (float[] features:frame.getHandFeatures()
-             ) {
+                ) {
             this.allHandFeatures.add(features);
         }
     }
@@ -218,23 +193,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     }
 
     private void setAllViewsToVariables(){
-        this.bottomRight = (ImageView) this.mainActivity.findViewById(R.id.segmentatedHand1);
-        this.bottomLeft = (ImageView) this.mainActivity.findViewById(R.id.segmentatedHand3);
-        this.topLeft = (ImageView) this.mainActivity.findViewById(R.id.segmentatedHand4);
-        this.topCenter = (ImageView) this.mainActivity.findViewById(R.id.segmentatedHand5);
-        this.topRight = (ImageView) this.mainActivity.findViewById(R.id.segmentatedHand6);
         this.bottomCenter = (ImageView) this.mainActivity.findViewById(R.id.liveView);
-    }
-
-    private void setCppViewsList(){
-        this.cppViews.add(bottomRight);
-        this.cppViews.add(bottomLeft);
-    }
-
-    private void setOpenCVViewsList(){
-        this.openCVViews.add(topRight);
-        this.openCVViews.add(topCenter);
-        this.openCVViews.add(topLeft);
     }
 
     public void setBitmapsToViews(List<ImageView> views, List<Bitmap> bitmaps){
@@ -242,16 +201,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         for (ImageView view:views) {
             setImageToImageView(view, bitmaps.get(counter));
             ++counter;
-        }
-    }
-
-    private static void initiateOpenCV(){
-        if (!OpenCVLoader.initDebug()) {
-            Log.e("TEST", "OpenCVLoader Failed");
-        }else {
-            Log.e("TEST", "OpenCVLoader Succeeded");
-            //System.loadLibrary("CameraVision");
-            System.loadLibrary("opencv_java3");
         }
     }
 
@@ -265,18 +214,24 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         usersWithTraits = this.dataBase.getAllUsersWithTraits();
     }
 
-    public void setMarkerCameraNull(){
-        cameraNull = true;
+    private boolean checkIfAllFeatures(){
+        if(allHandFeatures.size() < 10){
+            savedPic.setText(allHandFeatures.size() + " found");
+            return false;
+        }
+        else
+            return true;
     }
 
-    private void openCameraAndSetParameters(){
-        try{
-            mCamera = Camera.open(1);//you can use open(int) to use different cameras
-        } catch (Exception e){
-            Log.d("ERROR", "Failed to get camera: " + e.getMessage());
-        }
-        mCamera.setDisplayOrientation(90);
-        setCameraParameters();
+    private void addUser(){
+
+    }
+
+    public void closeActivity(){
+        mCamera.setPreviewCallback(null);
+        mCamera.stopPreview();
+        mCamera.release();
+        mCamera = null;
+        mainActivity.finish();
     }
 }
-
