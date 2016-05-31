@@ -12,7 +12,6 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -21,7 +20,7 @@ import com.app.database.DataBase;
 import com.app.memory.CopyManager;
 import com.app.picture.Frame;
 import com.app.recognition.HandRecognizer;
-import com.app.recognition.StandardNormalizer;
+import com.app.recognition.Normalizer;
 
 import org.opencv.android.OpenCVLoader;
 
@@ -52,9 +51,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private Frame frame, backgroundFrame;
     private List<float[]> actualHandFeatures, allHandFeatures;
     private HandRecognizer handRecognizer;
-    private Map<String, List<float[]>> usersWithTraits;
+    private Map<Integer, List<float[]>> usersWithTraits;
     private DataBase dataBase;
-    private List<String> recognisedUsers;
+    private List<Integer> recognisedUsers;
     private boolean cameraNull;
 
     public CameraView(Context context, Activity activity, MainActivity mainActivityObject, Camera camera){
@@ -89,7 +88,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         this.usersWithTraits = new HashMap<>();
         this.frame = new Frame();
         this.backgroundFrame = new Frame();
-        this.handRecognizer = new HandRecognizer(new StandardNormalizer());
+        this.handRecognizer = new HandRecognizer(new Normalizer());
         setAllViewsToVariables();
         setCppViewsList();
         setOpenCVViewsList();

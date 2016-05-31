@@ -39,7 +39,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     private Frame frame, backgroundFrame;
     private List<float[]> actualHandFeatures, allHandFeatures;
     private HandRecognizer handRecognizer;
-    private Map<String, List<float[]>> usersWithTraits;
+    private Map<Integer, List<float[]>> usersWithTraits;
     private DataBase dataBase;
     private List<String> recognisedUsers;
     private String firstName;

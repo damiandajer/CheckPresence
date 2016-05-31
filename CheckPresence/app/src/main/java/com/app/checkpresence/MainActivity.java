@@ -141,8 +141,8 @@ public class MainActivity extends Activity {
         startActivity(intent);
     }
 
-    public void pushFoundUserToScreen(List<String> usersList){
-        final List<String> usersListFinal = usersList;
+    public void pushFoundUserToScreen(List<Integer> usersList){
+        final List<Integer> usersListFinal = usersList;
         context = this;
         li = LayoutInflater.from(context);
         promptsView = li.inflate(R.layout.found_user, null);
@@ -155,7 +155,7 @@ public class MainActivity extends Activity {
         final TextView foundUser = (TextView) promptsView
                 .findViewById(R.id.foundUserTextView);
 
-        foundUser.setText(usersListFinal.get(numberOfFoundUser));
+        foundUser.setText(Integer.toString(usersListFinal.get(numberOfFoundUser)));
         ++numberOfFoundUser;
 
         // set dialog message
@@ -178,6 +178,7 @@ public class MainActivity extends Activity {
                                 }
                                 else{
                                     mCameraView.startPreviewInCameraView();
+                                    numberOfFoundUser = 0;
                                     dialog.cancel();
                                 }
                             }
