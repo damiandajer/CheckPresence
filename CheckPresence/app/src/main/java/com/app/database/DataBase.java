@@ -220,7 +220,13 @@ public class DataBase extends SQLiteOpenHelper{
         values.put(COLUMN_NAME_SECOND_NAME, user.getSecondName());
         values.put(COLUMN_NAME_ID_GROUP_IN_USER, groupId);
 
-        return dataBase.insert(TABLE_NAME_USERS, null, values);
+        long ret =  dataBase.insert(TABLE_NAME_USERS, null, values);
+
+        for( float traits[] : user.getTraits()){
+            insertTraits(ret, traits);
+        }
+
+        return ret;
     }
 
     /**
