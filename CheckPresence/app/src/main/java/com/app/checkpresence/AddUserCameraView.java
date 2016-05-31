@@ -232,7 +232,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public void createUser(){
-        User user = new User(firstName, secondName, indexUser, groupName, actualHandFeatures);
+        User user = new User(firstName, secondName, indexUser, groupName, allHandFeatures);
         dataBase.insertUser(user);
     }
 

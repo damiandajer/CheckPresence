@@ -3,8 +3,11 @@ package com.app.database;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.MatrixCursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.app.checkpresence.User;
 
@@ -360,6 +363,10 @@ public class DataBase extends SQLiteOpenHelper{
         return traits;
     }
 
+    /**
+     * Zwraca mapę w której do indeksów przypisane są tablice z cechami użytkowników
+     * @return Map<String, List<float[]>>
+     */
     public Map<String, List<float[]>> getAllUsersWithTraits(){
         List<User> users = new ArrayList<>();
         List<float[]> traits = new ArrayList<>();
@@ -367,17 +374,61 @@ public class DataBase extends SQLiteOpenHelper{
         Map<String, List<float[]>> usersWithTraits = new HashMap<>();
         users = getAllUsers();
 
-        for (User u:users
-             ) {
-            //TODO
-            /*Ogólnie taka koncepcja, żeby tutaj od kazdego użytkownika pobierało
-            jego wszystkie cechy i dodawalo do mapy. Widziałem, że mamy w bazie i ID i nrAlbumu
-            dlatego nie kończętego sam bo nie chcę się wpieprzać w bazę, którą zarządza @Szymon.
-            Metodę rozpisz wg własnej koncepcji, tak jak to będzie najwygodniej dla Ciebie,
-            tylko żeby zwracało mapę taką jak zadeklarowana ta wyżej.
-             */
+        for (User u : users) {
+            usersWithTraits.put(Integer.toString(u.getIndexNumber()),  u.getTraits());
         }
+
         return usersWithTraits;
+    }
+
+    public ArrayList<Cursor> getData(String Query){
+        //get writable database
+        SQLiteDatabase sqlDB = this.getWritableDatabase();
+        String[] columns = new String[] { "mesage" };
+        //an array list of cursor to save two cursors one has results from the query
+        //other cursor stores error message if any errors are triggered
+        ArrayList<Cursor> alc = new ArrayList<Cursor>(2);
+        MatrixCursor Cursor2= new MatrixCursor(columns);
+        alc.add(null);
+        alc.add(null);
+
+
+        try{
+            String maxQuery = Query ;
+            //execute the query results will be save in Cursor c
+            Cursor c = sqlDB.rawQuery(maxQuery, null);
+
+
+            //add value to cursor2
+            Cursor2.addRow(new Object[] { "Success" });
+
+            alc.set(1,Cursor2);
+            if (null != c && c.getCount() > 0) {
+
+
+                alc.set(0,c);
+                c.moveToFirst();
+
+                return alc ;
+            }
+            return alc;
+        } catch(SQLException sqlEx){
+            Log.d("printing exception", sqlEx.getMessage());
+            //if any exceptions are triggered save the error message to cursor an return the arraylist
+            Cursor2.addRow(new Object[] { ""+sqlEx.getMessage() });
+            alc.set(1,Cursor2);
+            return alc;
+        } catch(Exception ex){
+
+            Log.d("printing exception", ex.getMessage());
+
+            //if any exceptions are triggered save the error message to cursor an return the arraylist
+            Cursor2.addRow(new Object[] { ""+ex.getMessage() });
+            alc.set(1,Cursor2);
+            return alc;
+        }
+
+
     }
 
 }

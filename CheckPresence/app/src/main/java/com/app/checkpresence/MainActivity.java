@@ -54,6 +54,14 @@ public class MainActivity extends Activity {
             }
         });
 
+        Button databaseManagerButton = (Button) findViewById(R.id.databaseManagerButton);
+        databaseManagerButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                startDatabaseManager();
+            }
+        });
+
         openDB();
     }
 
@@ -114,6 +122,11 @@ public class MainActivity extends Activity {
         }
         mCameraView.setMarkerCameraNull();
         Intent intent = new Intent(this, AddUserActivity.class);
+        startActivity(intent);
+    }
+
+    public void startDatabaseManager(){
+        Intent intent = new Intent(this, AndroidDatabaseManager.class);
         startActivity(intent);
     }
 }

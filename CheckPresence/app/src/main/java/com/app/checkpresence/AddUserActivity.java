@@ -79,7 +79,7 @@ public class AddUserActivity extends Activity {
                                 mCameraView.setIndexUser(Integer.valueOf(userInputIndex.getText().toString()));
                                 mCameraView.setGroupName(userInputGroup.getText().toString());
                                 mCameraView.createUser();
-                                dialog.cancel();
+                                //dialog.cancel();
                                 //finish();
                                 closeActivity();
                                 //mCameraView.closeActivity();
