@@ -1,17 +1,24 @@
 package com.app.checkpresence;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.TextView;
 
 import com.app.database.DataBase;
+
+import java.util.List;
 
 
 public class MainActivity extends Activity {
@@ -19,6 +26,10 @@ public class MainActivity extends Activity {
     private CameraView mCameraView = null;
     private static DataBase dataBase;
     private Context context;
+    private LayoutInflater li;
+    private View promptsView;
+    private AlertDialog.Builder alertDialogBuilder;
+    private int numberOfFoundUser = 0;
 
 
     @Override
@@ -30,7 +41,7 @@ public class MainActivity extends Activity {
         openCamera();
 
         if(mCamera != null) {
-            mCameraView = new CameraView(this, this, mCamera);//create a SurfaceView to show camera data
+            mCameraView = new CameraView(this, this, this, mCamera);//create a SurfaceView to show camera data
             FrameLayout camera_view = (FrameLayout)findViewById(R.id.camera_view);
             camera_view.addView(mCameraView);//add the SurfaceView to the layout
         }
@@ -128,5 +139,54 @@ public class MainActivity extends Activity {
     public void startDatabaseManager(){
         Intent intent = new Intent(this, AndroidDatabaseManager.class);
         startActivity(intent);
+    }
+
+    public void pushFoundUserToScreen(List<String> usersList){
+        final List<String> usersListFinal = usersList;
+        context = this;
+        li = LayoutInflater.from(context);
+        promptsView = li.inflate(R.layout.found_user, null);
+
+        alertDialogBuilder = new AlertDialog.Builder(context);
+
+        // set prompts.xml to alertdialog builder
+        alertDialogBuilder.setView(promptsView);
+
+        final TextView foundUser = (TextView) promptsView
+                .findViewById(R.id.foundUserTextView);
+
+        foundUser.setText(usersListFinal.get(numberOfFoundUser));
+        ++numberOfFoundUser;
+
+        // set dialog message
+        alertDialogBuilder
+                .setCancelable(false)
+                .setPositiveButton("OK",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog,int id) {
+                                mCameraView.startPreviewInCameraView();
+                                dialog.cancel();
+                            }
+                        })
+                .setNegativeButton("To nie ja!",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                //mCameraView.startPreviewInCameraView();
+                                if(numberOfFoundUser<5) {
+                                    pushFoundUserToScreen(usersListFinal);
+                                    dialog.cancel();
+                                }
+                                else{
+                                    mCameraView.startPreviewInCameraView();
+                                    dialog.cancel();
+                                }
+                            }
+                        });
+
+        // create alert dialog
+        AlertDialog alertDialog = alertDialogBuilder.create();
+
+        // show it
+        alertDialog.show();
     }
 }

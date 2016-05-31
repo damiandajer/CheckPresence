@@ -37,6 +37,7 @@ import static org.opencv.imgproc.Imgproc.cvtColor;
 
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     Activity mainActivity;
+    MainActivity mainActivityObject;
     protected SurfaceHolder mHolder;
     protected Camera mCamera;
     public static Camera.Size size;
@@ -56,10 +57,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private List<String> recognisedUsers;
     private boolean cameraNull;
 
-    public CameraView(Context context, Activity activity, Camera camera){
+    public CameraView(Context context, Activity activity, MainActivity mainActivityObject, Camera camera){
         super(context);
 
         this.mainActivity = activity;
+        this.mainActivityObject = mainActivityObject;
         this.backgroundBtn = (ImageButton) this.mainActivity.findViewById(R.id.backgroundBtn);
         this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
         mCamera = camera;
@@ -132,8 +134,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     segmentateImagesGivenAsBytes(data);
                     findHandFeaturesFromSegmentatedHands();
                     recognizeUser();
-                    if(recognisedUsers.size() != 0)
+                    if(recognisedUsers.size() != 0) {
+                        mCamera.stopPreview();
                         System.out.println(recognisedUsers.get(0));
+                        mainActivityObject.pushFoundUserToScreen(recognisedUsers);
+                        recognisedUsers = new ArrayList<>();
+                    }
 
                     //set frames to 0 (return to the beginning of loop)
                     frames = 0;
@@ -186,8 +192,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
     public void recognizeUser(){
         getAllUsersWithTraits();
-        if (actualHandFeatures.size() != 0)
+        if (actualHandFeatures.size() != 0) {
             recognisedUsers = handRecognizer.recognise(actualHandFeatures.get(0), usersWithTraits);
+        }
     }
 
     @Override
@@ -283,6 +290,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         }
         mCamera.setDisplayOrientation(90);
         setCameraParameters();
+    }
+
+    public void startPreviewInCameraView(){
+        mCamera.startPreview();
     }
 }
 

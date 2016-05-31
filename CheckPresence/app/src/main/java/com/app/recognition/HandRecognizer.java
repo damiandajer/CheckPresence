@@ -42,7 +42,6 @@ public class HandRecognizer {
 
     public List<String> recognise(float[] values, Map<String,List<float[]>> data)
     {
-        System.out.println("length " + values.length);
         int numberOfSamples = 0;
         for (Map.Entry<String, List<float[]>> entry : data.entrySet())
         {
