@@ -11,6 +11,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.app.database.DataBase;
+import com.app.handfeatures.HandFeatures;
+import com.app.handfeatures.HandFeaturesData;
 import com.app.memory.CopyManager;
 import com.app.picture.Frame;
 import com.app.recognition.HandRecognizer;
@@ -46,6 +48,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     private String secondName;
     private String groupName;
     private int indexUser;
+    private HandFeaturesData handFeaturesData;
 
     public AddUserCameraView(Context context, Activity activity, AddUserActivity addUserActivity, Camera camera){
         super(context);
@@ -104,7 +107,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
                     //savedPic.setText(pictureSaved + " processed");
 
                     segmentateImagesGivenAsBytes(data);
-                    findHandFeaturesFromSegmentatedHands();
+                    //findHandFeaturesFromSegmentatedHands();
                     if(checkIfAllFeatures()){
                         addUser();
                         //createUser();
@@ -145,6 +148,15 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         frame.setBackground(bmpBackground);
         frame.setThresholds(10, 110, 3);
         frame.segmentateFrameWithOpenCV();
+        handFeaturesData = frame.getHandFeaturesData();
+        actualHandFeatures.clear();
+        if(handFeaturesData != null)
+            actualHandFeatures.add(handFeaturesData.features);
+
+        for (float[] features:actualHandFeatures
+                ) {
+            this.allHandFeatures.add(features);
+        }
 
         //CopyManager.saveBitmapToDisk(openCVBitmaps, pictureSaved, "OpenCV");
     }

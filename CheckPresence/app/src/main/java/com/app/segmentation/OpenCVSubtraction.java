@@ -1,15 +1,15 @@
 package com.app.segmentation;
 
 import android.graphics.Bitmap;
-import android.util.Log;
 
-import org.opencv.android.Utils;
+import com.app.checkpresence.CameraView;
+import com.app.handfeatures.Color;
+import com.app.handfeatures.HandFeatures;
+import com.app.handfeatures.HandFeaturesData;
+import com.app.handfeatures.HandFeaturesException;
+
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
-
-import java.nio.IntBuffer;
-import java.util.List;
 
 import static org.opencv.core.Core.subtract;
 import static org.opencv.imgproc.Imgproc.cvtColor;
@@ -18,13 +18,14 @@ import static org.opencv.imgproc.Imgproc.cvtColor;
  * Created by Damian on 17.05.2016.
  */
 public class OpenCVSubtraction implements Runnable {
-    private volatile Bitmap bmp;
+    private volatile Bitmap resultBitmap;
     Bitmap inputBitmap, backgroundBitmap;
     int height, width, threshold;
     Mat imgToProcess1, imgToProcess2, imgToProcess, mask;
     int[] intARGBArray;
     float[] handFeatures;
     private native int[] deleteSmallAreas(int[] intARGBArray, int height, int width);
+    private HandFeaturesData handFeaturesData = null;
 
 
     /**
@@ -35,6 +36,7 @@ public class OpenCVSubtraction implements Runnable {
     public OpenCVSubtraction(Bitmap inputBitmap, Bitmap backgroundBitmap, int threshold) {
         this.inputBitmap = inputBitmap;
         this.backgroundBitmap = backgroundBitmap;
+        resultBitmap = inputBitmap;
 
         this.height = inputBitmap.getHeight();
         this.width = inputBitmap.getWidth();
@@ -48,39 +50,80 @@ public class OpenCVSubtraction implements Runnable {
 
     @Override
     public void run() {
-        setConfToBitmap();
-        createMatsFromBitmap();
-        processMats();
-        createBitmapFromMat();
-        convertBitmapToIntArray();
-        clearIntArrayFromSmallAreas();
-        convertIntArrayToBitmap();
-    }
+        boolean useOpenCV = true;
+        if (useOpenCV)
+            System.out.println("Thread is processing frame with OpenCV");
+        else
+            System.out.println("Thread is processing frame withOUT OpenCV");
 
-    private void setConfToBitmap(){
-        Bitmap.Config conf = Bitmap.Config.ARGB_8888; // see other conf types
-        bmp = Bitmap.createBitmap(width, height, conf);
-    }
-
-    private void createMatsFromBitmap(){
+        HandFeatures handFeatures = null;
+        int numberOfElementPixels = 0;
         try {
-            Utils.bitmapToMat(inputBitmap, imgToProcess1);
-            Utils.bitmapToMat(backgroundBitmap, imgToProcess2);
-        } catch(Exception e){
-            Log.d("Warning", "Bitmap to Mat err: " + e.getMessage());
+            handFeatures = new HandFeatures(inputBitmap, backgroundBitmap);
+            //
+            // ETAP 1 - przygotowanie obazu do natepnego etapu
+            //
+            if (useOpenCV) { // Z OPENCV
+                numberOfElementPixels = handFeatures.binarizationOpenCV(25);
+            }
+            else { // BEZ OPENCV
+                numberOfElementPixels = handFeatures.binaryzation(45, Color.BG_COLOR, Color.EL_COLOR);
+            }
+
+            // ---------------
+            // RESZTA KODU JEST TAKA SAMA NIEZALEZNIE OD PROCESU BINARYZACJI
+            // ------------------------
+
+            boolean tooFewElementPixels = false;
+            // jezeli obraz ma mniej niz 10% pixeli koloru elementu nie przetwarzaj dalej - najprowodpodobniej nie ma reki na obrazie
+            if (numberOfElementPixels < (handFeatures.getImage().width() * handFeatures.getImage().height()) * 0.10) {
+                System.out.println("Binaryzacja - znaleziono za malo pixeli elementu");
+                //CameraView.refreshBackground = true;
+                //resultBitmap = handFeatures.getProcessed(false);
+                //return;
+                tooFewElementPixels = true;
+            }
+            // jezeli obraz ma wiecej niz 60% pixeli koloru elementu nie przetwarzaj dalej - najprowodpodobniej nie ma reki na obrazie
+            if (numberOfElementPixels > (handFeatures.getImage().width() * handFeatures.getImage().height()) * 0.70) {
+                System.out.println("Binaryzacja - znaleziono za duzo pixeli elementu");
+                resultBitmap = handFeatures.getProcessed(false);
+                CameraView.refreshBackground = true;
+                return;
+            }
+
+            // jezeli np plama dloni jest za mala, lub jakis blad przy przetwarzaniu to zwruc aktualny wyglad obrazu i zakoncz przetwarzanie tej klatki
+            // czyscimy pijedyncze kropki
+            handFeatures.getImage().setBorderColor(Color.BG_COLOR);
+            handFeatures.getImage().smoothEdge(Color.EL_COLOR, Color.BG_COLOR);
+            // segmentacja
+            int foundAreas = handFeatures.segmentation();
+            if (tooFewElementPixels == true && foundAreas == 0 || foundAreas > HandFeatures.maxAllowedAreas) {
+                System.out.println("Segmentacja - blad przetwarzania!");
+                resultBitmap = handFeatures.getProcessed(false);
+                CameraView.refreshBackground = true;
+                return;
+            }
+
+            //
+            // ETAP 2 - zyznaczanie cech z obrazu
+            //
+            if (handFeatures.calculateFeatures() == true) {
+                //CopyManager.saveBitmapToDisk(handFeatures.getConturBitmap(true), CameraView.foundedHandsFeatures++, "Contour_");
+                handFeaturesData = new HandFeaturesData(handFeatures);
+                handFeaturesData.show(true); // cechy 1 lini
+                handFeaturesData.show(false); // wypisuje pogrupowane cechy
+                ++HandFeatures.foundedHandsFeatures;
+                resultBitmap = handFeatures.getProcessed(true);
+                //Thread.sleep(2000);
+            }
+        } catch (HandFeaturesException hfe) {
+            System.out.println("HandFeaturesException!." + hfe.toString());
+            resultBitmap = handFeatures.getProcessed(false);
+        } catch (Exception e) {
+            System.out.println("Exception: Nie przewidziany wyjatek dla HandFeatures!");
+            System.out.println(e.toString());
+            e.printStackTrace();
         }
-    }
-
-    private void processMats(){
-        //absdiff(imgToProcess1, imgToProcess2, imgToProcess);
-        subtract(imgToProcess2, imgToProcess1, imgToProcess);
-
-        cvtColor(imgToProcess, mask, Imgproc.COLOR_RGBA2GRAY, 1); //your conversion specifier may vary
-        Imgproc.threshold(mask, mask, threshold, 255, Imgproc.THRESH_BINARY);
-    }
-
-    private void createBitmapFromMat(){
-        Utils.matToBitmap(mask, bmp);
     }
 
     /**
@@ -88,28 +131,12 @@ public class OpenCVSubtraction implements Runnable {
      * @return Bitmap
      */
     public Bitmap getBitmap(){
-        return this.bmp;
+        return this.resultBitmap;
     }
 
-    private void convertBitmapToIntArray(){
-        intARGBArray = new int[width * height];
-        bmp.getPixels(intARGBArray, 0, width, 0, 0, width, height);
+    public HandFeaturesData getHandFeaturesData(){
+        return handFeaturesData;
     }
 
-    /**
-     * Returns int ARGB Array with pixels
-     * @return
-     */
-    public int[] getARGBIntArray(){
-        return intARGBArray;
-    }
-
-    private void clearIntArrayFromSmallAreas(){
-        this.intARGBArray = deleteSmallAreas(this.intARGBArray, this.height, this.width);
-    }
-
-    private void convertIntArrayToBitmap(){
-        bmp.copyPixelsFromBuffer(IntBuffer.wrap(intARGBArray));
-    }
 
 }

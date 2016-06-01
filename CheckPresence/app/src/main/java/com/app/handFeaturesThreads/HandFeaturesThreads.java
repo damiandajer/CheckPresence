@@ -1,4 +1,4 @@
-package com.app.handFeatures;
+package com.app.handFeaturesThreads;
 
 import com.app.threads.TaskManager;
 import com.app.threads.ThreadHandler;

@@ -17,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.app.database.DataBase;
+import com.app.handfeatures.HandFeaturesData;
 import com.app.memory.CopyManager;
 import com.app.picture.Frame;
 import com.app.recognition.HandRecognizer;
@@ -46,7 +47,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private ImageView bottomRight, bottomLeft, topLeft, topCenter, topRight, bottomCenter;
     private ImageButton backgroundBtn;
     private Bitmap bmpBackground;
-    private Boolean getBckg = true;
+    public static boolean refreshBackground = true;
     private List<ImageView> cppViews, openCVViews;
     private Frame frame, backgroundFrame;
     private List<float[]> actualHandFeatures, allHandFeatures;
@@ -55,6 +56,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private DataBase dataBase;
     private List<Integer> recognisedUsers;
     private boolean cameraNull;
+    private HandFeaturesData handFeaturesData;
 
     public CameraView(Context context, Activity activity, MainActivity mainActivityObject, Camera camera){
         super(context);
@@ -76,7 +78,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
             @Override
             public void onClick(View v) {
-                getBckg = true;
+                refreshBackground = true;
             }
         });
         initiateOpenCV();
@@ -131,7 +133,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     savedPic.setText(pictureSaved + " processed");
 
                     segmentateImagesGivenAsBytes(data);
-                    findHandFeaturesFromSegmentatedHands();
+                    //findHandFeaturesFromSegmentatedHands();
                     recognizeUser();
                     if(recognisedUsers.size() != 0) {
                         mCamera.stopPreview();
@@ -175,6 +177,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         frame.setThresholds(10, 60, 4);
         frame.segmentateFrameWithOpenCV();
         List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
+        handFeaturesData = frame.getHandFeaturesData();
+        actualHandFeatures.clear();
+        if(handFeaturesData != null)
+            actualHandFeatures.add(handFeaturesData.features);
         setBitmapsToViews(openCVViews, openCVBitmaps);
 
         //CopyManager.saveBitmapToDisk(openCVBitmaps, pictureSaved, "OpenCV");
@@ -219,12 +225,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     public void getBackgroundFrame(byte[] data){
         backgroundFrame.setActualFrame(data);
         this.bmpBackground = backgroundFrame.getActualBitmap();
-        this.getBckg = false;
+        this.refreshBackground = false;
         System.out.println("Pobrano nową próbkę tła...");
     }
 
     protected Boolean isGetBackgroundButtonClicked(){
-        return this.getBckg;
+        return this.refreshBackground;
     }
 
     private void setAllViewsToVariables(){

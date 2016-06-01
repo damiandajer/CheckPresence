@@ -4,7 +4,8 @@ import android.graphics.Bitmap;
 import android.hardware.Camera;
 
 import com.app.checkpresence.CameraView;
-import com.app.handFeatures.HandFeaturesThreads;
+import com.app.handFeaturesThreads.HandFeaturesThreads;
+import com.app.handfeatures.HandFeaturesData;
 import com.app.segmentation.OpenCVSubtractionThreads;
 import com.app.segmentation.SegmentationThreads;
 
@@ -25,6 +26,7 @@ public class Frame {
     private int numberOfConditions;
     private int min, max, numberOfThresholds;
     private int segmentatedHeight, segmentatedWidth;
+    private HandFeaturesData handFeaturesData;
 
     public Frame(){}
 
@@ -151,6 +153,7 @@ public class Frame {
 
         openCVIntArrays = openCVSubtractionThreads.getListOfIntArrays();
         openCVBitmaps = openCVSubtractionThreads.getBitmaps();
+        handFeaturesData = openCVSubtractionThreads.getHandFeatures(); // may be null
         setSizeOfSegmentatedBitmaps(openCVBitmaps.get(0).getHeight(), openCVBitmaps.get(0).getWidth());
     }
 
@@ -185,5 +188,9 @@ public class Frame {
 
     public List<float[]> getHandFeatures() {
         return handFeatures;
+    }
+
+    public HandFeaturesData getHandFeaturesData() {
+        return handFeaturesData;
     }
 }

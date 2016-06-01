@@ -2,6 +2,7 @@ package com.app.segmentation;
 
 import android.graphics.Bitmap;
 
+import com.app.handfeatures.HandFeaturesData;
 import com.app.threads.TaskManager;
 import com.app.threads.ThreadHandler;
 
@@ -39,7 +40,7 @@ public class OpenCVSubtractionThreads extends TaskManager {
         for (Runnable r: ThreadHandler.getRunnables()) {
             try {
                 bitmaps.add(((OpenCVSubtraction) r).getBitmap());
-                intArrays.add(((OpenCVSubtraction) r).getARGBIntArray());
+                handFeaturesData = ((OpenCVSubtraction) r).getHandFeaturesData();
             }catch (IllegalFormatConversionException e){
                 e.printStackTrace();
             }
@@ -57,6 +58,10 @@ public class OpenCVSubtractionThreads extends TaskManager {
 
     public List<int[]> getListOfIntArrays() {
         return intArrays;
+    }
+
+    public HandFeaturesData getHandFeatures(){
+        return handFeaturesData;
     }
 
     /**
