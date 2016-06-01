@@ -79,11 +79,7 @@ public class AddUserActivity extends Activity {
                                 mCameraView.setIndexUser(Integer.valueOf(userInputIndex.getText().toString()));
                                 mCameraView.setGroupName(userInputGroup.getText().toString());
                                 mCameraView.createUser();
-                                //dialog.cancel();
-                                //finish();
                                 closeActivity();
-                                //mCameraView.closeActivity();
-                                //createNewCategory(nameOfNewCategory);
                             }
                         })
                 .setNegativeButton("Cancel",
@@ -103,11 +99,6 @@ public class AddUserActivity extends Activity {
 
     @Override
     public void onDestroy(){
-        //mCameraView.closeActivity();
-        //mCamera.setPreviewCallback(null);
-        //mCamera.stopPreview();
-        //mCamera.release();
-        //mCamera = null;
         super.onDestroy();
     }
 
@@ -115,7 +106,6 @@ public class AddUserActivity extends Activity {
         mCamera.setPreviewCallback(null);
         mCamera.stopPreview();
         mCamera.release();
-        //mCamera = null;
         finish();
     }
 }

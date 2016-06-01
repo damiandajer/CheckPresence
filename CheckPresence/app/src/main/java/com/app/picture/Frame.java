@@ -121,6 +121,7 @@ public class Frame {
 
     public void findHandFeatures(){
         handFeatures = new ArrayList<>();
+        //arrays before trim to 30, have a size of 51120 (it's a bug in native code)
         List<float[]> handFeaturesBeforeTrim = new ArrayList<>();
 
         HandFeaturesThreads handFeaturesThreads = HandFeaturesThreads.getNewObject();

@@ -17,6 +17,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.app.database.DataBase;
+import com.app.memory.CopyManager;
 
 import java.util.List;
 
@@ -26,10 +27,6 @@ public class MainActivity extends Activity {
     private CameraView mCameraView = null;
     private static DataBase dataBase;
     private Context context;
-    private LayoutInflater li;
-    private View promptsView;
-    private AlertDialog.Builder alertDialogBuilder;
-    private int numberOfFoundUser = 0;
 
 
     @Override
@@ -70,6 +67,21 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 startDatabaseManager();
+            }
+        });
+        Button copyDatabaseButton = (Button) findViewById(R.id.loadDatabaseButton);
+        databaseManagerButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                CopyManager.addCopyOfDatabase(context);
+            }
+        });
+
+        Button loadDatabaseButton = (Button) findViewById(R.id.copyDatabaseButton);
+        databaseManagerButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                CopyManager.loadBackupOfDatabase(context);
             }
         });
 
@@ -124,7 +136,7 @@ public class MainActivity extends Activity {
         return dataBase;
     }
 
-    private void startActivityAddNewUser(){
+    public void startActivityAddNewUser(){
         if(mCamera != null) {
             mCamera.setPreviewCallback(null);
             mCamera.stopPreview();
@@ -142,52 +154,11 @@ public class MainActivity extends Activity {
     }
 
     public void pushFoundUserToScreen(List<Integer> usersList){
-        final List<Integer> usersListFinal = usersList;
-        context = this;
-        li = LayoutInflater.from(context);
-        promptsView = li.inflate(R.layout.found_user, null);
-
-        alertDialogBuilder = new AlertDialog.Builder(context);
-
-        // set prompts.xml to alertdialog builder
-        alertDialogBuilder.setView(promptsView);
-
-        final TextView foundUser = (TextView) promptsView
-                .findViewById(R.id.foundUserTextView);
-
-        foundUser.setText(Integer.toString(usersListFinal.get(numberOfFoundUser)));
-        ++numberOfFoundUser;
-
-        // set dialog message
-        alertDialogBuilder
-                .setCancelable(false)
-                .setPositiveButton("OK",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog,int id) {
-                                mCameraView.startPreviewInCameraView();
-                                dialog.cancel();
-                            }
-                        })
-                .setNegativeButton("To nie ja!",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                //mCameraView.startPreviewInCameraView();
-                                if(numberOfFoundUser<5) {
-                                    pushFoundUserToScreen(usersListFinal);
-                                    dialog.cancel();
-                                }
-                                else{
-                                    mCameraView.startPreviewInCameraView();
-                                    numberOfFoundUser = 0;
-                                    dialog.cancel();
-                                }
-                            }
-                        });
-
-        // create alert dialog
-        AlertDialog alertDialog = alertDialogBuilder.create();
-
-        // show it
-        alertDialog.show();
+        MyAlertDialog myAlertDialog = new MyAlertDialog();
+        myAlertDialog.setMainActivity(this);
+        myAlertDialog.setContext(this);
+        myAlertDialog.setmCameraView(mCameraView);
+        myAlertDialog.convertUsersListToListOfStrings(usersList);
+        myAlertDialog.pushFoundUserToScreen();
     }
 }

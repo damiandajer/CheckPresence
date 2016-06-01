@@ -145,7 +145,6 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         frame.setBackground(bmpBackground);
         frame.setThresholds(10, 110, 3);
         frame.segmentateFrameWithOpenCV();
-        //List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
 
         //CopyManager.saveBitmapToDisk(openCVBitmaps, pictureSaved, "OpenCV");
     }
@@ -157,11 +156,6 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
                 ) {
             this.allHandFeatures.add(features);
         }
-    }
-
-    public void recognizeUser(){
-        getAllUsersWithTraits();
-        //recognisedUsers = handRecognizer.recognise(actualHandFeatures, usersWithTraits);
     }
 
     @Override
@@ -207,16 +201,6 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         }
     }
 
-    public void saveFeaturesToFile(){
-        if(actualHandFeatures != null)
-            CopyManager.saveHandFeaturesToTxt(allHandFeatures, "HandFeatures-3");
-    }
-
-    private void getAllUsersWithTraits(){
-        this.dataBase = MainActivity.getDataBase();
-        usersWithTraits = this.dataBase.getAllUsersWithTraits();
-    }
-
     private boolean checkIfAllFeatures(){
         if(allHandFeatures.size() < 10){
             savedPic.setText(allHandFeatures.size() + " found");
@@ -234,12 +218,6 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     public void createUser(){
         User user = new User(firstName, secondName, indexUser, groupName, allHandFeatures);
         dataBase.insertUser(user);
-    }
-
-    public void closeActivity(){
-        mCamera.setPreviewCallback(null);
-        mCamera.stopPreview();
-        mCamera.release();
     }
 
     public void setFirstName(String firstName) {
