@@ -9,6 +9,8 @@ import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.app.database.DataBase;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,8 +25,12 @@ public class MyAlertDialog {
     private AlertDialog.Builder alertDialogBuilder;
     private List<String> listOfUsers;
     private MainActivity mainActivity;
+    private DataBase dataBase;
+
+    public MyAlertDialog(){}
 
     public void pushFoundUserToScreen(){
+        System.out.println("pushfUtoscr");
         //final List<Integer> usersListFinal = usersList;
         li = LayoutInflater.from(getContext());
         promptsView = li.inflate(R.layout.found_user, null);
@@ -73,6 +79,8 @@ public class MyAlertDialog {
     }
 
     public void pushListOfUsersToScreen(){
+        this.dataBase = new DataBase(getContext());
+        convertUsersListToListOfStrings(dataBase.getAllUsersAlbums());
         li = LayoutInflater.from(getContext());
         promptsView = li.inflate(R.layout.found_user_list, null);
 

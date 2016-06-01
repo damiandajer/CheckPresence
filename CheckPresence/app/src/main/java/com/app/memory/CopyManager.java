@@ -6,6 +6,8 @@ import android.os.Environment;
 import android.view.View;
 import android.widget.Toast;
 
+import com.app.database.DataBase;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;

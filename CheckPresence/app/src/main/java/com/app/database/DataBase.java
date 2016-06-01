@@ -323,6 +323,24 @@ public class DataBase extends SQLiteOpenHelper{
         return users;
     }
 
+    public List<Integer> getAllUsersAlbums(){
+
+        List<Integer> users = new ArrayList<Integer>();
+
+        String selectQuery = "SELECT " + COLUMN_NAME_INDEX
+                + " FROM " + TABLE_NAME_USERS;
+
+        Cursor cursor = dataBase.rawQuery(selectQuery, null);
+
+        if(cursor != null && cursor.moveToFirst()) {
+            do{
+                users.add(cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_INDEX)));
+            }while(cursor.moveToNext());
+        }
+
+        return users;
+    }
+
     /**
      * Dodaje liste cech do użytkownika o podanym ID
      * @param userID - ID użytkownika

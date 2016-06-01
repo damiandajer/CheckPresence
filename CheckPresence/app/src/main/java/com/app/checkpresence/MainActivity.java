@@ -70,18 +70,22 @@ public class MainActivity extends Activity {
             }
         });
         Button copyDatabaseButton = (Button) findViewById(R.id.loadDatabaseButton);
-        databaseManagerButton.setOnClickListener(new View.OnClickListener(){
+        copyDatabaseButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
+                mCameraView.stopPreviewInCameraView();
                 CopyManager.addCopyOfDatabase(context);
+                mCameraView.startPreviewInCameraView();
             }
         });
 
         Button loadDatabaseButton = (Button) findViewById(R.id.copyDatabaseButton);
-        databaseManagerButton.setOnClickListener(new View.OnClickListener(){
+        loadDatabaseButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
+                mCameraView.stopPreviewInCameraView();
                 CopyManager.loadBackupOfDatabase(context);
+                mCameraView.startPreviewInCameraView();
             }
         });
 
