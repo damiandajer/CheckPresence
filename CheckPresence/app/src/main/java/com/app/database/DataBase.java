@@ -3,13 +3,18 @@ package com.app.database;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.MatrixCursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.app.checkpresence.User;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Szymon on 2016-04-10.
@@ -215,7 +220,13 @@ public class DataBase extends SQLiteOpenHelper{
         values.put(COLUMN_NAME_SECOND_NAME, user.getSecondName());
         values.put(COLUMN_NAME_ID_GROUP_IN_USER, groupId);
 
-        return dataBase.insert(TABLE_NAME_USERS, null, values);
+        long ret =  dataBase.insert(TABLE_NAME_USERS, null, values);
+
+        for( float traits[] : user.getTraits()){
+            insertTraits(ret, traits);
+        }
+
+        return ret;
     }
 
     /**
@@ -312,6 +323,24 @@ public class DataBase extends SQLiteOpenHelper{
         return users;
     }
 
+    public List<Integer> getAllUsersAlbums(){
+
+        List<Integer> users = new ArrayList<Integer>();
+
+        String selectQuery = "SELECT " + COLUMN_NAME_INDEX
+                + " FROM " + TABLE_NAME_USERS;
+
+        Cursor cursor = dataBase.rawQuery(selectQuery, null);
+
+        if(cursor != null && cursor.moveToFirst()) {
+            do{
+                users.add(cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_INDEX)));
+            }while(cursor.moveToNext());
+        }
+
+        return users;
+    }
+
     /**
      * Dodaje liste cech do użytkownika o podanym ID
      * @param userID - ID użytkownika
@@ -356,6 +385,74 @@ public class DataBase extends SQLiteOpenHelper{
         }
 
         return traits;
+    }
+
+    /**
+     * Zwraca mapę w której do indeksów przypisane są tablice z cechami użytkowników
+     * @return Map<String, List<float[]>>
+     */
+    public Map<Integer, List<float[]>> getAllUsersWithTraits(){
+        List<User> users = new ArrayList<>();
+        List<float[]> traits = new ArrayList<>();
+        int indexNumber;
+        Map<Integer, List<float[]>> usersWithTraits = new HashMap<>();
+        users = getAllUsers();
+
+        for (User u : users) {
+            usersWithTraits.put(u.getIndexNumber(),  u.getTraits());
+        }
+
+        return usersWithTraits;
+    }
+
+    public ArrayList<Cursor> getData(String Query){
+        //get writable database
+        SQLiteDatabase sqlDB = this.getWritableDatabase();
+        String[] columns = new String[] { "mesage" };
+        //an array list of cursor to save two cursors one has results from the query
+        //other cursor stores error message if any errors are triggered
+        ArrayList<Cursor> alc = new ArrayList<Cursor>(2);
+        MatrixCursor Cursor2= new MatrixCursor(columns);
+        alc.add(null);
+        alc.add(null);
+
+
+        try{
+            String maxQuery = Query ;
+            //execute the query results will be save in Cursor c
+            Cursor c = sqlDB.rawQuery(maxQuery, null);
+
+
+            //add value to cursor2
+            Cursor2.addRow(new Object[] { "Success" });
+
+            alc.set(1,Cursor2);
+            if (null != c && c.getCount() > 0) {
+
+
+                alc.set(0,c);
+                c.moveToFirst();
+
+                return alc ;
+            }
+            return alc;
+        } catch(SQLException sqlEx){
+            Log.d("printing exception", sqlEx.getMessage());
+            //if any exceptions are triggered save the error message to cursor an return the arraylist
+            Cursor2.addRow(new Object[] { ""+sqlEx.getMessage() });
+            alc.set(1,Cursor2);
+            return alc;
+        } catch(Exception ex){
+
+            Log.d("printing exception", ex.getMessage());
+
+            //if any exceptions are triggered save the error message to cursor an return the arraylist
+            Cursor2.addRow(new Object[] { ""+ex.getMessage() });
+            alc.set(1,Cursor2);
+            return alc;
+        }
+
+
     }
 
 }

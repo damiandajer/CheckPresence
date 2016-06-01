@@ -3,15 +3,21 @@ package com.app.memory;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Environment;
+import android.view.View;
+import android.widget.Toast;
+
+import com.app.database.DataBase;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.nio.channels.FileChannel;
 import java.util.List;
 
 /**
@@ -19,7 +25,7 @@ import java.util.List;
  */
 final public class CopyManager {
     private CopyManager(){}
-    private static File mFolder, file;
+    private static File mFolder, file, currentDB, backupDB;
 
 
     /**
@@ -34,7 +40,7 @@ final public class CopyManager {
 
         String newFileFullName = fileName + licznik + ".bmp";
         createFile(newFileFullName);
-
+        saveBitmapToFile(image);
     }
 
     public static void saveBitmapToDisk(List<Bitmap> images, int licznik, String fileName){
@@ -131,4 +137,59 @@ final public class CopyManager {
             }
         }
     }
+
+    public static void addCopyOfDatabase(Context context){
+        setCurrentDBPath();
+        createDir("backupCheckpresenceDB");
+        createFile("baza.db");
+        copyDatabaseToSd(context);
+    }
+
+    public static void loadBackupOfDatabase(Context context){
+        setCurrentDBPath();
+        setBackupDBPath();
+        copyDatabaseToApp(context);
+    }
+
+    private static void setBackupDBPath(){
+        File sd = Environment.getExternalStorageDirectory();
+        String backupDBPath = "backupCheckpresenceDB/baza.db";
+        backupDB = new File(sd, backupDBPath);
+    }
+
+    private static void setCurrentDBPath(){
+        String currentDBPath = "//data//com.app.checkpresence//databases//baza.db";
+        File data = Environment.getDataDirectory();
+        currentDB = new File(data, currentDBPath);
+    }
+
+    private static void copyDatabaseToSd(Context context){
+        try {
+            if(file.exists()) {
+                System.out.println("Kopiuję pliki");
+                FileChannel src = new FileInputStream(currentDB).getChannel();
+                FileChannel dst = new FileOutputStream(file).getChannel();
+                dst.transferFrom(src, 0, src.size());
+                src.close();
+                dst.close();
+                Toast.makeText(context, file.toString(), Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(context, e.toString(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private static void copyDatabaseToApp(Context context){
+        try {
+            FileChannel src = new FileInputStream(backupDB).getChannel();
+            FileChannel dst = new FileOutputStream(currentDB).getChannel();
+            dst.transferFrom(src, 0, src.size());
+            src.close();
+            dst.close();
+            Toast.makeText(context, currentDB.toString(), Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Toast.makeText(context, e.toString(), Toast.LENGTH_LONG).show();
+        }
+    }
+
 }
