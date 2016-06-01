@@ -7,6 +7,8 @@ import java.util.List;
  */
 public class User {
 
+    private long id;
+
     private String firstName;
     private String secondName;
     private int indexNumber;
@@ -14,13 +16,16 @@ public class User {
 
     private List<float[]> traits;
 
-    public User(String firstName, String secondName, int indexNumber, String groupName, List<float[]> traits) {
+    public User(long id, String firstName, String secondName, int indexNumber, String groupName, List<float[]> traits) {
+        this.id = id;
         this.firstName = firstName;
         this.secondName = secondName;
         this.indexNumber = indexNumber;
         this.groupName = groupName;
         this.traits = traits;
     }
+
+    public long getId(){ return id; }
 
     public String getGroupName() {
         return groupName;
