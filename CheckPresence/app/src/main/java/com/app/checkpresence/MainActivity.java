@@ -157,11 +157,12 @@ public class MainActivity extends Activity {
         startActivity(intent);
     }
 
-    public void pushFoundUserToScreen(List<Integer> usersList){
+    public void pushFoundUserToScreen(List<Integer> usersList, List<float[]> actualHandFeatures){
         MyAlertDialog myAlertDialog = new MyAlertDialog();
         myAlertDialog.setMainActivity(this);
         myAlertDialog.setContext(this);
         myAlertDialog.setmCameraView(mCameraView);
+        myAlertDialog.setActualHandFeatures(actualHandFeatures);
         myAlertDialog.convertUsersListToListOfStrings(usersList);
         myAlertDialog.pushFoundUserToScreen();
     }

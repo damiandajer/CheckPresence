@@ -1,17 +1,18 @@
 package com.app.handFeaturesThreads;
 
+import com.app.handfeatures.HandFeaturesData;
+import com.app.handfeatures.HandFeaturesException;
+
 /**
  * Created by Damian on 24.05.2016.
  */
 public class HandFeatures implements Runnable {
-    int height, width;
-    private int[] segmentatedHand;
+    private com.app.handfeatures.HandFeatures segmentatedHand;
     private float[] handFeatures;
-    private native float[] findHandFeatures(int[] intARGBArray, int rows, int cols);
+    private HandFeaturesData handFeaturesData = null;
+    //private native float[] findHandFeatures(int[] intARGBArray, int rows, int cols);
 
-    public HandFeatures(int[] segmentatedHand, int height, int width){
-        this.height = height;
-        this.width = width;
+    public HandFeatures(com.app.handfeatures.HandFeatures segmentatedHand){
         this.segmentatedHand = segmentatedHand;
     }
 
@@ -21,9 +22,30 @@ public class HandFeatures implements Runnable {
     }
 
     private void findHandFeatures(){
-        this.handFeatures = findHandFeatures(this.segmentatedHand.clone(), this.height, this.width);
+        findHandFeaturesJava(this.segmentatedHand);
+        if(handFeaturesData != null)
+            this.handFeatures = handFeaturesData.features;
         if (handFeatures != null)
             System.out.println("Odnaleziono wszystkie cechy!");
+    }
+
+    private void findHandFeaturesJava(com.app.handfeatures.HandFeatures handFeaturesObject){
+        try {
+            if (handFeaturesObject.calculateFeatures() == true) {
+                //CopyManager.saveBitmapToDisk(handFeatures.getConturBitmap(true), CameraView.foundedHandsFeatures++, "Contour_");
+                handFeaturesData = new HandFeaturesData(handFeaturesObject);
+                handFeaturesData.show(true); // cechy 1 lini
+                handFeaturesData.show(false); // wypisuje pogrupowane cechy
+                ++com.app.handfeatures.HandFeatures.foundedHandsFeatures;
+            }
+        } catch (Exception e) {
+            System.out.println(e.toString());
+            e.printStackTrace();
+        }
+    }
+
+    public HandFeaturesData getHandFeaturesData(){
+        return handFeaturesData;
     }
 
     public float[] getHandFeatures(){

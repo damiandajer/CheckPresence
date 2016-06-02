@@ -2,6 +2,7 @@ package com.app.segmentation;
 
 import android.graphics.Bitmap;
 
+import com.app.checkpresence.AddUserCameraView;
 import com.app.checkpresence.CameraView;
 import com.app.handfeatures.Color;
 import com.app.handfeatures.HandFeatures;
@@ -23,9 +24,9 @@ public class OpenCVSubtraction implements Runnable {
     int height, width, threshold;
     Mat imgToProcess1, imgToProcess2, imgToProcess, mask;
     int[] intARGBArray;
-    float[] handFeatures;
+    //float[] handFeatures;
     private native int[] deleteSmallAreas(int[] intARGBArray, int height, int width);
-    private HandFeaturesData handFeaturesData = null;
+    private HandFeatures handFeatures = null;
 
 
     /**
@@ -56,7 +57,7 @@ public class OpenCVSubtraction implements Runnable {
         else
             System.out.println("Thread is processing frame withOUT OpenCV");
 
-        HandFeatures handFeatures = null;
+
         int numberOfElementPixels = 0;
         try {
             handFeatures = new HandFeatures(inputBitmap, backgroundBitmap);
@@ -64,7 +65,7 @@ public class OpenCVSubtraction implements Runnable {
             // ETAP 1 - przygotowanie obazu do natepnego etapu
             //
             if (useOpenCV) { // Z OPENCV
-                numberOfElementPixels = handFeatures.binarizationOpenCV(25);
+                numberOfElementPixels = handFeatures.binarizationOpenCV(this.threshold);
             }
             else { // BEZ OPENCV
                 numberOfElementPixels = handFeatures.binaryzation(45, Color.BG_COLOR, Color.EL_COLOR);
@@ -100,21 +101,12 @@ public class OpenCVSubtraction implements Runnable {
             if (tooFewElementPixels == true && foundAreas == 0 || foundAreas > HandFeatures.maxAllowedAreas) {
                 System.out.println("Segmentacja - blad przetwarzania!");
                 resultBitmap = handFeatures.getProcessed(false);
+                AddUserCameraView.refreshBackground = true;
                 CameraView.refreshBackground = true;
                 return;
             }
-
-            //
-            // ETAP 2 - zyznaczanie cech z obrazu
-            //
-            if (handFeatures.calculateFeatures() == true) {
-                //CopyManager.saveBitmapToDisk(handFeatures.getConturBitmap(true), CameraView.foundedHandsFeatures++, "Contour_");
-                handFeaturesData = new HandFeaturesData(handFeatures);
-                handFeaturesData.show(true); // cechy 1 lini
-                handFeaturesData.show(false); // wypisuje pogrupowane cechy
-                ++HandFeatures.foundedHandsFeatures;
+            else if(handFeatures != null){
                 resultBitmap = handFeatures.getProcessed(true);
-                //Thread.sleep(2000);
             }
         } catch (HandFeaturesException hfe) {
             System.out.println("HandFeaturesException!." + hfe.toString());
@@ -134,9 +126,8 @@ public class OpenCVSubtraction implements Runnable {
         return this.resultBitmap;
     }
 
-    public HandFeaturesData getHandFeaturesData(){
-        return handFeaturesData;
+    public HandFeatures getHandFeaturesObject(){
+        return this.handFeatures;
     }
-
 
 }

@@ -26,6 +26,7 @@ public class MyAlertDialog {
     private List<String> listOfUsers;
     private MainActivity mainActivity;
     private DataBase dataBase;
+    private List<float[]> actualHandFeatures;
 
     public MyAlertDialog(){}
 
@@ -104,7 +105,15 @@ public class MyAlertDialog {
                 .setPositiveButton("OK",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog,int id) {
+                                addHandFeaturesToDatabase(usersSpinner);
                                 getmCameraView().startPreviewInCameraView();
+                                dialog.cancel();
+                            }
+                        })
+                .setNegativeButton("Anuluj",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                mCameraView.startPreviewInCameraView();
                                 dialog.cancel();
                             }
                         });
@@ -114,6 +123,15 @@ public class MyAlertDialog {
 
         // show it
         alertDialog.show();
+    }
+
+    private void addHandFeaturesToDatabase(Spinner usersSpinner){
+        String user = usersSpinner.getSelectedItem().toString();
+        long idUser = dataBase.getUserId(Integer.valueOf(user));
+        for (float[] traits:actualHandFeatures
+                ) {
+            dataBase.insertTraits(idUser, traits);
+        }
     }
 
     public Context getContext() {
@@ -142,5 +160,9 @@ public class MyAlertDialog {
 
     public void setMainActivity(MainActivity mainActivity) {
         this.mainActivity = mainActivity;
+    }
+
+    public void setActualHandFeatures(List<float[]> actualHandFeatures) {
+        this.actualHandFeatures = actualHandFeatures;
     }
 }

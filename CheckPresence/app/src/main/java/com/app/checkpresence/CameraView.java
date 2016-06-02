@@ -133,12 +133,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     savedPic.setText(pictureSaved + " processed");
 
                     segmentateImagesGivenAsBytes(data);
-                    //findHandFeaturesFromSegmentatedHands();
+                    findHandFeaturesFromSegmentatedHands();
                     recognizeUser();
                     if(recognisedUsers.size() != 0) {
                         mCamera.stopPreview();
                         System.out.println(recognisedUsers.get(0));
-                        mainActivityObject.pushFoundUserToScreen(recognisedUsers);
+                        mainActivityObject.pushFoundUserToScreen(recognisedUsers, actualHandFeatures);
                         recognisedUsers = new ArrayList<>();
                     }
 
@@ -174,19 +174,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         setImageToImageView(bottomCenter, liveViewBitmap);
 
         frame.setBackground(bmpBackground);
-        frame.setThresholds(10, 60, 4);
+        frame.setThresholds(25, 25, 1);
         frame.segmentateFrameWithOpenCV();
         List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
-        handFeaturesData = frame.getHandFeaturesData();
-        actualHandFeatures.clear();
-        if(handFeaturesData != null)
-            actualHandFeatures.add(handFeaturesData.features);
         setBitmapsToViews(openCVViews, openCVBitmaps);
 
         //CopyManager.saveBitmapToDisk(openCVBitmaps, pictureSaved, "OpenCV");
     }
 
     public void findHandFeaturesFromSegmentatedHands(){
+        actualHandFeatures.clear();
         frame.findHandFeatures();
         this.actualHandFeatures = frame.getHandFeatures();
         for (float[] features:frame.getHandFeatures()
@@ -255,8 +252,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
     public void setBitmapsToViews(List<ImageView> views, List<Bitmap> bitmaps){
         int counter = 0;
-        for (ImageView view:views) {
-            setImageToImageView(view, bitmaps.get(counter));
+        for (Bitmap bitmap:bitmaps) {
+            setImageToImageView(views.get(counter), bitmap);
             ++counter;
         }
     }

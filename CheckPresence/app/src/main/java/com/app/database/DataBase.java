@@ -348,7 +348,7 @@ public class DataBase extends SQLiteOpenHelper{
      * @return long id - zwraca id dodanych cech, -1 jeśli nie udało sie dodać
      */
     public long insertTraits(long userID, float[] traits){
-
+        System.out.println("Inserting traits");
         ContentValues values = new ContentValues();
         values.put(COLUMN_NAME_ID_USER_IN_TRAIT, userID);
         for(int i = 0 ; i < NUMBER_OF_TRAITS ; i++) {
