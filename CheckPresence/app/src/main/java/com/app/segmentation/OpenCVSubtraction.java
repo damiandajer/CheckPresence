@@ -105,12 +105,11 @@ public class OpenCVSubtraction implements Runnable {
                 CameraView.refreshBackground = true;
                 return;
             }
-            else if(handFeatures != null){
-                resultBitmap = handFeatures.getProcessed(true);
-            }
+
+            resultBitmap = handFeatures.getProcessed(false);
+
         } catch (HandFeaturesException hfe) {
             System.out.println("HandFeaturesException!." + hfe.toString());
-            resultBitmap = handFeatures.getProcessed(false);
         } catch (Exception e) {
             System.out.println("Exception: Nie przewidziany wyjatek dla HandFeatures!");
             System.out.println(e.toString());
