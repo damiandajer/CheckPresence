@@ -30,10 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.opencv.core.Core.absdiff;
-import static org.opencv.core.Core.subtract;
-import static org.opencv.imgproc.Imgproc.cvtColor;
-
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     Activity mainActivity;
     MainActivity mainActivityObject;
