@@ -697,7 +697,7 @@ public class DataBase extends SQLiteOpenHelper{
 
         dataBase.execSQL(deleteQuery);
     }
-    
+
     public ArrayList<Cursor> getData(String Query){
         //get writable database
         SQLiteDatabase sqlDB = this.getWritableDatabase();

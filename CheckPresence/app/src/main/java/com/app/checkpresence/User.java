@@ -25,6 +25,14 @@ public class User {
         this.traits = traits;
     }
 
+    public User(String firstName, String secondName, int indexNumber, String groupName, List<float[]> traits) {
+        this.firstName = firstName;
+        this.secondName = secondName;
+        this.indexNumber = indexNumber;
+        this.groupName = groupName;
+        this.traits = traits;
+    }
+
     public long getId(){ return id; }
 
     public String getGroupName() {
