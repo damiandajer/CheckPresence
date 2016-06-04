@@ -1,9 +1,5 @@
 package com.app.checkpresence;
 
-/**
- * Created by Damian on 04.04.2016.
- */
-
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -11,8 +7,6 @@ import android.hardware.Camera;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -20,9 +14,6 @@ import com.app.database.DataBase;
 import com.app.memory.CopyManager;
 import com.app.picture.Frame;
 import com.app.recognition.HandRecognizer;
-import com.app.recognition.Normalizer;
-
-import org.opencv.android.OpenCVLoader;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,34 +21,37 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
+/**
+ * Created by Damian on 30.05.2016.
+ */
+public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Callback {
     Activity mainActivity;
-    MainActivity mainActivityObject;
+    AddUserActivity addUserActivity;
     protected SurfaceHolder mHolder;
     protected Camera mCamera;
     public static Camera.Size size;
     protected int frames = 1;
     protected int pictureSaved = 0;
     protected TextView savedPic;
-    private ImageView bottomRight, bottomLeft, topLeft, topCenter, topRight, bottomCenter;
-    private ImageButton backgroundBtn;
+    private ImageView bottomCenter;
     private Bitmap bmpBackground;
     private Boolean getBckg = true;
-    private List<ImageView> cppViews, openCVViews;
     private Frame frame, backgroundFrame;
     private List<float[]> actualHandFeatures, allHandFeatures;
     private HandRecognizer handRecognizer;
     private Map<Integer, List<float[]>> usersWithTraits;
     private DataBase dataBase;
-    private List<Integer> recognisedUsers;
-    private boolean cameraNull;
+    private List<String> recognisedUsers;
+    private String firstName;
+    private String secondName;
+    private String groupName;
+    private int indexUser;
 
-    public CameraView(Context context, Activity activity, MainActivity mainActivityObject, Camera camera){
+    public AddUserCameraView(Context context, Activity activity, AddUserActivity addUserActivity, Camera camera){
         super(context);
 
         this.mainActivity = activity;
-        this.mainActivityObject = mainActivityObject;
-        this.backgroundBtn = (ImageButton) this.mainActivity.findViewById(R.id.backgroundBtn);
+        this.addUserActivity = addUserActivity;
         this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
         mCamera = camera;
         //get the holder and set this class as the callback, so we can get camera data here
@@ -67,27 +61,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         mCamera.setDisplayOrientation(90);
         setCameraParameters();
         this.dataBase = MainActivity.getDataBase();
-        this.cameraNull = false;
-        this.backgroundBtn.setOnClickListener(new View.OnClickListener(){
-
-            @Override
-            public void onClick(View v) {
-                getBckg = true;
-            }
-        });
-        initiateOpenCV();
-        this.cppViews = new ArrayList<>();
-        this.openCVViews = new ArrayList<>();
         this.actualHandFeatures = new ArrayList<>();
         this.allHandFeatures = new ArrayList<>();
         this.recognisedUsers = new ArrayList<>();
         this.usersWithTraits = new HashMap<>();
         this.frame = new Frame();
         this.backgroundFrame = new Frame();
-        this.handRecognizer = new HandRecognizer(new Normalizer());
+        this.handRecognizer = new HandRecognizer();
         setAllViewsToVariables();
-        setCppViewsList();
-        setOpenCVViewsList();
     }
 
 
@@ -95,10 +76,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
         try{
-            if(cameraNull == true){
-                openCameraAndSetParameters();
-                cameraNull = false;
-            }
             //when the surface is created, we can set the camera to draw images in this surfaceholder
             mCamera.setPreviewDisplay(surfaceHolder);
             mCamera.startPreview();
@@ -124,16 +101,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                 if(frames == 5) {
                     //number of processed pictures
                     ++pictureSaved;
-                    savedPic.setText(pictureSaved + " processed");
+                    //savedPic.setText(pictureSaved + " processed");
 
                     segmentateImagesGivenAsBytes(data);
                     findHandFeaturesFromSegmentatedHands();
-                    recognizeUser();
-                    if(recognisedUsers.size() != 0) {
-                        mCamera.stopPreview();
-                        System.out.println(recognisedUsers.get(0));
-                        mainActivityObject.pushFoundUserToScreen(recognisedUsers);
-                        recognisedUsers = new ArrayList<>();
+                    if(checkIfAllFeatures()){
+                        addUser();
+                        //createUser();
+                        //addUserActivity.closeActivity();
                     }
 
                     //set frames to 0 (return to the beginning of loop)
@@ -168,10 +143,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         setImageToImageView(bottomCenter, liveViewBitmap);
 
         frame.setBackground(bmpBackground);
-        frame.setThresholds(10, 60, 4);
+        frame.setThresholds(10, 110, 3);
         frame.segmentateFrameWithOpenCV();
-        List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
-        setBitmapsToViews(openCVViews, openCVBitmaps);
 
         //CopyManager.saveBitmapToDisk(openCVBitmaps, pictureSaved, "OpenCV");
     }
@@ -180,15 +153,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         frame.findHandFeatures();
         this.actualHandFeatures = frame.getHandFeatures();
         for (float[] features:frame.getHandFeatures()
-             ) {
+                ) {
             this.allHandFeatures.add(features);
-        }
-    }
-
-    public void recognizeUser(){
-        getAllUsersWithTraits();
-        if (actualHandFeatures.size() != 0) {
-            recognisedUsers = handRecognizer.recognise(actualHandFeatures.get(0), usersWithTraits);
         }
     }
 
@@ -224,23 +190,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     }
 
     private void setAllViewsToVariables(){
-        this.bottomRight = (ImageView) this.mainActivity.findViewById(R.id.segmentatedHand1);
-        this.bottomLeft = (ImageView) this.mainActivity.findViewById(R.id.segmentatedHand3);
-        this.topLeft = (ImageView) this.mainActivity.findViewById(R.id.segmentatedHand4);
-        this.topCenter = (ImageView) this.mainActivity.findViewById(R.id.segmentatedHand5);
-        this.topRight = (ImageView) this.mainActivity.findViewById(R.id.segmentatedHand6);
         this.bottomCenter = (ImageView) this.mainActivity.findViewById(R.id.liveView);
-    }
-
-    private void setCppViewsList(){
-        this.cppViews.add(bottomRight);
-        this.cppViews.add(bottomLeft);
-    }
-
-    private void setOpenCVViewsList(){
-        this.openCVViews.add(topRight);
-        this.openCVViews.add(topCenter);
-        this.openCVViews.add(topLeft);
     }
 
     public void setBitmapsToViews(List<ImageView> views, List<Bitmap> bitmaps){
@@ -251,48 +201,38 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         }
     }
 
-    private static void initiateOpenCV(){
-        if (!OpenCVLoader.initDebug()) {
-            Log.e("TEST", "OpenCVLoader Failed");
-        }else {
-            Log.e("TEST", "OpenCVLoader Succeeded");
-            //System.loadLibrary("CameraVision");
-            System.loadLibrary("opencv_java3");
+    private boolean checkIfAllFeatures(){
+        if(allHandFeatures.size() < 10){
+            savedPic.setText(allHandFeatures.size() + " found");
+            return false;
         }
+        else
+            return true;
     }
 
-    public void saveFeaturesToFile(){
-        if(actualHandFeatures != null)
-            CopyManager.saveHandFeaturesToTxt(allHandFeatures, "HandFeatures-3");
-    }
-
-    private void getAllUsersWithTraits(){
-        this.dataBase = MainActivity.getDataBase();
-        usersWithTraits = this.dataBase.getAllUsersWithTraits();
-    }
-
-    public void setMarkerCameraNull(){
-        cameraNull = true;
-    }
-
-    private void openCameraAndSetParameters(){
-        try{
-            mCamera.release();
-            mCamera = null;
-            mCamera = Camera.open(1);//you can use open(int) to use different cameras
-        } catch (Exception e){
-            Log.d("ERROR", "Failed to get camera: " + e.getMessage());
-        }
-        mCamera.setDisplayOrientation(90);
-        setCameraParameters();
-    }
-
-    public void startPreviewInCameraView(){
-        mCamera.startPreview();
-    }
-
-    public void stopPreviewInCameraView(){
+    private void addUser(){
         mCamera.stopPreview();
+        addUserActivity.addUserData();
+    }
+
+    public void createUser(){
+        User user = new User(firstName, secondName, indexUser, groupName, allHandFeatures);
+        dataBase.insertUser(user);
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public void setSecondName(String secondName) {
+        this.secondName = secondName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+
+    public void setIndexUser(int indexUser) {
+        this.indexUser = indexUser;
     }
 }
-

@@ -3,8 +3,11 @@ package com.app.database;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.MatrixCursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.app.checkpresence.Classes;
 import com.app.checkpresence.User;
@@ -377,6 +380,24 @@ public class DataBase extends SQLiteOpenHelper{
         return users;
     }
 
+    public List<Integer> getAllUsersAlbums(){
+
+        List<Integer> users = new ArrayList<Integer>();
+
+        String selectQuery = "SELECT " + COLUMN_NAME_INDEX
+                + " FROM " + TABLE_NAME_USERS;
+
+        Cursor cursor = dataBase.rawQuery(selectQuery, null);
+
+        if(cursor != null && cursor.moveToFirst()) {
+            do{
+                users.add(cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_INDEX)));
+            }while(cursor.moveToNext());
+        }
+
+        return users;
+    }
+
     /**
      * Zwraca wszystkich użytkowników z danej grupy
      * @return List<User> - lista użytkowników
@@ -488,7 +509,6 @@ public class DataBase extends SQLiteOpenHelper{
 
         return traits;
     }
-
 
     /**
      * Dodaje nowe zajęcia do bazy. Zajecia dla podanej grupy w podanym dniu
@@ -676,6 +696,54 @@ public class DataBase extends SQLiteOpenHelper{
         String deleteQuery = "DELETE FROM " + TABLE_NAME_CLASS;
 
         dataBase.execSQL(deleteQuery);
+
+    public ArrayList<Cursor> getData(String Query){
+        //get writable database
+        SQLiteDatabase sqlDB = this.getWritableDatabase();
+        String[] columns = new String[] { "mesage" };
+        //an array list of cursor to save two cursors one has results from the query
+        //other cursor stores error message if any errors are triggered
+        ArrayList<Cursor> alc = new ArrayList<Cursor>(2);
+        MatrixCursor Cursor2= new MatrixCursor(columns);
+        alc.add(null);
+        alc.add(null);
+
+
+        try{
+            String maxQuery = Query ;
+            //execute the query results will be save in Cursor c
+            Cursor c = sqlDB.rawQuery(maxQuery, null);
+
+
+            //add value to cursor2
+            Cursor2.addRow(new Object[] { "Success" });
+
+            alc.set(1,Cursor2);
+            if (null != c && c.getCount() > 0) {
+
+
+                alc.set(0,c);
+                c.moveToFirst();
+
+                return alc ;
+            }
+            return alc;
+        } catch(SQLException sqlEx){
+            Log.d("printing exception", sqlEx.getMessage());
+            //if any exceptions are triggered save the error message to cursor an return the arraylist
+            Cursor2.addRow(new Object[] { ""+sqlEx.getMessage() });
+            alc.set(1,Cursor2);
+            return alc;
+        } catch(Exception ex){
+
+            Log.d("printing exception", ex.getMessage());
+
+            //if any exceptions are triggered save the error message to cursor an return the arraylist
+            Cursor2.addRow(new Object[] { ""+ex.getMessage() });
+            alc.set(1,Cursor2);
+            return alc;
+        }
+
     }
 
 }

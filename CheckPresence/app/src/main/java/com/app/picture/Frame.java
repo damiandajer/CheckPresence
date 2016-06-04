@@ -121,12 +121,23 @@ public class Frame {
 
     public void findHandFeatures(){
         handFeatures = new ArrayList<>();
+        //arrays before trim to 30, have a size of 51120 (it's a bug in native code)
+        List<float[]> handFeaturesBeforeTrim = new ArrayList<>();
 
         HandFeaturesThreads handFeaturesThreads = HandFeaturesThreads.getNewObject();
         handFeaturesThreads.addNewThread(openCVIntArrays, this.segmentatedHeight, this.segmentatedWidth);
         handFeaturesThreads.executeThreads();
 
-        this.handFeatures = handFeaturesThreads.getListOfArraysWithHandFeatures();
+        handFeaturesBeforeTrim = handFeaturesThreads.getListOfArraysWithHandFeatures();
+
+        float[] newFloat = new float[30];
+        for (float[] f:handFeaturesBeforeTrim
+             ) {
+            for (int i = 0; i<30; i++){
+                newFloat[i] = f[i];
+            }
+            this.handFeatures.add(newFloat);
+        }
     }
 
     public void segmentateFrameWithOpenCV(){
