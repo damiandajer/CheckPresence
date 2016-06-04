@@ -692,11 +692,12 @@ public class DataBase extends SQLiteOpenHelper{
     /**
      * Usuwa wszystkie wpisy z zajęciami
      */
-    public void deleteAllClasses(){
+    public void deleteAllClasses() {
         String deleteQuery = "DELETE FROM " + TABLE_NAME_CLASS;
 
         dataBase.execSQL(deleteQuery);
-
+    }
+    
     public ArrayList<Cursor> getData(String Query){
         //get writable database
         SQLiteDatabase sqlDB = this.getWritableDatabase();
