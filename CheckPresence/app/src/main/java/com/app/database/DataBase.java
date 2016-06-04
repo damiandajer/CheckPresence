@@ -427,15 +427,15 @@ public class DataBase extends SQLiteOpenHelper{
      * Zwraca mapę w której do indeksów przypisane są tablice z cechami użytkowników
      * @return Map<String, List<float[]>>
      */
-    public Map<String, List<float[]>> getAllUsersWithTraits(){
+    public Map<Integer, List<float[]>> getAllUsersWithTraits(){
         List<User> users = new ArrayList<>();
         List<float[]> traits = new ArrayList<>();
         int indexNumber;
-        Map<String, List<float[]>> usersWithTraits = new HashMap<>();
+        Map<Integer, List<float[]>> usersWithTraits = new HashMap<>();
         users = getAllUsers();
 
         for (User u : users) {
-            usersWithTraits.put(Integer.toString(u.getIndexNumber()),  u.getTraits());
+            usersWithTraits.put(u.getIndexNumber(),  u.getTraits());
         }
 
         return usersWithTraits;

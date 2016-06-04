@@ -19,15 +19,13 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <ListView
-            android:id="@+id/navList"
-            android:layout_width="80dp"
+        <fragment
+            android:id="@+id/navigation_drawer"
+            android:name="com.app.checkpresence.NavigationDrawerFragment"
+            android:layout_width="@dimen/navigation_drawer_width"
             android:layout_height="match_parent"
-            android:layout_gravity="right"
-            android:background="#33383c">
-
-
-        </ListView>
+            android:layout_gravity="start"
+            tools:layout="@layout/drawer_main" />
 
     </android.support.v4.widget.DrawerLayout>
 
