@@ -171,6 +171,7 @@ public class DataBase extends SQLiteOpenHelper{
         createTableTrait(db);
         createTableClass(db);
         createTablePresence(db);
+        createTraitsTrigger(db);
     }
 
     @Override
@@ -186,6 +187,9 @@ public class DataBase extends SQLiteOpenHelper{
         if(oldVersion < 6){
             createTableClass(db);
             createTablePresence(db);
+        }
+        if(oldVersion < 7){
+            createTraitsTrigger(db);
         }
     }
 
@@ -206,6 +210,29 @@ public class DataBase extends SQLiteOpenHelper{
 
     private void createTablePresence(SQLiteDatabase db){ db.execSQL(ON_CREATE_PRESENCE);}
     private void dropPresence(SQLiteDatabase db) { db.execSQL(ON_DELETE_PRESENCE);}
+
+    /**
+     * Tworzy triggera usuwającego stare wartości z tabeli traits
+     */
+    public void createTraitsTrigger(SQLiteDatabase db){
+        db.execSQL("CREATE TRIGGER IF NOT EXISTS traitTrigger \n" +
+                " AFTER INSERT "+
+                " ON "+ TABLE_NAME_TRAIT + "\n" +
+                " FOR EACH ROW \n" +
+
+                " WHEN ( select count(*) from " + TABLE_NAME_TRAIT + " \n" +
+                    " where " + COLUMN_NAME_ID_USER_IN_TRAIT + "= NEW." + COLUMN_NAME_ID_USER_IN_TRAIT + "\n" +
+                    " ) > 30 \n" +
+
+                " BEGIN \n"+
+
+                        " delete from " + TABLE_NAME_TRAIT + "\n" +
+                        " where " + COLUMN_NAME_ID_USER_IN_TRAIT  + " = (" +
+                        " select min("+ COLUMN_NAME_ID_USER_IN_TRAIT +") from " + TABLE_NAME_TRAIT + "\n" +
+                        " where " + COLUMN_NAME_ID_USER_IN_TRAIT + "= NEW." + COLUMN_NAME_ID_USER_IN_TRAIT + ");\n" +
+
+                " END;");
+    }
 
     /**
      * Dodaje do bazy grupę o podanej nazwie i zwraca id
@@ -427,15 +454,15 @@ public class DataBase extends SQLiteOpenHelper{
      * Zwraca mapę w której do indeksów przypisane są tablice z cechami użytkowników
      * @return Map<String, List<float[]>>
      */
-    public Map<String, List<float[]>> getAllUsersWithTraits(){
+    public Map<Integer, List<float[]>> getAllUsersWithTraits(){
         List<User> users = new ArrayList<>();
         List<float[]> traits = new ArrayList<>();
         int indexNumber;
-        Map<String, List<float[]>> usersWithTraits = new HashMap<>();
+        Map<Integer, List<float[]>> usersWithTraits = new HashMap<>();
         users = getAllUsers();
 
         for (User u : users) {
-            usersWithTraits.put(Integer.toString(u.getIndexNumber()),  u.getTraits());
+            usersWithTraits.put(u.getIndexNumber(),  u.getTraits());
         }
 
         return usersWithTraits;
