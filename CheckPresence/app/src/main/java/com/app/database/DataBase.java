@@ -27,7 +27,7 @@ public class DataBase extends SQLiteOpenHelper{
 
     public static final String DATABASE_NAME = "baza.db";
     public static int NUMBER_OF_TRAITS = 30;
-    private static final int DB_VERSION = 6;
+    private static final int DB_VERSION = 7;
 
     public static final String TABLE_NAME_USERS = "users";
     public static final String COLUMN_NAME_ID_USER = "id_user";
