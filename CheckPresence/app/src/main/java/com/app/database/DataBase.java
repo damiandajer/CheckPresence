@@ -27,7 +27,7 @@ public class DataBase extends SQLiteOpenHelper{
 
     public static final String DATABASE_NAME = "baza.db";
     public static int NUMBER_OF_TRAITS = 30;
-    private static final int DB_VERSION = 6;
+    private static final int DB_VERSION = 7;
 
     public static final String TABLE_NAME_USERS = "users";
     public static final String COLUMN_NAME_ID_USER = "id_user";
@@ -171,6 +171,7 @@ public class DataBase extends SQLiteOpenHelper{
         createTableTrait(db);
         createTableClass(db);
         createTablePresence(db);
+        createTraitsTrigger(db);
     }
 
     @Override
@@ -186,6 +187,9 @@ public class DataBase extends SQLiteOpenHelper{
         if(oldVersion < 6){
             createTableClass(db);
             createTablePresence(db);
+        }
+        if(oldVersion < 7){
+            createTraitsTrigger(db);
         }
     }
 
@@ -206,6 +210,29 @@ public class DataBase extends SQLiteOpenHelper{
 
     private void createTablePresence(SQLiteDatabase db){ db.execSQL(ON_CREATE_PRESENCE);}
     private void dropPresence(SQLiteDatabase db) { db.execSQL(ON_DELETE_PRESENCE);}
+
+    /**
+     * Tworzy triggera usuwającego stare wartości z tabeli traits
+     */
+    public void createTraitsTrigger(SQLiteDatabase db){
+        db.execSQL("CREATE TRIGGER IF NOT EXISTS traitTrigger \n" +
+                " AFTER INSERT "+
+                " ON "+ TABLE_NAME_TRAIT + "\n" +
+                " FOR EACH ROW \n" +
+
+                " WHEN ( select count(*) from " + TABLE_NAME_TRAIT + " \n" +
+                    " where " + COLUMN_NAME_ID_USER_IN_TRAIT + "= NEW." + COLUMN_NAME_ID_USER_IN_TRAIT + "\n" +
+                    " ) > 30 \n" +
+
+                " BEGIN \n"+
+
+                        " delete from " + TABLE_NAME_TRAIT + "\n" +
+                        " where " + COLUMN_NAME_ID_USER_IN_TRAIT  + " = (" +
+                        " select min("+ COLUMN_NAME_ID_USER_IN_TRAIT +") from " + TABLE_NAME_TRAIT + "\n" +
+                        " where " + COLUMN_NAME_ID_USER_IN_TRAIT + "= NEW." + COLUMN_NAME_ID_USER_IN_TRAIT + ");\n" +
+
+                " END;");
+    }
 
     /**
      * Dodaje do bazy grupę o podanej nazwie i zwraca id
