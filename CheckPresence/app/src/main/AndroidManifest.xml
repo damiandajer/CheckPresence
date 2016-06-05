@@ -30,8 +30,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".AddUserActivity"></activity>
-        <activity android:name=".AndroidDatabaseManager"></activity>
+        <activity android:name=".AddUserActivity" />
+        <activity android:name=".AndroidDatabaseManager" />
     </application>
 
 </manifest>
