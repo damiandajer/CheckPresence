@@ -9,6 +9,7 @@ import com.app.handfeatures.Color;
 import com.app.handfeatures.HandFeatures;
 import com.app.handfeatures.HandFeaturesData;
 import com.app.handfeatures.HandFeaturesException;
+import com.app.memory.CopyManager;
 
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -73,6 +74,7 @@ public class OpenCVSubtraction implements Runnable {
             else { // BEZ OPENCV
                 numberOfElementPixels = handFeatures.binaryzation(45, Color.BG_COLOR, Color.EL_COLOR);
             }
+            //CopyManager.saveBitmapToDisk(handFeatures.getProcessed(false), HandFeatures.foundedHandsFeatures, "binarized_");
 
             // ---------------
             // RESZTA KODU JEST TAKA SAMA NIEZALEZNIE OD PROCESU BINARYZACJI
@@ -101,6 +103,7 @@ public class OpenCVSubtraction implements Runnable {
             handFeatures.getImage().smoothEdge(Color.EL_COLOR, Color.BG_COLOR);
             // segmentacja
             int foundAreas = handFeatures.segmentation();
+            //CopyManager.saveBitmapToDisk(handFeatures.getProcessed(false), HandFeatures.foundedHandsFeatures, "segmentated_");
             if (tooFewElementPixels == true && foundAreas == 0 || foundAreas > HandFeatures.maxAllowedAreas) {
                 System.out.println("Segmentacja - blad przetwarzania!");
                 resultBitmap = handFeatures.getProcessed(false);
