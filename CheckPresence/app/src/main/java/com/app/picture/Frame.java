@@ -1,6 +1,7 @@
 package com.app.picture;
 
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.hardware.Camera;
 
 import com.app.checkpresence.CameraView;
@@ -104,6 +105,16 @@ public class Frame {
         this.segmentatedWidth = width;
     }
 
+    private Rect createRectWithSizeOfSegmentatedBitmap(){
+        //(int)(height*0.15), 0, (int)(height*0.7), (int)(width*0.6)
+        int left = (int)(actualFrame.getWidth()*0.15);
+        int top = 0;
+        int right = (int)(actualFrame.getWidth()*0.7);
+        int bottom = actualFrame.getHeight();
+        Rect rect = new Rect(left, top, right, bottom);
+        return rect;
+    }
+
     public void setBackground(Bitmap bmpBackground){
         this.bmpBackground = bmpBackground;
     }
@@ -134,10 +145,11 @@ public class Frame {
     public void segmentateFrameWithOpenCV(){
         openCVBitmaps = new ArrayList<>();
         openCVIntArrays = new ArrayList<>();
+        Rect sizeOfBitmapToSegmentation = createRectWithSizeOfSegmentatedBitmap();
 
         OpenCVSubtractionThreads openCVSubtractionThreads = OpenCVSubtractionThreads.getNewObject();
         openCVSubtractionThreads.createListOfThresholds(this.min, this.max, this.numberOfThresholds);
-        openCVSubtractionThreads.addNewThread(actualFrame, bmpBackground);
+        openCVSubtractionThreads.addNewThread(actualFrame, bmpBackground, sizeOfBitmapToSegmentation);
         openCVSubtractionThreads.executeThreads();
 
         openCVIntArrays = openCVSubtractionThreads.getListOfIntArrays();

@@ -1,6 +1,7 @@
 package com.app.segmentation;
 
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 
 import com.app.checkpresence.AddUserCameraView;
 import com.app.checkpresence.CameraView;
@@ -27,6 +28,7 @@ public class OpenCVSubtraction implements Runnable {
     //float[] handFeatures;
     private native int[] deleteSmallAreas(int[] intARGBArray, int height, int width);
     private HandFeatures handFeatures = null;
+    Rect sizeOfBitmapToSegmentation;
 
 
     /**
@@ -34,10 +36,11 @@ public class OpenCVSubtraction implements Runnable {
      * @param inputBitmap Bitmap to process
      * @param backgroundBitmap Bitmap with background
      */
-    public OpenCVSubtraction(Bitmap inputBitmap, Bitmap backgroundBitmap, int threshold) {
+    public OpenCVSubtraction(Bitmap inputBitmap, Bitmap backgroundBitmap, int threshold, Rect sizeOfBitmapToSegmentation) {
         this.inputBitmap = inputBitmap;
         this.backgroundBitmap = backgroundBitmap;
         resultBitmap = inputBitmap;
+        this.sizeOfBitmapToSegmentation = sizeOfBitmapToSegmentation;
 
         this.height = inputBitmap.getHeight();
         this.width = inputBitmap.getWidth();
