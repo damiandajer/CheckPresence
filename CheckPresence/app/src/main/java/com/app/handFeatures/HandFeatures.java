@@ -278,9 +278,10 @@ public class HandFeatures {
             area.rect.top -= 2;
             area.rect.bottom += 2;
 
-            MyImage elementImage = m_image.getImage(area.rect, Color.BG_COLOR);
+            //MyImage elementImage = m_image.getImage(area.rect, Color.BG_COLOR);
+            MyImage elementImage = new MyImage(area);
             elementImage.setBorderColor(Color.EL_COLOR);
-            ImageUtils.fillAllArea(elementImage, Color.BG_COLOR, Color.EL_COLOR, 10);
+            ImageUtils.fillAllArea(elementImage, Color.BG_COLOR, Color.EL_COLOR, m_image.width() * 5);
 
             // czyszczenie czarnych wglebien(grubosc 1 pixel) w element(dlon)
             elementImage.setBorderColor(Color.EL_COLOR);
@@ -289,8 +290,9 @@ public class HandFeatures {
             elementImage.setBorderColor(Color.BG_COLOR);
             elementImage.smoothEdge(Color.EL_COLOR, Color.BG_COLOR);
 
-            m_image = new MyImage(m_image.width(), m_image.height());
-            m_image.setImageAtCenter(elementImage);
+            //m_image = new MyImage(m_image.width(), m_image.height());
+            //m_image.setImageAtCenter(elementImage);
+            m_image = elementImage;
             /*MyImage finalImage = new MyImage(m_image.width(), m_image.height());
             finalImage.setImageAtCenter(elementImage);*/
 
@@ -340,6 +342,7 @@ public class HandFeatures {
             isGood = false;
         }
 
+        ++HandFeatures.foundedHandsFeatures;
         return isGood;
     }
 

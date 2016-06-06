@@ -2,6 +2,7 @@ package com.app.handFeaturesThreads;
 
 import com.app.handfeatures.HandFeaturesData;
 import com.app.handfeatures.HandFeaturesException;
+import com.app.memory.CopyManager;
 
 /**
  * Created by Damian on 24.05.2016.
@@ -33,10 +34,10 @@ public class HandFeatures implements Runnable {
         try {
             if (handFeaturesObject.calculateFeatures() == true) {
                 //CopyManager.saveBitmapToDisk(handFeatures.getConturBitmap(true), CameraView.foundedHandsFeatures++, "Contour_");
+                //CopyManager.saveBitmapToDisk(handFeaturesObject.getProcessed(true), com.app.handfeatures.HandFeatures.foundedHandsFeatures, "calculated_");
                 handFeaturesData = new HandFeaturesData(handFeaturesObject);
                 handFeaturesData.show(true); // cechy 1 lini
                 handFeaturesData.show(false); // wypisuje pogrupowane cechy
-                ++com.app.handfeatures.HandFeatures.foundedHandsFeatures;
             }
         } catch (Exception e) {
             System.out.println(e.toString());

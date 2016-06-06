@@ -1,0 +1,5 @@
+*.class
+CheckPresence/openCVLibrary/build/intermediates/bundles/release/classes.jar
+*.class
+CheckPresence/openCVLibrary/build/intermediates/classes/debug/org/opencv/core/Core.class
+*.class

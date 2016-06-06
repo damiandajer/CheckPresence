@@ -38,7 +38,7 @@ final public class CopyManager {
 
         createDir("backupBMP");
 
-        String newFileFullName = fileName + licznik + ".bmp";
+        String newFileFullName = fileName + licznik + ".png";
         createFile(newFileFullName);
         saveBitmapToFile(image);
     }

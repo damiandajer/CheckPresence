@@ -102,8 +102,19 @@ public class MyImage {
 
         for (int y = 0; y < m_height; ++y) {
             for (int x = 0; x < m_width; ++x) {
-                    m_image[y][x] = Color.BG_COLOR;
+                m_image[y][x] = Color.BG_COLOR;
             }
+        }
+    }
+
+    public MyImage(ImageArea area) {
+        m_height = area.rect.height();
+        m_width = area.rect.width();
+        m_numOfPixels = m_width * m_height;
+        allocate();
+
+        for (Point p : area.points) {
+            m_image[p.y - area.rect.top][p.x - area.rect.left] = Color.EL_COLOR;
         }
     }
 
