@@ -93,6 +93,7 @@ public class OpenCVSubtraction implements Runnable {
             if (numberOfElementPixels > (handFeatures.getImage().width() * handFeatures.getImage().height()) * 0.70) {
                 System.out.println("Binaryzacja - znaleziono za duzo pixeli elementu");
                 resultBitmap = handFeatures.getProcessed(false);
+                AddUserCameraView.refreshBackground = true;
                 CameraView.refreshBackground = true;
                 return;
             }

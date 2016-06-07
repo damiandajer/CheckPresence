@@ -26,9 +26,9 @@ import java.util.Map;
  */
 public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Callback {
     public static boolean refreshBackground = true;
-    public static boolean measureCameraTime = true; // czy odliczac czas dla ustabilizowania kamery i jej blokady
     public final static long autoAdjustmentTime = 2000000000L; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
 
+    public boolean measureCameraTime; // czy odliczac czas dla ustabilizowania kamery i jej blokady
     private long startTime; //punkt poczatkowy czasu. actualTime - startTime >= autoAdjustmentTime => zablokowanie kamery
     private Camera.Parameters startParameters; // poczatkowe ustawienia kamery, jezeli odblokujemy aparato to chcemy wlasnie do nich powrucic
 
@@ -51,12 +51,12 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     private String firstName;
     private String secondName;
     private String groupName;
-    private int indexUser;
+    private int indexUser, segmentatedHandsBufor;
 
     public AddUserCameraView(Context context, Activity activity, AddUserActivity addUserActivity, Camera camera){
         super(context);
 
-        startTime = System.nanoTime();
+        startAutoExposure();
 
         this.mainActivity = activity;
         this.addUserActivity = addUserActivity;
@@ -77,6 +77,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         this.backgroundFrame = new Frame();
         this.handRecognizer = new HandRecognizer();
         setAllViewsToVariables();
+        clearSegmentatedHandsBufor();
     }
 
 
@@ -181,7 +182,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         setImageToImageView(bottomCenter, liveViewBitmap);
 
         frame.setBackground(bmpBackground);
-        frame.setThresholds(10, 110, 3);
+        frame.setThresholds(20, 20, 1);
         frame.segmentateFrameWithOpenCV();
 
         //CopyManager.saveBitmapToDisk(openCVBitmaps, pictureSaved, "OpenCV");
@@ -190,9 +191,13 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     public void findHandFeaturesFromSegmentatedHands(){
         frame.findHandFeatures();
         this.actualHandFeatures = frame.getHandFeatures();
-        for (float[] features:frame.getHandFeatures()
-                ) {
-            this.allHandFeatures.add(features);
+        ++segmentatedHandsBufor;
+        if(actualHandFeatures.size() != 0 && segmentatedHandsBufor > 2) {
+            for (float[] features : frame.getHandFeatures()
+                    ) {
+                this.allHandFeatures.add(features);
+            }
+            clearSegmentatedHandsBufor();
         }
     }
 
@@ -220,6 +225,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         backgroundFrame.setActualFrame(data);
         this.bmpBackground = backgroundFrame.getActualBitmap();
         this.refreshBackground = false;
+        clearSegmentatedHandsBufor();
         System.out.println("Pobrano nową próbkę tła...");
     }
 
@@ -272,5 +278,14 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
 
     public void setIndexUser(int indexUser) {
         this.indexUser = indexUser;
+    }
+
+    public void startAutoExposure(){
+        measureCameraTime = true;
+        startTime = System.nanoTime();
+    }
+
+    public void clearSegmentatedHandsBufor(){
+        segmentatedHandsBufor = 0;
     }
 }

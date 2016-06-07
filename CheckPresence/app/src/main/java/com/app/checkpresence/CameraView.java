@@ -17,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.app.database.DataBase;
+import com.app.handfeatures.HandFeatures;
 import com.app.handfeatures.HandFeaturesData;
 import com.app.memory.CopyManager;
 import com.app.picture.Frame;
@@ -68,8 +69,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     public CameraView(Context context, Activity activity, MainActivity mainActivityObject, Camera camera){
         super(context);
 
-        measureCameraTime = true;
-        startTime = System.nanoTime();
+        startAutoExposure();
 
         this.mainActivity = activity;
         this.mainActivityObject = mainActivityObject;
@@ -148,7 +148,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                 if(frames == 5) {
                     //number of processed pictures
                     ++pictureSaved;
-                    savedPic.setText(pictureSaved + " processed");
+                    savedPic.setText(pictureSaved + " processed. Good " + HandFeatures.foundedHandsFeatures);
 
                     segmentateImagesGivenAsBytes(data);
                     findHandFeaturesFromSegmentatedHands();
@@ -226,19 +226,21 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     }
 
     public void findHandFeaturesFromSegmentatedHands(){
-        actualHandFeatures.clear();
+        //actualHandFeatures.clear();
         frame.findHandFeatures();
-        this.actualHandFeatures = frame.getHandFeatures();
+        //this.actualHandFeatures = frame.getHandFeatures();
         for (float[] features:frame.getHandFeatures()
              ) {
             this.allHandFeatures.add(features);
+            this.actualHandFeatures.add(features);
         }
     }
 
     public void recognizeUser(){
         getAllUsersWithTraits();
-        if (actualHandFeatures.size() != 0) {
-            recognisedUsers = handRecognizer.recognise(actualHandFeatures.get(0), usersWithTraits);
+        if (actualHandFeatures.size() > 2 * frame.getHandFeatures().size()) {
+            recognisedUsers = handRecognizer.recognise(actualHandFeatures.get(0).clone(), usersWithTraits);
+            actualHandFeatures.clear();
         }
     }
 
@@ -266,6 +268,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         backgroundFrame.setActualFrame(data);
         this.bmpBackground = backgroundFrame.getActualBitmap();
         this.refreshBackground = false;
+        actualHandFeatures.clear();
         System.out.println("Pobrano nową próbkę tła...");
     }
 
@@ -343,6 +346,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
     public void stopPreviewInCameraView(){
         mCamera.stopPreview();
+    }
+
+    public void startAutoExposure(){
+        measureCameraTime = true;
+        startTime = System.nanoTime();
     }
 }
 
