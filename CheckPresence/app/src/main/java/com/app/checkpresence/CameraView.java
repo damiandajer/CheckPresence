@@ -38,7 +38,7 @@ import static org.opencv.imgproc.Imgproc.cvtColor;
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     public static boolean refreshBackground = true;
     public static boolean measureCameraTime = true; // czy odliczac czas dla ustabilizowania kamery i jej blokady
-    public final static long autoAdjustmentTime = 1000000000L; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
+    public final static long autoAdjustmentTime = 2000000000L; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
 
     private long startTime; //punkt poczatkowy czasu. actualTime - startTime >= autoAdjustmentTime => zablokowanie kamery
     private Camera.Parameters startParameters; // poczatkowe ustawienia kamery, jezeli odblokujemy aparato to chcemy wlasnie do nich powrucic
@@ -129,20 +129,19 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         if(mHolder.getSurface() == null)//check if the surface is ready to receive camera data
             return;
 
-        if (CameraView.measureCameraTime) { // odliczanie czasu do zablokowania automatycznej ekpozycji kamery
-            if (System.nanoTime() - startTime > CameraView.autoAdjustmentTime) {
-                lockCameraExposure(true);
-                CameraView.measureCameraTime = false;
-            }
-        }
-
-
-
         mCamera.setPreviewCallback(new Camera.PreviewCallback() {
             public void onPreviewFrame(byte[] data, Camera _camera) {
                 //getting once bitmap with background
                 if(isGetBackgroundButtonClicked()){
                     getBackgroundFrame(data);
+                }
+
+                if (CameraView.measureCameraTime) { // odliczanie czasu do zablokowania automatycznej ekpozycji kamery
+                    //System.out.println("Diff time: " + (System.nanoTime() - startTime) + " > " + CameraView.autoAdjustmentTime);
+                    if (System.nanoTime() - startTime > CameraView.autoAdjustmentTime) {
+                        lockCameraExposure(true);
+                        CameraView.measureCameraTime = true;
+                    }
                 }
 
                 if(frames == 5) {
