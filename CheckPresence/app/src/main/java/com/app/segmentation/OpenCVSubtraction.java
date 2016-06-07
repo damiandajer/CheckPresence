@@ -102,7 +102,7 @@ public class OpenCVSubtraction implements Runnable {
             handFeatures.getImage().setBorderColor(Color.BG_COLOR);
             handFeatures.getImage().smoothEdge(Color.EL_COLOR, Color.BG_COLOR);
             // segmentacja
-            int foundAreas = handFeatures.segmentation(null);
+            int foundAreas = handFeatures.segmentation(areaToSegmentation);
             //CopyManager.saveBitmapToDisk(handFeatures.getProcessed(false), HandFeatures.foundedHandsFeatures, "segmentated_");
             if (tooFewElementPixels == true && foundAreas == 0 || foundAreas > HandFeatures.maxAllowedAreas) {
                 System.out.println("Segmentacja - blad przetwarzania!");

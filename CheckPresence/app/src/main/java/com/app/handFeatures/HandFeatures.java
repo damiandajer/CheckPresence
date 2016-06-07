@@ -268,6 +268,10 @@ public class HandFeatures {
             /*if (area.numOfFoundAreas > maxAreas) { // za duzo plam - obraz nie jest odpowieniej jakosci - zadnie pobrania nowego tla
                 return area.numOfFoundAreas;
             }*/
+            if (area.points.size() < (m_image.width() * m_image.height() * 0.35)) {
+                    System.out.println("Nie ma 40%!!!");
+                return 0;
+            }
 
             //System.out.println("Plama sklada sie z " + area.points.size() + " pixeli.");
             // znaleziona plama musi pokrywac chociaz 10% obrazu

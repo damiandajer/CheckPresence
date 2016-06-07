@@ -109,8 +109,8 @@ public class Frame {
         //(int)(height*0.15), 0, (int)(height*0.7), (int)(width*0.6)
         int left = (int)(actualFrame.getWidth()*0.15);
         int top = 0;
-        int right = (int)(actualFrame.getWidth()*0.7);
-        int bottom = actualFrame.getHeight();
+        int right = left + (int)(actualFrame.getWidth()*0.7);
+        int bottom = top + actualFrame.getHeight();
         Rect rect = new Rect(left, top, right, bottom);
         return rect;
     }

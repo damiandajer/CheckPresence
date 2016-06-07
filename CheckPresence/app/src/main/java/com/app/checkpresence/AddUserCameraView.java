@@ -25,6 +25,13 @@ import java.util.Map;
  * Created by Damian on 30.05.2016.
  */
 public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Callback {
+    public static boolean refreshBackground = true;
+    public static boolean measureCameraTime = true; // czy odliczac czas dla ustabilizowania kamery i jej blokady
+    public final static long autoAdjustmentTime = 2000000000L; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
+
+    private long startTime; //punkt poczatkowy czasu. actualTime - startTime >= autoAdjustmentTime => zablokowanie kamery
+    private Camera.Parameters startParameters; // poczatkowe ustawienia kamery, jezeli odblokujemy aparato to chcemy wlasnie do nich powrucic
+
     Activity mainActivity;
     AddUserActivity addUserActivity;
     protected SurfaceHolder mHolder;
@@ -35,7 +42,6 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     protected TextView savedPic;
     private ImageView bottomCenter;
     private Bitmap bmpBackground;
-    public static Boolean refreshBackground = true;
     private Frame frame, backgroundFrame;
     private List<float[]> actualHandFeatures, allHandFeatures;
     private HandRecognizer handRecognizer;
@@ -49,6 +55,8 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
 
     public AddUserCameraView(Context context, Activity activity, AddUserActivity addUserActivity, Camera camera){
         super(context);
+
+        startTime = System.nanoTime();
 
         this.mainActivity = activity;
         this.addUserActivity = addUserActivity;
@@ -98,6 +106,14 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
                     getBackgroundFrame(data);
                 }
 
+                if (measureCameraTime) { // odliczanie czasu do zablokowania automatycznej ekpozycji kamery
+                    //System.out.println("Diff time: " + (System.nanoTime() - startTime) + " > " + CameraView.autoAdjustmentTime);
+                    if (System.nanoTime() - startTime > CameraView.autoAdjustmentTime) {
+                        lockCameraExposure(true);
+                        measureCameraTime = false;
+                    }
+                }
+
                 if(frames == 5) {
                     //number of processed pictures
                     ++pictureSaved;
@@ -126,8 +142,32 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         parameters.setRotation(90);
         Camera.Size size = parameters.getPreviewSize();
         parameters.setPreviewSize(size.width / 2, size.height / 2);
+        startParameters = parameters; // zapamietuje poczatkowe ustawienia kamery
         mCamera.setParameters(parameters);
         this.size = parameters.getPreviewSize();
+    }
+
+    public void lockCameraExposure(boolean lock){
+        Camera.Parameters parameters = mCamera.getParameters();
+
+        // chcemy zablokowac automatyczna ekspozycje siatla aparatu
+        if (lock == true) {
+            if (parameters.getAutoExposureLock() == false) { // ekspozycja swiatla automatyczna
+                System.out.println("Ekspozycja swiatła automatyczna. Wylaczono");
+                parameters.setAutoExposureLock(true); // zabllkuj ekspozycje swiatla
+            }
+            if (parameters.getAutoWhiteBalanceLock() == false) { // balans bieli automatyczny
+                System.out.println("Balans bielie automatyczny. Wylaczono");
+                parameters.setAutoWhiteBalanceLock(true); // zablokuj
+            }
+            //parameters.set("iso", 800);
+        }
+        else {
+            // przywraca poczatkowe ustaiania kamery
+            mCamera.setParameters(startParameters);
+        }
+
+        mCamera.setParameters(parameters);
     }
 
     /**

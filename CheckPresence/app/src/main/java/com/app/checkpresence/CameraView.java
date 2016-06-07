@@ -37,9 +37,9 @@ import static org.opencv.imgproc.Imgproc.cvtColor;
 
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     public static boolean refreshBackground = true;
-    public static boolean measureCameraTime = true; // czy odliczac czas dla ustabilizowania kamery i jej blokady
     public final static long autoAdjustmentTime = 2000000000L; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
 
+    public boolean measureCameraTime; // czy odliczac czas dla ustabilizowania kamery i jej blokady
     private long startTime; //punkt poczatkowy czasu. actualTime - startTime >= autoAdjustmentTime => zablokowanie kamery
     private Camera.Parameters startParameters; // poczatkowe ustawienia kamery, jezeli odblokujemy aparato to chcemy wlasnie do nich powrucic
 
@@ -68,6 +68,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     public CameraView(Context context, Activity activity, MainActivity mainActivityObject, Camera camera){
         super(context);
 
+        measureCameraTime = true;
         startTime = System.nanoTime();
 
         this.mainActivity = activity;
@@ -136,11 +137,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     getBackgroundFrame(data);
                 }
 
-                if (CameraView.measureCameraTime) { // odliczanie czasu do zablokowania automatycznej ekpozycji kamery
+                if (measureCameraTime) { // odliczanie czasu do zablokowania automatycznej ekpozycji kamery
                     //System.out.println("Diff time: " + (System.nanoTime() - startTime) + " > " + CameraView.autoAdjustmentTime);
                     if (System.nanoTime() - startTime > CameraView.autoAdjustmentTime) {
                         lockCameraExposure(true);
-                        CameraView.measureCameraTime = true;
+                        measureCameraTime = false;
                     }
                 }
 
@@ -216,7 +217,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         setImageToImageView(bottomCenter, liveViewBitmap);
 
         frame.setBackground(bmpBackground);
-        frame.setThresholds(25, 25, 1);
+        frame.setThresholds(15, 15, 1);
         frame.segmentateFrameWithOpenCV();
         List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
         setBitmapsToViews(openCVViews, openCVBitmaps);
