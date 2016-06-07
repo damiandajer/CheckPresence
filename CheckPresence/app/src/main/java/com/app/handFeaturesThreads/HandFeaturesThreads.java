@@ -1,4 +1,4 @@
-package com.app.handFeatures;
+package com.app.handFeaturesThreads;
 
 import com.app.threads.TaskManager;
 import com.app.threads.ThreadHandler;
@@ -37,9 +37,9 @@ public class HandFeaturesThreads extends TaskManager {
         ThreadHandler.clearLists();
     }
 
-    public void addNewThread(List<int[]> segmentatedHandsList, int height, int width){
-        for (int[] segmentatedHand:segmentatedHandsList) {
-            HandFeatures handFeatures = new HandFeatures(segmentatedHand, height, width);
+    public void addNewThread(List<com.app.handfeatures.HandFeatures> segmentatedHandsList){
+        for (com.app.handfeatures.HandFeatures segmentatedHand:segmentatedHandsList) {
+            HandFeatures handFeatures = new HandFeatures(segmentatedHand);
             ThreadHandler.createThread(handFeatures);
         }
     }

@@ -1,7 +1,10 @@
 package com.app.segmentation;
 
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 
+import com.app.handfeatures.HandFeatures;
+import com.app.handfeatures.HandFeaturesData;
 import com.app.threads.TaskManager;
 import com.app.threads.ThreadHandler;
 
@@ -39,7 +42,7 @@ public class OpenCVSubtractionThreads extends TaskManager {
         for (Runnable r: ThreadHandler.getRunnables()) {
             try {
                 bitmaps.add(((OpenCVSubtraction) r).getBitmap());
-                intArrays.add(((OpenCVSubtraction) r).getARGBIntArray());
+                handFeatures.add(((OpenCVSubtraction) r).getHandFeaturesObject());
             }catch (IllegalFormatConversionException e){
                 e.printStackTrace();
             }
@@ -59,14 +62,18 @@ public class OpenCVSubtractionThreads extends TaskManager {
         return intArrays;
     }
 
+    public List<HandFeatures> getHandFeaturesObjects(){
+        return handFeatures;
+    }
+
     /**
      * Add new threads to process OpenCV Subtraction with submitted parameters
      * @param frameBitmap Bitmap with frame to process
      * @param backgroundBitmap Bitmap with background to substract
      */
-    public void addNewThread(Bitmap frameBitmap, Bitmap backgroundBitmap){
+    public void addNewThread(Bitmap frameBitmap, Bitmap backgroundBitmap, Rect sizeOfBitmapToSegmentation){
         for (int threshold:thresholds) {
-            OpenCVSubtraction openCVSubtraction = new OpenCVSubtraction(frameBitmap, backgroundBitmap, threshold);
+            OpenCVSubtraction openCVSubtraction = new OpenCVSubtraction(frameBitmap, backgroundBitmap, threshold, sizeOfBitmapToSegmentation);
             ThreadHandler.createThread(openCVSubtraction);
         }
     }

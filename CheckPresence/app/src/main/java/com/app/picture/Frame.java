@@ -1,12 +1,14 @@
 package com.app.picture;
 
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.hardware.Camera;
 
 import com.app.checkpresence.CameraView;
-import com.app.handFeatures.HandFeaturesThreads;
+import com.app.handFeaturesThreads.HandFeaturesThreads;
+import com.app.handfeatures.HandFeatures;
+import com.app.handfeatures.HandFeaturesData;
 import com.app.segmentation.OpenCVSubtractionThreads;
-import com.app.segmentation.SegmentationThreads;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +27,7 @@ public class Frame {
     private int numberOfConditions;
     private int min, max, numberOfThresholds;
     private int segmentatedHeight, segmentatedWidth;
+    private List<HandFeatures> handFeaturesObjects;
 
     public Frame(){}
 
@@ -102,6 +105,16 @@ public class Frame {
         this.segmentatedWidth = width;
     }
 
+    private Rect createRectWithSizeOfSegmentatedBitmap(){
+        //(int)(height*0.15), 0, (int)(height*0.7), (int)(width*0.6)
+        int left = (int)(actualFrame.getWidth()*0.15);
+        int top = 0;
+        int right = left + (int)(actualFrame.getWidth()*0.7);
+        int bottom = top + actualFrame.getHeight();
+        Rect rect = new Rect(left, top, right, bottom);
+        return rect;
+    }
+
     public void setBackground(Bitmap bmpBackground){
         this.bmpBackground = bmpBackground;
     }
@@ -121,60 +134,32 @@ public class Frame {
 
     public void findHandFeatures(){
         handFeatures = new ArrayList<>();
-        //arrays before trim to 30, have a size of 51120 (it's a bug in native code)
-        List<float[]> handFeaturesBeforeTrim = new ArrayList<>();
 
         HandFeaturesThreads handFeaturesThreads = HandFeaturesThreads.getNewObject();
-        handFeaturesThreads.addNewThread(openCVIntArrays, this.segmentatedHeight, this.segmentatedWidth);
+        handFeaturesThreads.addNewThread(handFeaturesObjects);
         handFeaturesThreads.executeThreads();
 
-        handFeaturesBeforeTrim = handFeaturesThreads.getListOfArraysWithHandFeatures();
-
-        float[] newFloat = new float[30];
-        for (float[] f:handFeaturesBeforeTrim
-             ) {
-            for (int i = 0; i<30; i++){
-                newFloat[i] = f[i];
-            }
-            this.handFeatures.add(newFloat);
-        }
+        handFeatures = handFeaturesThreads.getListOfArraysWithHandFeatures();
     }
 
     public void segmentateFrameWithOpenCV(){
         openCVBitmaps = new ArrayList<>();
         openCVIntArrays = new ArrayList<>();
+        Rect sizeOfBitmapToSegmentation = createRectWithSizeOfSegmentatedBitmap();
 
         OpenCVSubtractionThreads openCVSubtractionThreads = OpenCVSubtractionThreads.getNewObject();
         openCVSubtractionThreads.createListOfThresholds(this.min, this.max, this.numberOfThresholds);
-        openCVSubtractionThreads.addNewThread(actualFrame, bmpBackground);
+        openCVSubtractionThreads.addNewThread(actualFrame, bmpBackground, sizeOfBitmapToSegmentation);
         openCVSubtractionThreads.executeThreads();
 
         openCVIntArrays = openCVSubtractionThreads.getListOfIntArrays();
         openCVBitmaps = openCVSubtractionThreads.getBitmaps();
+        handFeaturesObjects = openCVSubtractionThreads.getHandFeaturesObjects(); // may be null
         setSizeOfSegmentatedBitmaps(openCVBitmaps.get(0).getHeight(), openCVBitmaps.get(0).getWidth());
-    }
-
-    public void segmentateFrameWithCpp(){
-        cppBitmaps = new ArrayList<>();
-
-        SegmentationThreads segmentationThreads = SegmentationThreads.getNewObject();
-        segmentationThreads.createListOfConditions(numberOfConditions);
-        segmentationThreads.addNewThread(argb, size.height, size.width);
-        segmentationThreads.executeThreads();
-
-        cppBitmaps = getBitmapsFromIntArray(segmentationThreads.getIntArrays());
     }
 
     public List<Bitmap> getOpenCVBitmaps() {
         return openCVBitmaps;
-    }
-
-    public List<Bitmap> getCppBitmaps() {
-        return cppBitmaps;
-    }
-
-    public void setNumberOfConditions(int numberOfConditions) {
-        this.numberOfConditions = numberOfConditions;
     }
 
     public void setThresholds(int min, int max, int numberOfThresholds){
@@ -186,4 +171,5 @@ public class Frame {
     public List<float[]> getHandFeatures() {
         return handFeatures;
     }
+
 }

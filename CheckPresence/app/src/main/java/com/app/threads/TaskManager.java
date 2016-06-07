@@ -2,6 +2,9 @@ package com.app.threads;
 
 import android.graphics.Bitmap;
 
+import com.app.handfeatures.HandFeatures;
+import com.app.handfeatures.HandFeaturesData;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,6 +15,8 @@ public abstract class TaskManager {
     protected List<Bitmap> bitmaps;
     protected List<int[]> intArrays;
     protected List<float[]> floatArrays;
+    protected List<HandFeatures> handFeatures;
+    protected HandFeaturesData handFeaturesData;
 
     /**
      * Executing threads
@@ -20,6 +25,8 @@ public abstract class TaskManager {
         bitmaps = new ArrayList<>();
         intArrays = new ArrayList<>();
         floatArrays = new ArrayList<>();
+        handFeatures = new ArrayList<>();
+        handFeaturesData = null;
 
         ThreadHandler.startThreads();
         try {

@@ -55,7 +55,7 @@ public class CreateBitmapFromPixels implements Runnable {
         bmp = RotateBitmap(bmp, -90);
         bmp = flipBitmap(bmp);
 
-        Bitmap bmpCropped = Bitmap.createBitmap(bmp, 0, 0, height, width*2/3);
+        Bitmap bmpCropped = Bitmap.createBitmap(bmp, 0, 0, height, (int)(width*0.6));
         return bmpCropped;
     }
 
