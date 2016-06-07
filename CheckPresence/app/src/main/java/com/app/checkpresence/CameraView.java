@@ -36,6 +36,13 @@ import static org.opencv.core.Core.subtract;
 import static org.opencv.imgproc.Imgproc.cvtColor;
 
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
+    public static boolean refreshBackground = true;
+    public static boolean measureCameraTime = true; // czy odliczac czas dla ustabilizowania kamery i jej blokady
+    public final static long autoAdjustmentTime = 1000000000L; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
+
+    private long startTime; //punkt poczatkowy czasu. actualTime - startTime >= autoAdjustmentTime => zablokowanie kamery
+    private Camera.Parameters startParameters; // poczatkowe ustawienia kamery, jezeli odblokujemy aparato to chcemy wlasnie do nich powrucic
+
     Activity mainActivity;
     MainActivity mainActivityObject;
     protected SurfaceHolder mHolder;
@@ -47,7 +54,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private ImageView bottomRight, bottomLeft, topLeft, topCenter, topRight, bottomCenter;
     private ImageButton backgroundBtn;
     private Bitmap bmpBackground;
-    public static boolean refreshBackground = true;
+    //public static boolean refreshBackground = true;
     private List<ImageView> cppViews, openCVViews;
     private Frame frame, backgroundFrame;
     private List<float[]> actualHandFeatures, allHandFeatures;
@@ -60,6 +67,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
     public CameraView(Context context, Activity activity, MainActivity mainActivityObject, Camera camera){
         super(context);
+
+        startTime = System.nanoTime();
 
         this.mainActivity = activity;
         this.mainActivityObject = mainActivityObject;
@@ -120,6 +129,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         if(mHolder.getSurface() == null)//check if the surface is ready to receive camera data
             return;
 
+        if (CameraView.measureCameraTime) { // odliczanie czasu do zablokowania automatycznej ekpozycji kamery
+            if (System.nanoTime() - startTime > CameraView.autoAdjustmentTime) {
+                lockCameraExposure(true);
+                CameraView.measureCameraTime = false;
+            }
+        }
+
+
+
         mCamera.setPreviewCallback(new Camera.PreviewCallback() {
             public void onPreviewFrame(byte[] data, Camera _camera) {
                 //getting once bitmap with background
@@ -159,9 +177,34 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         parameters.setRotation(90);
         Camera.Size size = parameters.getPreviewSize();
         parameters.setPreviewSize(size.width / 2, size.height / 2);
+        startParameters = parameters; // zapamietuje poczatkowe ustawienia kamery
         mCamera.setParameters(parameters);
         this.size = parameters.getPreviewSize();
     }
+
+    public void lockCameraExposure(boolean lock){
+        Camera.Parameters parameters = mCamera.getParameters();
+
+        // chcemy zablokowac automatyczna ekspozycje siatla aparatu
+        if (lock == true) {
+            if (parameters.getAutoExposureLock() == false) { // ekspozycja swiatla automatyczna
+                System.out.println("Ekspozycja swiatła automatyczna. Wylaczono");
+                parameters.setAutoExposureLock(true); // zabllkuj ekspozycje swiatla
+            }
+            if (parameters.getAutoWhiteBalanceLock() == false) { // balans bieli automatyczny
+                System.out.println("Balans bielie automatyczny. Wylaczono");
+                parameters.setAutoWhiteBalanceLock(true); // zablokuj
+            }
+            //parameters.set("iso", 800);
+        }
+        else {
+            // przywraca poczatkowe ustaiania kamery
+            mCamera.setParameters(startParameters);
+        }
+
+        mCamera.setParameters(parameters);
+    }
+
 
     /**
      * Process segmentation of data from camera preview, sets results to ImageViews
@@ -174,7 +217,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         setImageToImageView(bottomCenter, liveViewBitmap);
 
         frame.setBackground(bmpBackground);
-        frame.setThresholds(25, 25, 1);
+        frame.setThresholds(10, 50, 3);
         frame.segmentateFrameWithOpenCV();
         List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
         setBitmapsToViews(openCVViews, openCVBitmaps);

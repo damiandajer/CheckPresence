@@ -2,6 +2,7 @@ package com.app.handfeatures;
 
 import android.graphics.Bitmap;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.util.Log;
 
 import org.opencv.core.CvType;
@@ -238,7 +239,7 @@ public class HandFeatures {
      * @return number of found areas.
      * @throws Exception
      */
-    public int segmentation() throws Exception {
+    public int segmentation(Rect areaToProcess) throws Exception {
         // nie ustawiono m_image w binaryzation()
         if (m_image == null) {
             // nie ustawiono w odpowiednim konstruktorze obrazu po binaryzacji
@@ -251,6 +252,10 @@ public class HandFeatures {
 
                 m_image = new MyImage(binarized_intARGBArray, m_binarized.getWidth(), m_binarized.getHeight());
             }
+        }
+
+        if (areaToProcess != null) {
+            m_image = m_image.getImage(areaToProcess, Color.BG_COLOR);
         }
 
         ImageArea area = new ImageArea();

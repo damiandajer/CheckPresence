@@ -29,7 +29,7 @@ public class OpenCVSubtraction implements Runnable {
     //float[] handFeatures;
     private native int[] deleteSmallAreas(int[] intARGBArray, int height, int width);
     private HandFeatures handFeatures = null;
-    Rect sizeOfBitmapToSegmentation;
+    Rect areaToSegmentation;
 
 
     /**
@@ -41,7 +41,7 @@ public class OpenCVSubtraction implements Runnable {
         this.inputBitmap = inputBitmap;
         this.backgroundBitmap = backgroundBitmap;
         resultBitmap = inputBitmap;
-        this.sizeOfBitmapToSegmentation = sizeOfBitmapToSegmentation;
+        this.areaToSegmentation = sizeOfBitmapToSegmentation;
 
         this.height = inputBitmap.getHeight();
         this.width = inputBitmap.getWidth();
@@ -102,7 +102,7 @@ public class OpenCVSubtraction implements Runnable {
             handFeatures.getImage().setBorderColor(Color.BG_COLOR);
             handFeatures.getImage().smoothEdge(Color.EL_COLOR, Color.BG_COLOR);
             // segmentacja
-            int foundAreas = handFeatures.segmentation();
+            int foundAreas = handFeatures.segmentation(null);
             //CopyManager.saveBitmapToDisk(handFeatures.getProcessed(false), HandFeatures.foundedHandsFeatures, "segmentated_");
             if (tooFewElementPixels == true && foundAreas == 0 || foundAreas > HandFeatures.maxAllowedAreas) {
                 System.out.println("Segmentacja - blad przetwarzania!");
