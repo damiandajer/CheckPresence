@@ -33,7 +33,7 @@ public class HandFeatures implements Runnable {
     private void findHandFeaturesJava(com.app.handfeatures.HandFeatures handFeaturesObject){
         try {
             if (handFeaturesObject.calculateFeatures() == true) {
-                //CopyManager.saveBitmapToDisk(handFeatures.getConturBitmap(true), CameraView.foundedHandsFeatures++, "Contour_");
+                //CopyManager.saveBitmapToDisk(handFeaturesObject.getConturBitmap(false), handFeaturesObject.foundedHandsFeatures, "contour_");
                 //CopyManager.saveBitmapToDisk(handFeaturesObject.getProcessed(true), com.app.handfeatures.HandFeatures.foundedHandsFeatures, "calculated_");
                 handFeaturesData = new HandFeaturesData(handFeaturesObject);
                 handFeaturesData.show(true); // cechy 1 lini

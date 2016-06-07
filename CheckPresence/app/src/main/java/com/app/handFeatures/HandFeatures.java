@@ -264,15 +264,15 @@ public class HandFeatures {
             m_image.setBorderColor(Color.BG_COLOR);
 
             area = m_image.findTheBiggestArea(Color.EL_COLOR);
-            System.out.println("Znaleziono " + area.numOfFoundAreas + " plam.");
+            //System.out.println("Znaleziono " + area.numOfFoundAreas + " plam.");
             /*if (area.numOfFoundAreas > maxAreas) { // za duzo plam - obraz nie jest odpowieniej jakosci - zadnie pobrania nowego tla
                 return area.numOfFoundAreas;
             }*/
 
-            System.out.println("Plama sklada sie z " + area.points.size() + " pixeli.");
+            //System.out.println("Plama sklada sie z " + area.points.size() + " pixeli.");
             // znaleziona plama musi pokrywac chociaz 10% obrazu
             if (area.points.size() < (m_image.width() * m_image.height() * 0.05)) {
-                System.out.println("Segmentacja - plama pokrywa zbyt maly obszar obrazu(10% wymagane)!!");
+                System.out.println("Segmentacja - plama pokrywa zbyt maly obszar obrazu(5% wymagane)!!");
                 //CameraView.refreshBackground = true;
                 return 0;
             }
@@ -329,10 +329,10 @@ public class HandFeatures {
 
             //showNeighbours(m_fingers[Finger.THUMB].top_point); // pokazuje sasiednie pixele czubka kciuka
 
-            System.out.println("Eureka!. Próba znalezienia cech!");
+            //System.out.println("Eureka!. Próba znalezienia cech!");
             findFingersTopAndBase(m_fingers[Finger.THUMB].top_index);
             calculateFingersFetures();
-            System.out.println("Eureka!. Odnalezione ekstrema palcow!");
+            //System.out.println("Eureka!. Odnalezione ekstrema palcow!");
 
             // obliczanie wartosci cech dloni
             findOthenHandFeatures();
@@ -596,19 +596,19 @@ public class HandFeatures {
         index = findBottomExtremum(index, index + findSizeRange, rangeSize);
         m_fingers[Finger.THUMB].base_last_index = index;
         m_fingers[Finger.THUMB].base_last_point = m_conturList.get(m_fingers[Finger.THUMB].base_last_index);
-        System.out.println("Odnalezione base last thumb(" + m_fingers[Finger.THUMB].base_last_point.x + "," + m_fingers[Finger.THUMB].base_last_point.y +"). Index: " + index);;
+        //System.out.println("Odnalezione base last thumb(" + m_fingers[Finger.THUMB].base_last_point.x + "," + m_fingers[Finger.THUMB].base_last_point.y +"). Index: " + index);;
 
         // pierwsza podstawa kciuka
         int thumb_base_index = findThumbBaseFirst(m_fingers[Finger.THUMB].base_last_index);
         m_fingers[Finger.THUMB].base_first_index = thumb_base_index;
         m_fingers[Finger.THUMB].base_first_point = m_conturList.get(m_fingers[Finger.THUMB].base_first_index);
-        System.out.println("Odnalezione base first thumb(" + m_fingers[Finger.THUMB].base_first_point.x + "," + m_fingers[Finger.THUMB].base_first_point.y +"). Index: " + thumb_base_index);
+        //System.out.println("Odnalezione base first thumb(" + m_fingers[Finger.THUMB].base_first_point.x + "," + m_fingers[Finger.THUMB].base_first_point.y +"). Index: " + thumb_base_index);
 
         // szukanie top index finger
         index = findTopExtremum(index, index + findSizeRange, rangeSize);
         m_fingers[Finger.INDEX_FINGER].top_index = index;
         m_fingers[Finger.INDEX_FINGER].top_point = m_conturList.get(m_fingers[Finger.INDEX_FINGER].top_index);
-        System.out.println("Odnalezione top index finger(" + m_fingers[Finger.INDEX_FINGER].top_point.x + "," + m_fingers[Finger.INDEX_FINGER].top_point.y + "). Index: " + index);
+        //System.out.println("Odnalezione top index finger(" + m_fingers[Finger.INDEX_FINGER].top_point.x + "," + m_fingers[Finger.INDEX_FINGER].top_point.y + "). Index: " + index);
 
         // podstawa wspolna index and middle finger
         index = findBottomExtremum(index, index + findSizeRange, rangeSize);
@@ -616,20 +616,20 @@ public class HandFeatures {
         m_fingers[Finger.INDEX_FINGER].base_last_point = m_conturList.get(m_fingers[Finger.INDEX_FINGER].base_last_index);
         m_fingers[Finger.MIDDLE_FINGER].base_first_index = index;
         m_fingers[Finger.MIDDLE_FINGER].base_first_point = m_conturList.get(m_fingers[Finger.MIDDLE_FINGER].base_first_index);
-        System.out.println("Odnalezione base lase index | first base middle finger(" + m_fingers[Finger.INDEX_FINGER].base_last_point.x + "," + m_fingers[Finger.INDEX_FINGER].base_last_point.y +"). Index: " + index);
+        //System.out.println("Odnalezione base lase index | first base middle finger(" + m_fingers[Finger.INDEX_FINGER].base_last_point.x + "," + m_fingers[Finger.INDEX_FINGER].base_last_point.y +"). Index: " + index);
 
 
         int index_base_first_index = findIndexBaseFirst(m_fingers[Finger.INDEX_FINGER].top_index, m_fingers[Finger.THUMB].base_last_index, m_fingers[Finger.INDEX_FINGER].base_last_index);
         m_fingers[Finger.INDEX_FINGER].base_first_index = index_base_first_index;
         m_fingers[Finger.INDEX_FINGER].base_first_point = m_conturList.get(m_fingers[Finger.INDEX_FINGER].base_first_index);
-        System.out.println("Odnalezione base first index finger(" + m_fingers[Finger.INDEX_FINGER].base_first_point.x + "," + m_fingers[Finger.INDEX_FINGER].base_first_point.y +"). Index: " + index_base_first_index);
+        //System.out.println("Odnalezione base first index finger(" + m_fingers[Finger.INDEX_FINGER].base_first_point.x + "," + m_fingers[Finger.INDEX_FINGER].base_first_point.y +"). Index: " + index_base_first_index);
 
 
         // top middle finger
         index = findTopExtremum(index, index + findSizeRange, rangeSize);
         m_fingers[Finger.MIDDLE_FINGER].top_index = index;
         m_fingers[Finger.MIDDLE_FINGER].top_point = m_conturList.get(m_fingers[Finger.MIDDLE_FINGER].top_index);
-        System.out.println("Odnalezione top middle finger(" + m_fingers[Finger.MIDDLE_FINGER].top_point.x + "," + m_fingers[Finger.MIDDLE_FINGER].top_point.y +")");
+        //System.out.println("Odnalezione top middle finger(" + m_fingers[Finger.MIDDLE_FINGER].top_point.x + "," + m_fingers[Finger.MIDDLE_FINGER].top_point.y +")");
 
 
         // podstawa wspolna middle and ring finger
@@ -638,14 +638,14 @@ public class HandFeatures {
         m_fingers[Finger.MIDDLE_FINGER].base_last_point = m_conturList.get(m_fingers[Finger.MIDDLE_FINGER].base_last_index);
         m_fingers[Finger.RING_FINGER].base_first_index = index;
         m_fingers[Finger.RING_FINGER].base_first_point = m_conturList.get(m_fingers[Finger.RING_FINGER].base_first_index);
-        System.out.println("Odnalezione base last middle finger(" + m_fingers[Finger.MIDDLE_FINGER].base_last_point.x + "," + m_fingers[Finger.MIDDLE_FINGER].base_last_point.y +")");
+        //System.out.println("Odnalezione base last middle finger(" + m_fingers[Finger.MIDDLE_FINGER].base_last_point.x + "," + m_fingers[Finger.MIDDLE_FINGER].base_last_point.y +")");
 
 
         // top ring finger
         index = findTopExtremum(index, index + findSizeRange, rangeSize);
         m_fingers[Finger.RING_FINGER].top_index = index;
         m_fingers[Finger.RING_FINGER].top_point = m_conturList.get(m_fingers[Finger.RING_FINGER].top_index);
-        System.out.println("Odnalezione top ring finger(" + m_fingers[Finger.RING_FINGER].top_point.x + "," + m_fingers[Finger.RING_FINGER].top_point.y +")");
+        //System.out.println("Odnalezione top ring finger(" + m_fingers[Finger.RING_FINGER].top_point.x + "," + m_fingers[Finger.RING_FINGER].top_point.y +")");
 
 
         // podstawa wspolna ring and PINKY finger
@@ -654,21 +654,21 @@ public class HandFeatures {
         m_fingers[Finger.RING_FINGER].base_last_point = m_conturList.get(m_fingers[Finger.RING_FINGER].base_last_index);
         m_fingers[Finger.PINKY].base_first_index = index;
         m_fingers[Finger.PINKY].base_first_point = m_conturList.get(m_fingers[Finger.PINKY].base_first_index);
-        System.out.println("Odnalezione base last ring finger(" + m_fingers[Finger.RING_FINGER].base_last_point.x + "," + m_fingers[Finger.RING_FINGER].base_last_point.y +")");
+        //System.out.println("Odnalezione base last ring finger(" + m_fingers[Finger.RING_FINGER].base_last_point.x + "," + m_fingers[Finger.RING_FINGER].base_last_point.y +")");
 
 
         // top pinky finger
         index = findTopExtremum(index, index + findSizeRange, rangeSize);
         m_fingers[Finger.PINKY].top_index = index;
         m_fingers[Finger.PINKY].top_point = m_conturList.get(m_fingers[Finger.PINKY].top_index);
-        System.out.println("Odnalezione top pinky finger(" + m_fingers[Finger.PINKY].top_point.x + "," + m_fingers[Finger.PINKY].top_point.y +")");
+        //System.out.println("Odnalezione top pinky finger(" + m_fingers[Finger.PINKY].top_point.x + "," + m_fingers[Finger.PINKY].top_point.y +")");
 
 
         // podstawa zewnetrzna pinky finger base last
         index = findPinkyBaseLast(m_fingers[Finger.PINKY].top_index, m_fingers[Finger.PINKY].base_first_index);
         m_fingers[Finger.PINKY].base_last_index = index;
         m_fingers[Finger.PINKY].base_last_point = m_conturList.get(m_fingers[Finger.PINKY].base_last_index);
-        System.out.println("Odnalezione base last pinky finger(" + m_fingers[Finger.PINKY].base_last_point.x + "," + m_fingers[Finger.PINKY].base_last_point.y +")");
+        //System.out.println("Odnalezione base last pinky finger(" + m_fingers[Finger.PINKY].base_last_point.x + "," + m_fingers[Finger.PINKY].base_last_point.y +")");
 
     }
 
@@ -700,7 +700,7 @@ public class HandFeatures {
                 m_fingers[Finger.THUMB].base_last_index);
         m_fingers[Finger.THUMB].circle_top_centre = thumbCircleInfo.centre;
         m_fingers[Finger.THUMB].circle_top_radius = thumbCircleInfo.radius;
-        System.out.println("Finger(" + Finger.THUMB + ") circle(" + thumbCircleInfo.centre.x + ", " + thumbCircleInfo.centre.x + ") r: " + String.format("%.2f", thumbCircleInfo.radius));
+        //System.out.println("Finger(" + Finger.THUMB + ") circle(" + thumbCircleInfo.centre.x + ", " + thumbCircleInfo.centre.x + ") r: " + String.format("%.2f", thumbCircleInfo.radius));
 
         // gorne i dolne okregi palcow
         for (int i = 0; i < Finger.NUM_OF_FINGERS; ++i) {
@@ -723,7 +723,7 @@ public class HandFeatures {
 
             m_fingers[i].circle_top_centre = upperCircleInfo.centre;
             m_fingers[i].circle_top_radius = upperCircleInfo.radius;
-            System.out.println("Finger(" + i + ") circle(" + upperCircleInfo.centre.x + ", " + upperCircleInfo.centre.x + ") r: " + String.format("%.2f", upperCircleInfo.radius));
+            //System.out.println("Finger(" + i + ") circle(" + upperCircleInfo.centre.x + ", " + upperCircleInfo.centre.x + ") r: " + String.format("%.2f", upperCircleInfo.radius));
 
             // dolny okrag palca
             int leftStartIndex = leftEndIndex;
@@ -741,7 +741,7 @@ public class HandFeatures {
 
             m_fingers[i].circle_bottom_centre = lowerCircleInfo.centre;
             m_fingers[i].circle_bottom_radius = lowerCircleInfo.radius;
-            System.out.println("Finger(" + i + ") circle(" + lowerCircleInfo.centre.x + ", " + lowerCircleInfo.centre.x + ") r: " + String.format("%.2f", lowerCircleInfo.radius));
+            //System.out.println("Finger(" + i + ") circle(" + lowerCircleInfo.centre.x + ", " + lowerCircleInfo.centre.x + ") r: " + String.format("%.2f", lowerCircleInfo.radius));
 
         }
     }

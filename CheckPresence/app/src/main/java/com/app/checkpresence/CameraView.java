@@ -216,7 +216,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         setImageToImageView(bottomCenter, liveViewBitmap);
 
         frame.setBackground(bmpBackground);
-        frame.setThresholds(10, 50, 3);
+        frame.setThresholds(25, 25, 1);
         frame.segmentateFrameWithOpenCV();
         List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
         setBitmapsToViews(openCVViews, openCVBitmaps);
