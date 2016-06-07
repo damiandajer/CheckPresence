@@ -32,10 +32,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.opencv.core.Core.absdiff;
-import static org.opencv.core.Core.subtract;
-import static org.opencv.imgproc.Imgproc.cvtColor;
-
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     public static boolean refreshBackground = true;
     public final static long autoAdjustmentTime = 2000000000L; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
