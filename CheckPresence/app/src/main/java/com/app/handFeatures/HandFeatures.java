@@ -5,6 +5,10 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.util.Log;
 
+import com.app.checkpresence.Configure;
+import com.app.measurement.AppExecutionTimes;
+import com.app.measurement.ExecutionTimeName;
+
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
@@ -157,6 +161,8 @@ public class HandFeatures {
      * @throws HandFeaturesException
      */
     public int binaryzation(int threshold, byte background_color, byte element_color) throws HandFeaturesException {
+        AppExecutionTimes.startTime(ExecutionTimeName.BINARYZATION);
+
         if (m_input == null || m_background == null)
             throw new HandFeaturesException("binaryzation(). Brak obrazow wejsciowych!");
 
@@ -204,10 +210,13 @@ public class HandFeatures {
 
         m_image = new MyImage(diff_image, m_input.getWidth(), m_input.getHeight());
 
+        AppExecutionTimes.endTime(ExecutionTimeName.BINARYZATION);
         return numOfElementPixels;
     }
 
     public int binarizationOpenCV(int threshold) throws HandFeaturesException {
+        AppExecutionTimes.startTime(ExecutionTimeName.BINARYZATION);
+
         if (m_input == null || m_background == null)
             throw new HandFeaturesException("binaryzation(). Brak obrazow wejsciowych!");
 
@@ -231,6 +240,8 @@ public class HandFeatures {
         m_binarized = OpenCVHelper.matToBitmap(mask, width, height);
 
         m_image = new MyImage(m_binarized);
+
+        AppExecutionTimes.endTime(ExecutionTimeName.BINARYZATION);
         return m_image.numOfPixels(Color.EL_COLOR); // number of element pixels
     }
 
@@ -240,6 +251,8 @@ public class HandFeatures {
      * @throws Exception
      */
     public int segmentation(Rect areaToProcess) throws Exception {
+        AppExecutionTimes.startTime(ExecutionTimeName.SEGMANTATION);
+
         // nie ustawiono m_image w binaryzation()
         if (m_image == null) {
             // nie ustawiono w odpowiednim konstruktorze obrazu po binaryzacji
@@ -314,12 +327,15 @@ public class HandFeatures {
             e.printStackTrace();
         }
 
+        AppExecutionTimes.endTime(ExecutionTimeName.SEGMANTATION);
         return area.numOfFoundAreas;
     }
 
     public boolean calculateFeatures() {
         boolean isGood = true;
         try {
+            AppExecutionTimes.startTime(ExecutionTimeName.HAND_FEATURE_FINGERS);
+
             m_image.setBorderColor(Color.BG_COLOR); // dla pewnosic zeby przy szukaniu konturu nie myjsc poza obraz
 
             m_fingers[Finger.THUMB].top_point = findThumbTop(Color.EL_COLOR);
@@ -335,11 +351,17 @@ public class HandFeatures {
 
             //System.out.println("Eureka!. Próba znalezienia cech!");
             findFingersTopAndBase(m_fingers[Finger.THUMB].top_index);
+            AppExecutionTimes.endTime(ExecutionTimeName.HAND_FEATURE_FINGERS);
+
+            AppExecutionTimes.startTime(ExecutionTimeName.HAND_FEATURE_CALCULATE_FINGERS);
             calculateFingersFetures();
+            AppExecutionTimes.endTime(ExecutionTimeName.HAND_FEATURE_CALCULATE_FINGERS);
             //System.out.println("Eureka!. Odnalezione ekstrema palcow!");
 
             // obliczanie wartosci cech dloni
+            AppExecutionTimes.startTime(ExecutionTimeName.HAND_FEATURE_CALCULATE_OTHERS);
             findOthenHandFeatures();
+            AppExecutionTimes.endTime(ExecutionTimeName.HAND_FEATURE_CALCULATE_OTHERS);
 
             //Thread.sleep(1000);
         } catch (HandFeaturesException hfe) {
@@ -677,6 +699,7 @@ public class HandFeatures {
     }
 
     private void findOthenHandFeatures() throws Exception {
+        AppExecutionTimes.startTime(ExecutionTimeName.HAND_FEATURE_CALCULATE_OTHERS_AREAS);
         // z ilu pixeli sklada sie palec
         for (int i = 0; i < Finger.NUM_OF_FINGERS; ++i) {
             // odciecie palcy linia aby stanowily one osobna powierzchnie, bo mozna bylo policzyc ich pixele
@@ -691,13 +714,21 @@ public class HandFeatures {
             int num = m_image.fillArea(startFillPoint, Color.GREY_DARK, Color.BG_COLOR);
             m_fingers[i].area = num;
         }
+        AppExecutionTimes.endTime(ExecutionTimeName.HAND_FEATURE_CALCULATE_OTHERS_AREAS);
 
-        Point baseFingerForThumbCircle = new Point();
-        baseFingerForThumbCircle.x = (int) ((m_fingers[Finger.THUMB].base_center_point.x * 5 + m_fingers[Finger.THUMB].top_point.x) / 6);
-        baseFingerForThumbCircle.y = (int) ((m_fingers[Finger.THUMB].base_center_point.y * 5 + m_fingers[Finger.THUMB].top_point.y) / 6);
+        AppExecutionTimes.startTime(ExecutionTimeName.HAND_FEATURE_CALCULATE_OTHERS_CIRCLES);
+        // nie szukamy okregu przy samej podstawie palaca. Odsun sie od podstawy o 1/5 jego dlugosci
+        Vector2D offsetFromBaseToTop = new Vector2D(m_fingers[Finger.THUMB].base_center_point, m_fingers[Finger.THUMB].top_point);
+        offsetFromBaseToTop.multiply(2.f / 5.0f);
+        // utworz punkt bazowy uwzgledniajac przesuniecie od podstawy
+        FPoint baseFingerForThumbCircle = new FPoint(m_fingers[Finger.THUMB].base_center_point);
+        baseFingerForThumbCircle.add(offsetFromBaseToTop);
+        if (Configure.DRAW_SPECIAL_DEBUG_CIRCLE_ON_FINGER == true)
+            m_image.drawCircle(baseFingerForThumbCircle.asIntPoint(), 4, Color.MAGENTA);
+        // szukaj okregu
         CircleInfo thumbCircleInfo = findMaxCircle(
                 m_fingers[Finger.THUMB].top_point,
-                baseFingerForThumbCircle, //m_fingers[Finger.THUMB].base_center_point.asIntPoint(),
+                baseFingerForThumbCircle.asIntPoint(), //m_fingers[Finger.THUMB].base_center_point.asIntPoint(),
                 m_conturList.size() - 2,
                 m_fingers[Finger.THUMB].base_first_index,
                 m_fingers[Finger.THUMB].top_index + 1,
@@ -714,12 +745,18 @@ public class HandFeatures {
             // gorny okrag palca
             int leftEndIndex = (m_fingers[i].base_first_index + m_fingers[i].top_index) / 2;
             int rightEndIndex = (m_fingers[i].base_last_index + m_fingers[i].top_index) / 2;
-            Point baseFingerForUpperCircle = new Point();
-            baseFingerForUpperCircle.x = (int) ((m_fingers[i].base_center_point.x + m_fingers[i].top_point.x) / 2);
-            baseFingerForUpperCircle.y = (int) ((m_fingers[i].base_center_point.y + m_fingers[i].top_point.y) / 2);
+            // nie szukamy okregu przy samej podstawie palaca. Odsun sie od podstawy o 1/2 jego dlugosci
+            offsetFromBaseToTop = new Vector2D(m_fingers[i].base_center_point, m_fingers[i].top_point);
+            offsetFromBaseToTop.multiply(1.0f / 2.0f);
+            // utworz punkt bazowy uwzgledniajac przesuniecie od podstawy
+            FPoint baseFingerForUpperCircle = new FPoint(m_fingers[i].base_center_point);
+            baseFingerForUpperCircle.add(offsetFromBaseToTop);
+            if (Configure.DRAW_SPECIAL_DEBUG_CIRCLE_ON_FINGER == true)
+                m_image.drawCircle(baseFingerForUpperCircle.asIntPoint(), 4, Color.MAGENTA);
+            // szukaj okregu
             CircleInfo upperCircleInfo = findMaxCircle(
                     m_fingers[i].top_point,
-                    baseFingerForUpperCircle,//m_fingers[i].base_center_point.asIntPoint(),
+                    baseFingerForUpperCircle.asIntPoint(),//m_fingers[i].base_center_point.asIntPoint(),
                     m_fingers[i].top_index - 1,
                     leftEndIndex,
                     m_fingers[i].top_index + 1,
@@ -728,16 +765,45 @@ public class HandFeatures {
             m_fingers[i].circle_top_centre = upperCircleInfo.centre;
             m_fingers[i].circle_top_radius = upperCircleInfo.radius;
             //System.out.println("Finger(" + i + ") circle(" + upperCircleInfo.centre.x + ", " + upperCircleInfo.centre.x + ") r: " + String.format("%.2f", upperCircleInfo.radius));
+            if (upperCircleInfo.radius < 10) {
+                 leftEndIndex = (m_fingers[i].base_first_index + m_fingers[i].top_index) / 2;
+                 rightEndIndex = (m_fingers[i].base_last_index + m_fingers[i].top_index) / 2;
+                // nie szukamy okregu przy samej podstawie palaca. Odsun sie od podstawy o 1/2 jego dlugosci
+                offsetFromBaseToTop = new Vector2D(m_fingers[i].base_center_point, m_fingers[i].top_point);
+                offsetFromBaseToTop.multiply(1.0f / 2.0f);
+                // utworz punkt bazowy uwzgledniajac przesuniecie od podstawy
+                 baseFingerForUpperCircle = new FPoint(m_fingers[i].base_center_point);
+                baseFingerForUpperCircle.add(offsetFromBaseToTop);
+                if (Configure.DRAW_SPECIAL_DEBUG_CIRCLE_ON_FINGER == true)
+                    m_image.drawCircle(baseFingerForUpperCircle.asIntPoint(), 4, Color.MAGENTA);
+                // szukaj okregu
+                upperCircleInfo = findMaxCircle(
+                        m_fingers[i].top_point,
+                        baseFingerForUpperCircle.asIntPoint(),//m_fingers[i].base_center_point.asIntPoint(),
+                        m_fingers[i].top_index - 1,
+                        leftEndIndex,
+                        m_fingers[i].top_index + 1,
+                        rightEndIndex);
+
+                m_fingers[i].circle_top_centre = upperCircleInfo.centre;
+                m_fingers[i].circle_top_radius = upperCircleInfo.radius;
+            }
 
             // dolny okrag palca
             int leftStartIndex = leftEndIndex;
             int rightStartIndex = rightEndIndex;
-            Point baseFingerForLowerCircle = new Point();
-            baseFingerForLowerCircle.x = (int) ((m_fingers[i].base_center_point.x * 3 + m_fingers[i].top_point.x) / 4);
-            baseFingerForLowerCircle.y = (int) ((m_fingers[i].base_center_point.y * 3 + m_fingers[i].top_point.y) / 4);
+            // nie szukamy okregu przy samej podstawie palaca. Odsun sie od podstawy o 1/5 jego dlugosci
+            offsetFromBaseToTop = new Vector2D(m_fingers[i].base_center_point, m_fingers[i].top_point);
+            offsetFromBaseToTop.multiply(1.0f / 5.0f);
+            // utworz punkt bazowy uwzgledniajac przesuniecie od podstawy
+            FPoint baseFingerForBottomCircle = new FPoint(m_fingers[i].base_center_point);
+            baseFingerForBottomCircle.add(offsetFromBaseToTop);
+            if (Configure.DRAW_SPECIAL_DEBUG_CIRCLE_ON_FINGER == true)
+                m_image.drawCircle(baseFingerForBottomCircle.asIntPoint(), 4, Color.MAGENTA);
+            // szukaj okregu
             CircleInfo lowerCircleInfo = findMaxCircle(
-                    baseFingerForUpperCircle,
-                    baseFingerForLowerCircle,
+                    baseFingerForUpperCircle.asIntPoint(),
+                    baseFingerForBottomCircle.asIntPoint(),
                     leftStartIndex,
                     m_fingers[i].base_first_index,
                     rightStartIndex,
@@ -748,6 +814,7 @@ public class HandFeatures {
             //System.out.println("Finger(" + i + ") circle(" + lowerCircleInfo.centre.x + ", " + lowerCircleInfo.centre.x + ") r: " + String.format("%.2f", lowerCircleInfo.radius));
 
         }
+        AppExecutionTimes.endTime(ExecutionTimeName.HAND_FEATURE_CALCULATE_OTHERS_CIRCLES);
     }
 
     private CircleInfo findMaxCircle(Point top, Point base, int startLeftIndex, int endLeftIndex, int startRightIndex, int endRightIndex) throws HandFeaturesException {
@@ -916,44 +983,62 @@ public class HandFeatures {
 
         return index;
     }*/
-
-    // 0-_---->parrarelToTopBase
-    // |\/-angle
-    // | \
-    // |  0 midToPoint
-    // |
+    
     private int findClosesContourIndex(Point top, Point base, int startIndex, int endIndex) throws HandFeaturesException {//, int rightTopIndex, int rightBaseIndex) {
+        float minAngle = Float.MAX_VALUE;
+        int index = -1;
+
         if (startIndex > endIndex) {
             int temp = startIndex;
             startIndex = endIndex;
             endIndex = startIndex;
         }
 
-        int xdif = base.x - top.x;
-        int ydif = base.y - top.y;
-        // dwa punkty prostopadla do top - base
-        FPoint lp = new FPoint(base.x - ydif / 2, base.y + xdif);
-        FPoint rp = new FPoint(base.x + ydif / 2, base.y - xdif);
-        FPoint mid = new FPoint((lp.x + rp.x) / 2, (lp.y + rp.y) / 2);
+        Vector2D baseToTop = new Vector2D(base, top);
+        baseToTop.normalize();
 
-        FPoint parallelToBaseTop = new FPoint(rp.x - mid.x, rp.y - mid.y);
-        //m_image.drawLine(lp.asIntPoint(), rp.asIntPoint(), Color.RED);
+        // vektory od srodka do startIndex midIndex i endIndex
+        Vector2D toStart = new Vector2D(base, m_conturList.get(startIndex));
+        Vector2D toEnd = new Vector2D(base, m_conturList.get(endIndex));
 
-        float minAndle = Float.MAX_VALUE;
-        int index = -1;
-        for (int i = startIndex; i < endIndex; ++i) {
-            FPoint midToPoint = new FPoint(m_conturList.get(i).x - mid.x, m_conturList.get(i).y - mid.y);
-            float tempAngle = Utils.angle(parallelToBaseTop, midToPoint);
-            if (tempAngle > Utils.PI_2)
-                tempAngle = Utils.PI - tempAngle;
-            if (tempAngle < minAndle) {
-                minAndle = tempAngle;
-                index = i;
+        // normalizacja potrzbna zeby mozna bylo sprawdzić kat miedzy wektorami
+        toStart.normalize();
+        toEnd.normalize();
+
+        // obliczamy kat
+        float startAngle = Vector2D.angleBetweenUnitVectors(baseToTop, toStart);
+        float endAngle = Vector2D.angleBetweenUnitVectors(baseToTop, toEnd);
+
+        // jezeli oba wektory toStart i toEnd sa powyzej szukanego wektora to nie znajdziemy miedzy nimi najblizszego pixela
+        if (startAngle < Utils.PI_2 && endAngle < Utils.PI_2)
+            throw new HandFeaturesException("findClosesContourIndex(). wektory toStart i toEnd sa powyzej szukanego wektora to nie znajdziemy miedzy nimi najblizszego pixela!");
+        // jezeli oba wektory toStart i toEnd sa ponizej szukanego wektora to nie znajdziemy miedzy nimi najblizszego pixela
+        if (startAngle > Utils.PI_2 && endAngle > Utils.PI_2)
+            throw new HandFeaturesException("findClosesContourIndex(). wektory toStart i toEnd sa ponizej szukanego wektora to nie znajdziemy miedzy nimi najblizszego pixela!");
+
+        while (startIndex != endIndex) {
+            int midIndex = (startIndex + endIndex) / 2; // srodkowy index
+            Vector2D toMid = new Vector2D(base, m_conturList.get(midIndex)); // wektor od podstawy do konturu o midIndex'ie
+            toMid.normalize(); // normalizacja zeby mozna bylo sprawdzic kat miedzy wektorami
+            float midAngle = Vector2D.angleBetweenUnitVectors(baseToTop, toMid); // kat w radianat PI_2 to 90 stopni
+
+            float tempAngle = Math.abs(Utils.PI_2 - midAngle);
+            if (tempAngle < minAngle) {
+                minAngle = tempAngle;
+                index = midIndex;
+            }
+
+            if (Math.abs(Utils.PI_2 - startAngle) < Math.abs(Utils.PI_2 - endAngle)) {
+                endIndex = midIndex;
+                endAngle = midAngle;
+            } else {
+                startIndex = (midIndex == startIndex ? midIndex + 1 : midIndex);
+                startAngle = midAngle;
             }
         }
 
-        if (index == -1 || minAndle > 0.03f) {
-            throw new HandFeaturesException("findClosesContourIndex(). Nie znaleziono odpowiednio bliskiego pixela!. Index("+index+"), minAmgle("+minAndle+")");
+        if (index == -1 || minAngle > 0.04f) {
+            throw new HandFeaturesException("findClosesContourIndex(). Nie znaleziono odpowiednio bliskiego pixela!. Index(" + index + "), minAmgle(" + minAngle + ")");
         }
 
         return index;

@@ -1,7 +1,10 @@
 package com.app.handFeaturesThreads;
 
+import com.app.checkpresence.Configure;
 import com.app.handfeatures.HandFeaturesData;
 import com.app.handfeatures.HandFeaturesException;
+import com.app.measurement.AppExecutionTimes;
+import com.app.measurement.ExecutionTimeName;
 import com.app.memory.CopyManager;
 
 /**
@@ -32,12 +35,20 @@ public class HandFeatures implements Runnable {
 
     private void findHandFeaturesJava(com.app.handfeatures.HandFeatures handFeaturesObject){
         try {
-            if (handFeaturesObject.calculateFeatures() == true) {
-                //CopyManager.saveBitmapToDisk(handFeaturesObject.getProcessed(true), com.app.handfeatures.HandFeatures.foundedHandsFeatures, "calculated_");
-                //CopyManager.saveBitmapToDisk(handFeaturesObject.getConturBitmap(false), handFeaturesObject.foundedHandsFeatures, "contour_");
+            AppExecutionTimes.startTime(ExecutionTimeName.HAND_FEATURE_CALCULATE);
+            boolean calculated = handFeaturesObject.calculateFeatures();
+            AppExecutionTimes.endTime(ExecutionTimeName.HAND_FEATURE_CALCULATE);
+            if (calculated == true) {
+                if (Configure.SAVE_HAND_RECOGNIZATION_STEPS) {
+                    CopyManager.saveBitmapToDisk(handFeaturesObject.getProcessed(true), com.app.handfeatures.HandFeatures.foundedHandsFeatures, "calculated_");
+                    CopyManager.saveBitmapToDisk(handFeaturesObject.getConturBitmap(false), handFeaturesObject.foundedHandsFeatures, "contour_");
+                }
                 handFeaturesData = new HandFeaturesData(handFeaturesObject);
-                handFeaturesData.show(true); // cechy 1 lini
-                handFeaturesData.show(false); // wypisuje pogrupowane cechy
+
+                if (Configure.SHOW_FOUND_HAND_FEATURES == true) {
+                    handFeaturesData.show(true); // cechy 1 lini
+                    handFeaturesData.show(false); // wypisuje pogrupowane cechy
+                }
             }
         } catch (Exception e) {
             System.out.println(e.toString());

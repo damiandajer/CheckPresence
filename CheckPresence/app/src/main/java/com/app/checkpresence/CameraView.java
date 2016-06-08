@@ -19,6 +19,8 @@ import android.widget.TextView;
 import com.app.database.DataBase;
 import com.app.handfeatures.HandFeatures;
 import com.app.handfeatures.HandFeaturesData;
+import com.app.measurement.AppExecutionTimes;
+import com.app.measurement.ExecutionTimeName;
 import com.app.memory.CopyManager;
 import com.app.picture.Frame;
 import com.app.recognition.HandRecognizer;
@@ -142,22 +144,35 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                 }
 
                 if(frames == 5) {
+                    AppExecutionTimes.clear(); // czyscimy obecnie istniejace czasy
+                    AppExecutionTimes.startTime(ExecutionTimeName.CAPTURE_CAMERA_PREVIWE_TO_CALCULATE); // rozpoczynamy mierzenie czasu dla tej nawy
+
                     //number of processed pictures
                     ++pictureSaved;
-                    savedPic.setText(pictureSaved + " processed. Good " + HandFeatures.foundedHandsFeatures);
+                    savedPic.setText(pictureSaved + " processed");
 
                     segmentateImagesGivenAsBytes(data);
-                    findHandFeaturesFromSegmentatedHands();
-                    recognizeUser();
-                    if(recognisedUsers.size() != 0) {
-                        mCamera.stopPreview();
-                        System.out.println(recognisedUsers.get(0));
-                        mainActivityObject.pushFoundUserToScreen(recognisedUsers, actualHandFeatures);
-                        recognisedUsers = new ArrayList<>();
+
+                    if (CameraView.refreshBackground == false) {
+                        findHandFeaturesFromSegmentatedHands();
+
+                        if (Configure.SEARCH_USER_IN_DATABASE == true) { // Tomek - potrzebuje zeby nie blokowalo czasem aplikacji tylko caly czas przetwarzalo kolejne klatki
+                            recognizeUser();
+                            if (recognisedUsers.size() != 0) {
+                                mCamera.stopPreview();
+                                System.out.println(recognisedUsers.get(0));
+                                mainActivityObject.pushFoundUserToScreen(recognisedUsers, actualHandFeatures);
+                                recognisedUsers = new ArrayList<>();
+                            }
+                        }
                     }
 
                     //set frames to 0 (return to the beginning of loop)
                     frames = 0;
+
+                    AppExecutionTimes.endTime(ExecutionTimeName.CAPTURE_CAMERA_PREVIWE_TO_CALCULATE); // konczymy liczyc czas dla tej nazwy
+                    if (Configure.SHOW_MEASURED_TIMES == true)
+                        AppExecutionTimes.show(true);
                 }
                 ++frames;
             }
@@ -207,6 +222,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
      * @param data byte Array
      */
     public void segmentateImagesGivenAsBytes(byte[] data){
+        AppExecutionTimes.startTime(ExecutionTimeName.SEGMENTATE_IMAGE_THREAD);
+
         frame.setActualFrame(data);
 
         Bitmap liveViewBitmap = frame.getActualBitmap();
@@ -219,9 +236,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         setBitmapsToViews(openCVViews, openCVBitmaps);
 
         //CopyManager.saveBitmapToDisk(openCVBitmaps, pictureSaved, "OpenCV");
+
+        AppExecutionTimes.endTime(ExecutionTimeName.SEGMENTATE_IMAGE_THREAD);
     }
 
     public void findHandFeaturesFromSegmentatedHands(){
+        AppExecutionTimes.startTime(ExecutionTimeName.HAND_FEATURE_THREAD);
+
         //actualHandFeatures.clear();
         frame.findHandFeatures();
         //this.actualHandFeatures = frame.getHandFeatures();
@@ -230,14 +251,20 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
             this.allHandFeatures.add(features);
             this.actualHandFeatures.add(features);
         }
+
+        AppExecutionTimes.endTime(ExecutionTimeName.HAND_FEATURE_THREAD);
     }
 
     public void recognizeUser(){
+        AppExecutionTimes.startTime(ExecutionTimeName.USER_RECOGNICE_THREAD);
+
         getAllUsersWithTraits();
         if (actualHandFeatures.size() > 2 * frame.getHandFeatures().size()) {
             recognisedUsers = handRecognizer.recognise(actualHandFeatures.get(0).clone(), usersWithTraits);
             actualHandFeatures.clear();
         }
+
+        AppExecutionTimes.endTime(ExecutionTimeName.USER_RECOGNICE_THREAD);
     }
 
     @Override

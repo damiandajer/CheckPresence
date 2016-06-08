@@ -5,6 +5,7 @@ import android.graphics.Rect;
 
 import com.app.checkpresence.AddUserCameraView;
 import com.app.checkpresence.CameraView;
+import com.app.checkpresence.Configure;
 import com.app.handfeatures.Color;
 import com.app.handfeatures.HandFeatures;
 import com.app.handfeatures.HandFeaturesData;
@@ -14,8 +15,6 @@ import com.app.memory.CopyManager;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
-import static org.opencv.core.Core.subtract;
-import static org.opencv.imgproc.Imgproc.cvtColor;
 
 /**
  * Created by Damian on 17.05.2016.
@@ -74,7 +73,11 @@ public class OpenCVSubtraction implements Runnable {
             else { // BEZ OPENCV
                 numberOfElementPixels = handFeatures.binaryzation(45, Color.BG_COLOR, Color.EL_COLOR);
             }
-            //CopyManager.saveBitmapToDisk(handFeatures.getProcessed(false), HandFeatures.foundedHandsFeatures, "binarized_");
+
+            // zapisuje obraz po binaryzacji do bitmapy na external storage
+            if (Configure.SAVE_HAND_RECOGNIZATION_STEPS) {
+                CopyManager.saveBitmapToDisk(handFeatures.getProcessed(false), HandFeatures.foundedHandsFeatures, "binarized_");
+            }
 
             // ---------------
             // RESZTA KODU JEST TAKA SAMA NIEZALEZNIE OD PROCESU BINARYZACJI
@@ -102,9 +105,15 @@ public class OpenCVSubtraction implements Runnable {
             // czyscimy pijedyncze kropki
             handFeatures.getImage().setBorderColor(Color.BG_COLOR);
             handFeatures.getImage().smoothEdge(Color.EL_COLOR, Color.BG_COLOR);
+
             // segmentacja
             int foundAreas = handFeatures.segmentation(areaToSegmentation);
-            //CopyManager.saveBitmapToDisk(handFeatures.getProcessed(false), HandFeatures.foundedHandsFeatures, "segmentated_");
+
+            // zapisanie do pliku obrazu po segmentacji
+            if (Configure.SAVE_HAND_RECOGNIZATION_STEPS) {
+                CopyManager.saveBitmapToDisk(handFeatures.getProcessed(false), HandFeatures.foundedHandsFeatures, "segmentated_");
+            }
+
             if (tooFewElementPixels == true && foundAreas == 0 || foundAreas > HandFeatures.maxAllowedAreas) {
                 System.out.println("Segmentacja - blad przetwarzania!");
                 resultBitmap = handFeatures.getProcessed(false);
@@ -116,7 +125,8 @@ public class OpenCVSubtraction implements Runnable {
             resultBitmap = handFeatures.getProcessed(false);
 
         } catch (HandFeaturesException hfe) {
-            System.out.println("HandFeaturesException!." + hfe.toString());
+            if (Configure.SHOW_FOUND_HAND_FEATURES_EXCEPTIONS == true)
+                System.out.println("HandFeaturesException!." + hfe.toString());
         } catch (Exception e) {
             System.out.println("Exception: Nie przewidziany wyjatek dla HandFeatures!");
             System.out.println(e.toString());
