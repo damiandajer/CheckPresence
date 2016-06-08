@@ -6,6 +6,64 @@ import android.graphics.Point;
  * Created by bijat on 28.05.2016.
  */
 
+class Vector2D {
+    public Vector2D(FPoint start, FPoint end) {
+        x = end.x - start.x;
+        y = end.y - start.y;
+    }
+
+    public Vector2D(FPoint start, Point end) {
+        x = end.x - start.x;
+        y = end.y - start.y;
+    }
+
+    public Vector2D(Point start, Point end) {
+        x = end.x - start.x;
+        y = end.y - start.y;
+    }
+
+    public Vector2D(FPoint end) {
+        x = end.x ;
+        y = end.y;
+    }
+
+    public Vector2D(float x, float y) {
+        this.x = x ;
+        this.y = y;
+    }
+
+    public float length() {
+        return (float)(Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)));
+    }
+
+    public void normalize() {
+        float length = length();
+        x = x / length;
+        y = y / length;
+    }
+
+    public Vector2D add(float x, float y) {
+        this.x += x;
+        this.y += y;
+
+        return new Vector2D(this.x + x, this.y + y);
+    }
+
+    public Vector2D multiply(float scalar) {
+        x *= scalar;
+        y *= scalar;
+
+        return new Vector2D(x * scalar, y * scalar);
+    }
+
+    public float x;
+    public float y;
+
+    public static float angleBetweenUnitVectors(Vector2D v1, Vector2D v2) {
+        return (float)Math.acos(v1.x * v2.x + v1.y * v2.y);
+    }
+}
+
 class FPoint {
     FPoint() {
         x = 0.0f;
@@ -35,6 +93,13 @@ class FPoint {
         float d = (float)Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
         x = x / d;
         y = y / d;
+    }
+
+    public FPoint add(Vector2D vec) {
+        this.x += vec.x;
+        this.y += vec.y;
+
+        return new FPoint(this.x + vec.x, this.y + vec.y);
     }
 
     float x;

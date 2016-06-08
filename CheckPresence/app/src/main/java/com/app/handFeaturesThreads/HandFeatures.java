@@ -39,11 +39,13 @@ public class HandFeatures implements Runnable {
             boolean calculated = handFeaturesObject.calculateFeatures();
             AppExecutionTimes.endTime(ExecutionTimeName.HAND_FEATURE_CALCULATE);
             if (calculated == true) {
-                //CopyManager.saveBitmapToDisk(handFeaturesObject.getProcessed(true), com.app.handfeatures.HandFeatures.foundedHandsFeatures, "calculated_");
-                //CopyManager.saveBitmapToDisk(handFeaturesObject.getConturBitmap(false), handFeaturesObject.foundedHandsFeatures, "contour_");
+                if (Configure.SAVE_HAND_RECOGNIZATION_STEPS) {
+                    CopyManager.saveBitmapToDisk(handFeaturesObject.getProcessed(true), com.app.handfeatures.HandFeatures.foundedHandsFeatures, "calculated_");
+                    CopyManager.saveBitmapToDisk(handFeaturesObject.getConturBitmap(false), handFeaturesObject.foundedHandsFeatures, "contour_");
+                }
                 handFeaturesData = new HandFeaturesData(handFeaturesObject);
 
-                if (Configure.SHOW_MEASURED_TIMES == true) {
+                if (Configure.SHOW_FOUND_HAND_FEATURES == true) {
                     handFeaturesData.show(true); // cechy 1 lini
                     handFeaturesData.show(false); // wypisuje pogrupowane cechy
                 }

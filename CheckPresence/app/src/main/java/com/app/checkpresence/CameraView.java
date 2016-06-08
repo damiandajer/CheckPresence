@@ -151,23 +151,19 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     ++pictureSaved;
                     savedPic.setText(pictureSaved + " processed");
 
-                    AppExecutionTimes.startTime(ExecutionTimeName.SEGMENTATE_IMAGE_THREAD);
                     segmentateImagesGivenAsBytes(data);
-                    AppExecutionTimes.endTime(ExecutionTimeName.SEGMENTATE_IMAGE_THREAD);
 
                     if (CameraView.refreshBackground == false) {
-                        AppExecutionTimes.startTime(ExecutionTimeName.HAND_FEATURE_THREAD);
                         findHandFeaturesFromSegmentatedHands();
-                        AppExecutionTimes.endTime(ExecutionTimeName.HAND_FEATURE_THREAD);
 
-                        AppExecutionTimes.startTime(ExecutionTimeName.USER_RECOGNICE_THREAD);
-                        recognizeUser();
-                        AppExecutionTimes.endTime(ExecutionTimeName.USER_RECOGNICE_THREAD);
-                        if (recognisedUsers.size() != 0) {
-                            mCamera.stopPreview();
-                            System.out.println(recognisedUsers.get(0));
-                            mainActivityObject.pushFoundUserToScreen(recognisedUsers, actualHandFeatures);
-                            recognisedUsers = new ArrayList<>();
+                        if (Configure.SEARCH_USER_IN_DATABASE == true) { // Tomek - potrzebuje zeby nie blokowalo czasem aplikacji tylko caly czas przetwarzalo kolejne klatki
+                            recognizeUser();
+                            if (recognisedUsers.size() != 0) {
+                                mCamera.stopPreview();
+                                System.out.println(recognisedUsers.get(0));
+                                mainActivityObject.pushFoundUserToScreen(recognisedUsers, actualHandFeatures);
+                                recognisedUsers = new ArrayList<>();
+                            }
                         }
                     }
 
@@ -226,6 +222,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
      * @param data byte Array
      */
     public void segmentateImagesGivenAsBytes(byte[] data){
+        AppExecutionTimes.startTime(ExecutionTimeName.SEGMENTATE_IMAGE_THREAD);
+
         frame.setActualFrame(data);
 
         Bitmap liveViewBitmap = frame.getActualBitmap();
@@ -238,9 +236,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         setBitmapsToViews(openCVViews, openCVBitmaps);
 
         //CopyManager.saveBitmapToDisk(openCVBitmaps, pictureSaved, "OpenCV");
+
+        AppExecutionTimes.endTime(ExecutionTimeName.SEGMENTATE_IMAGE_THREAD);
     }
 
     public void findHandFeaturesFromSegmentatedHands(){
+        AppExecutionTimes.startTime(ExecutionTimeName.HAND_FEATURE_THREAD);
+
         //actualHandFeatures.clear();
         frame.findHandFeatures();
         //this.actualHandFeatures = frame.getHandFeatures();
@@ -249,14 +251,20 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
             this.allHandFeatures.add(features);
             this.actualHandFeatures.add(features);
         }
+
+        AppExecutionTimes.endTime(ExecutionTimeName.HAND_FEATURE_THREAD);
     }
 
     public void recognizeUser(){
+        AppExecutionTimes.startTime(ExecutionTimeName.USER_RECOGNICE_THREAD);
+
         getAllUsersWithTraits();
         if (actualHandFeatures.size() > 2 * frame.getHandFeatures().size()) {
             recognisedUsers = handRecognizer.recognise(actualHandFeatures.get(0).clone(), usersWithTraits);
             actualHandFeatures.clear();
         }
+
+        AppExecutionTimes.endTime(ExecutionTimeName.USER_RECOGNICE_THREAD);
     }
 
     @Override
