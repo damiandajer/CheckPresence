@@ -19,6 +19,8 @@ import android.widget.TextView;
 import com.app.database.DataBase;
 import com.app.handfeatures.HandFeatures;
 import com.app.handfeatures.HandFeaturesData;
+import com.app.measurement.AppExecutionTimes;
+import com.app.measurement.ExecutionTimeName;
 import com.app.memory.CopyManager;
 import com.app.picture.Frame;
 import com.app.recognition.HandRecognizer;
@@ -142,22 +144,39 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                 }
 
                 if(frames == 5) {
+                    AppExecutionTimes.clear(); // czyscimy obecnie istniejace czasy
+                    AppExecutionTimes.startTime(ExecutionTimeName.CAPTURE_CAMERA_PREVIWE_TO_CALCULATE); // rozpoczynamy mierzenie czasu dla tej nawy
+
                     //number of processed pictures
                     ++pictureSaved;
-                    savedPic.setText(pictureSaved + " processed. Good " + HandFeatures.foundedHandsFeatures);
+                    savedPic.setText(pictureSaved + " processed");
 
+                    AppExecutionTimes.startTime(ExecutionTimeName.SEGMENTATE_IMAGE_THREAD);
                     segmentateImagesGivenAsBytes(data);
-                    findHandFeaturesFromSegmentatedHands();
-                    recognizeUser();
-                    if(recognisedUsers.size() != 0) {
-                        mCamera.stopPreview();
-                        System.out.println(recognisedUsers.get(0));
-                        mainActivityObject.pushFoundUserToScreen(recognisedUsers, actualHandFeatures);
-                        recognisedUsers = new ArrayList<>();
+                    AppExecutionTimes.endTime(ExecutionTimeName.SEGMENTATE_IMAGE_THREAD);
+
+                    if (CameraView.refreshBackground == false) {
+                        AppExecutionTimes.startTime(ExecutionTimeName.HAND_FEATURE_THREAD);
+                        findHandFeaturesFromSegmentatedHands();
+                        AppExecutionTimes.endTime(ExecutionTimeName.HAND_FEATURE_THREAD);
+
+                        AppExecutionTimes.startTime(ExecutionTimeName.USER_RECOGNICE_THREAD);
+                        recognizeUser();
+                        AppExecutionTimes.endTime(ExecutionTimeName.USER_RECOGNICE_THREAD);
+                        if (recognisedUsers.size() != 0) {
+                            mCamera.stopPreview();
+                            System.out.println(recognisedUsers.get(0));
+                            mainActivityObject.pushFoundUserToScreen(recognisedUsers, actualHandFeatures);
+                            recognisedUsers = new ArrayList<>();
+                        }
                     }
 
                     //set frames to 0 (return to the beginning of loop)
                     frames = 0;
+
+                    AppExecutionTimes.endTime(ExecutionTimeName.CAPTURE_CAMERA_PREVIWE_TO_CALCULATE); // konczymy liczyc czas dla tej nazwy
+                    if (Configure.SHOW_MEASURED_TIMES == true)
+                        AppExecutionTimes.show(true);
                 }
                 ++frames;
             }
