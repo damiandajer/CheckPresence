@@ -30,8 +30,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".AddUserActivity" />
-        <activity android:name=".AndroidDatabaseManager" />
+        <activity
+            android:name=".AddUserActivity"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:name=".AndroidDatabaseManager"
+            android:screenOrientation="portrait"/>
     </application>
 
 </manifest>
