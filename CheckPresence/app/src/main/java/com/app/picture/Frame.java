@@ -107,9 +107,9 @@ public class Frame {
 
     private Rect createRectWithSizeOfSegmentatedBitmap(){
         //(int)(height*0.15), 0, (int)(height*0.7), (int)(width*0.6)
-        int left = (int)(actualFrame.getWidth()*0.15);
+        int left = (int)(actualFrame.getWidth()*0.1);
         int top = 0;
-        int right = left + (int)(actualFrame.getWidth()*0.7);
+        int right = left + (int)(actualFrame.getWidth()*0.8);
         int bottom = top + actualFrame.getHeight();
         Rect rect = new Rect(left, top, right, bottom);
         return rect;
