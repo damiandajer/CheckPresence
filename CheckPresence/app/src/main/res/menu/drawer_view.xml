@@ -15,12 +15,23 @@
             android:icon="@drawable/plus"
             android:title="Wyświetl obecności" />
         <item
-            android:id="@+id/nav_Kopia_zapasowa"
-            android:icon="@drawable/plus"
-            android:title="Kopia zapasowa" />
-        <item
             android:id="@+id/nav_Database_Manager"
             android:icon="@drawable/plus"
             android:title="Database Manager" />
+
+        <item android:title="Kopia bazy danych">
+            <menu>
+                <group android:checkableBehavior="single">
+                    <item
+                        android:id="@+id/nav_load_database"
+                        android:icon="@drawable/plus"
+                        android:title="Wczytaj kopię" />
+                    <item
+                        android:id="@+id/nav_create_copy_database"
+                        android:icon="@drawable/plus"
+                        android:title="Stwórz kopię" />
+                </group>
+            </menu>
+        </item>
     </group>
 </menu>

@@ -3,6 +3,7 @@ package com.app.checkpresence;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.hardware.Camera;
@@ -63,20 +64,14 @@ public class MainActivity extends AppCompatActivity {
 
         // Find our drawer view
         mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawerToggle = setupDrawerToggle();
 
         // Find our drawer view
         nvDrawer = (NavigationView) findViewById(R.id.nvView);
         // Setup drawer view
         setupDrawerContent(nvDrawer);
 
-        /*mNavigationDrawerFragment = (NavigationDrawerFragment)
-                getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
-        mTitle = getTitle();
-
-        // Set up the drawer.
-        mNavigationDrawerFragment.setUp(
-                R.id.navigation_drawer,
-                (DrawerLayout) findViewById(R.id.drawer_layout));*/
+        //mDrawer.addDrawerListener(drawerToggle);
 
         openCamera();
 
@@ -86,39 +81,19 @@ public class MainActivity extends AppCompatActivity {
             camera_view.addView(mCameraView);//add the SurfaceView to the layout
         }
 
-        Button copyDatabaseButton = (Button) findViewById(R.id.copyDatabaseButton);
-        copyDatabaseButton.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                mCameraView.stopPreview();
-                CopyManager.addCopyOfDatabase(context);
-                mCameraView.startPreview();
-            }
-        });
-
-        Button loadDatabaseButton = (Button) findViewById(R.id.loadDatabaseButton);
-        loadDatabaseButton.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                mCameraView.stopPreview();
-                CopyManager.loadBackupOfDatabase(context);
-                mCameraView.startPreview();
-            }
-        });
-
         openDB();
         //restoreActionBar();
     }
 
+    private ActionBarDrawerToggle setupDrawerToggle() {
+        return new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open,  R.string.drawer_close);
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // The action bar home/up action should open or close the drawer.
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                mDrawer.openDrawer(GravityCompat.START);
-                return true;
+        if (drawerToggle.onOptionsItemSelected(item)) {
+            return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -127,6 +102,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
+        drawerToggle.syncState();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // Pass any configuration change to the drawer toggles
+        drawerToggle.onConfigurationChanged(newConfig);
     }
 
     private void setupDrawerContent(NavigationView navigationView) {
@@ -155,24 +138,33 @@ public class MainActivity extends AppCompatActivity {
             case R.id.nav_obecnosci:
                 //fragmentClass = ThirdFragment.class;
                 break;
-            case R.id.nav_Kopia_zapasowa:
-                //fragmentClass = ThirdFragment.class;
-                break;
             case R.id.nav_Database_Manager:
                 //fragmentClass = AndroidDatabaseManager.class;
                 mCameraView.stopPreview();
                 startDatabaseManager();
                 break;
+            case R.id.nav_load_database:
+                menuItem.setChecked(false);
+                mCameraView.stopPreview();
+                CopyManager.loadBackupOfDatabase(context);
+                mCameraView.startPreview();
+                break;
+            case R.id.nav_create_copy_database:
+                menuItem.setChecked(false);
+                mCameraView.stopPreview();
+                CopyManager.addCopyOfDatabase(context);
+                mCameraView.startPreview();
+                break;
             default:
                 fragmentClass = MainActivity.class;
         }
-
+/*
         try {
             fragment = (Fragment) fragmentClass.newInstance();
         } catch (Exception e) {
             e.printStackTrace();
         }
-
+*/
         // Insert the fragment by replacing any existing fragment
         //FragmentManager fragmentManager = getSupportFragmentManager();
         //fragmentManager.beginTransaction().replace(R.id.main_frame, fragment).commit();
@@ -181,93 +173,13 @@ public class MainActivity extends AppCompatActivity {
         inflater.inflate(R.layout.activity_main, container);*/
 
         // Highlight the selected item has been done by NavigationView
-        menuItem.setChecked(true);
+        //menuItem.setChecked(true);
         // Set action bar title
-        setTitle(menuItem.getTitle());
+        //setTitle(menuItem.getTitle());
         // Close the navigation drawer
         mDrawer.closeDrawers();
     }
-/*
-    @Override
-    public void onNavigationDrawerItemSelected(int position) {
-        // update the main content by replacing fragments
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction()
-                .replace(R.id.camera_view, PlaceholderFragment.newInstance(position + 1))
-                .commit();
-    }
 
-    public void onSectionAttached(int number) {
-        switch (number) {
-            case 1:
-                mTitle = "PaPa Mobile";
-                break;
-            case 2:
-                mTitle = "Dodaj użytkownika";
-                startActivityAddNewUser();
-                break;
-            case 3:
-                mTitle = "Wyświetl obecności";
-                break;
-            case 4:
-                mTitle = "Kopia zapasowa";
-                break;
-            case 5:
-                mTitle = "Database Manager";
-                mCameraView.stopPreview();
-                startDatabaseManager();
-                break;
-        }
-    }
-
-    public void restoreActionBar() {
-        ActionBar actionBar = getSupportActionBar();
-        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
-        actionBar.setDisplayShowTitleEnabled(true);
-        actionBar.setTitle(mTitle);
-        actionBar.setBackgroundDrawable(new ColorDrawable(Color.rgb(0,168,0)));
-    }
-
-    /**
-     * A placeholder fragment containing a simple view.
-     */
- /*   public static class PlaceholderFragment extends Fragment {
-        /**
-         * The fragment argument representing the section number for this
-         * fragment.
-         */
-    /*    private static final String ARG_SECTION_NUMBER = "section_number";
-
-        public PlaceholderFragment() {
-        }
-
-        /**
-         * Returns a new instance of this fragment for the given section
-         * number.
-         */
-     /*   public static PlaceholderFragment newInstance(int sectionNumber) {
-            PlaceholderFragment fragment = new PlaceholderFragment();
-            Bundle args = new Bundle();
-            args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-            fragment.setArguments(args);
-            return fragment;
-        }
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-            return rootView;
-        }
-
-        @Override
-        public void onAttach(Activity activity) {
-            super.onAttach(activity);
-            ((MainActivity) activity).onSectionAttached(
-                    getArguments().getInt(ARG_SECTION_NUMBER));
-        }
-    }
-*/
     static {
         System.loadLibrary("native");
     }
