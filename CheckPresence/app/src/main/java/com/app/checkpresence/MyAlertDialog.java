@@ -53,7 +53,7 @@ public class MyAlertDialog {
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog,int id) {
                                 getmCameraView().startPreviewInCameraView();
-                                getmCameraView().startAutoExposure();
+                                //getmCameraView().startAutoExposure();
                                 dialog.cancel();
                             }
                         })
@@ -108,7 +108,7 @@ public class MyAlertDialog {
                             public void onClick(DialogInterface dialog,int id) {
                                 addHandFeaturesToDatabase(usersSpinner);
                                 getmCameraView().startPreviewInCameraView();
-                                getmCameraView().startAutoExposure();
+                                //getmCameraView().startAutoExposure();
                                 dialog.cancel();
                             }
                         })
@@ -116,7 +116,7 @@ public class MyAlertDialog {
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                                 mCameraView.startPreviewInCameraView();
-                                getmCameraView().startAutoExposure();
+                                //getmCameraView().startAutoExposure();
                                 dialog.cancel();
                             }
                         });
