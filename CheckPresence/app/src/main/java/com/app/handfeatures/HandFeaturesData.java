@@ -72,7 +72,7 @@ public class HandFeaturesData {
         features[FeatureNames.MiddleDistToThumb.ordinal()] = tempFingers[Finger.MIDDLE_FINGER].distance_from_thumb;
         features[FeatureNames.RingDistToThumb.ordinal()]   = tempFingers[Finger.RING_FINGER].distance_from_thumb;
         features[FeatureNames.PinkyDistToThumb.ordinal()]  = tempFingers[Finger.PINKY].distance_from_thumb;
-        features[FeatureNames.LowerHandWidth.ordinal()]    = handFeatures.getLowerHandWidth();
+        features[FeatureNames.LowerHandWidth.ordinal()]    = 0.0f; //handFeatures.getLowerHandWidth();
         features[FeatureNames.UpperHandWidth.ordinal()]    = handFeatures.getUpperHandWidth();
 
         features[FeatureNames.ThumbUpperCircleRadious.ordinal()]  = tempFingers[Finger.THUMB].circle_top_radius;

@@ -1,0 +1,37 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_PaPa_Mobile"
+            android:icon="@drawable/plus"
+            android:title="PaPa Mobile"
+            android:checked="true"/>
+        <item
+            android:id="@+id/nav_Dodaj_użytkownika"
+            android:icon="@drawable/plus"
+            android:title="Dodaj użytkownika" />
+        <item
+            android:id="@+id/nav_obecnosci"
+            android:icon="@drawable/plus"
+            android:title="Wyświetl obecności" />
+        <item
+            android:id="@+id/nav_Database_Manager"
+            android:icon="@drawable/plus"
+            android:title="Database Manager" />
+
+        <item android:title="Kopia bazy danych">
+            <menu>
+                <group android:checkableBehavior="single">
+                    <item
+                        android:id="@+id/nav_load_database"
+                        android:icon="@drawable/plus"
+                        android:title="Wczytaj kopię" />
+                    <item
+                        android:id="@+id/nav_create_copy_database"
+                        android:icon="@drawable/plus"
+                        android:title="Stwórz kopię" />
+                </group>
+            </menu>
+        </item>
+    </group>
+</menu>

@@ -103,7 +103,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         mCamera.setPreviewCallback(new Camera.PreviewCallback() {
             public void onPreviewFrame(byte[] data, Camera _camera) {
                 //getting once bitmap with background
-                if (CameraView.refreshBackground) {
+                if (AddUserCameraView.refreshBackground) {
                     getBackgroundFrame(data);
                 }
 

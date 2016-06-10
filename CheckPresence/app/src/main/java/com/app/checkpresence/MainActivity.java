@@ -3,17 +3,24 @@ package com.app.checkpresence;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.hardware.Camera;
 import android.os.Bundle;
+import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -26,23 +33,24 @@ import com.app.memory.CopyManager;
 import java.util.List;
 
 
-public class MainActivity extends ActionBarActivity
-        implements NavigationDrawerFragment.NavigationDrawerCallbacks {
+public class MainActivity extends AppCompatActivity {
     private Camera mCamera = null;
     private CameraView mCameraView = null;
     private static DataBase dataBase;
     private Context context;
+    private DrawerLayout mDrawer;
+    private Toolbar toolbar;
+    private NavigationView nvDrawer;
+    private ActionBarDrawerToggle drawerToggle;
 
 
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
      */
-    private NavigationDrawerFragment mNavigationDrawerFragment;
+    //private NavigationDrawerFragment mNavigationDrawerFragment;
 
-    /**
-     * Used to store the last screen title. For use in {@link #restoreActionBar()}.
-     */
-    private CharSequence mTitle;
+
+    //private CharSequence mTitle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,14 +58,20 @@ public class MainActivity extends ActionBarActivity
         setContentView(R.layout.activity_main);
         context = this;
 
-        mNavigationDrawerFragment = (NavigationDrawerFragment)
-                getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
-        mTitle = getTitle();
+        // Set a Toolbar to replace the ActionBar.
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
 
-        // Set up the drawer.
-        mNavigationDrawerFragment.setUp(
-                R.id.navigation_drawer,
-                (DrawerLayout) findViewById(R.id.drawer_layout));
+        // Find our drawer view
+        mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawerToggle = setupDrawerToggle();
+
+        // Find our drawer view
+        nvDrawer = (NavigationView) findViewById(R.id.nvView);
+        // Setup drawer view
+        setupDrawerContent(nvDrawer);
+
+        //mDrawer.addDrawerListener(drawerToggle);
 
         openCamera();
 
@@ -67,121 +81,103 @@ public class MainActivity extends ActionBarActivity
             camera_view.addView(mCameraView);//add the SurfaceView to the layout
         }
 
-        //btn to close the application
-        ImageButton imgClose = (ImageButton) findViewById(R.id.imgClose);
-        imgClose.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if(mCamera != null)
-                    mCamera.release();
-                System.exit(0);
-            }
-        });
-
-        Button copyDatabaseButton = (Button) findViewById(R.id.loadDatabaseButton);
-        copyDatabaseButton.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                mCameraView.stopPreview();
-                CopyManager.addCopyOfDatabase(context);
-                mCameraView.startPreview();
-            }
-        });
-
-        Button loadDatabaseButton = (Button) findViewById(R.id.copyDatabaseButton);
-        loadDatabaseButton.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                mCameraView.stopPreview();
-                CopyManager.loadBackupOfDatabase(context);
-                mCameraView.startPreview();
-            }
-        });
-
         openDB();
-        restoreActionBar();
+        //restoreActionBar();
+    }
+
+    private ActionBarDrawerToggle setupDrawerToggle() {
+        return new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open,  R.string.drawer_close);
     }
 
     @Override
-    public void onNavigationDrawerItemSelected(int position) {
-        // update the main content by replacing fragments
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction()
-                .replace(R.id.camera_view, PlaceholderFragment.newInstance(position + 1))
-                .commit();
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (drawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
-    public void onSectionAttached(int number) {
-        switch (number) {
-            case 1:
-                mTitle = "PaPa Mobile";
+    // `onPostCreate` called when activity start-up is complete after `onStart()`
+    // NOTE! Make sure to override the method with only a single `Bundle` argument
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        drawerToggle.syncState();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // Pass any configuration change to the drawer toggles
+        drawerToggle.onConfigurationChanged(newConfig);
+    }
+
+    private void setupDrawerContent(NavigationView navigationView) {
+        navigationView.setNavigationItemSelectedListener(
+                new NavigationView.OnNavigationItemSelectedListener() {
+                    @Override
+                    public boolean onNavigationItemSelected(MenuItem menuItem) {
+                        selectDrawerItem(menuItem);
+                        return true;
+                    }
+                });
+    }
+
+    public void selectDrawerItem(MenuItem menuItem) {
+        // Create a new fragment and specify the fragment to show based on nav item clicked
+        Fragment fragment = null;
+        Class fragmentClass = null;
+        switch(menuItem.getItemId()) {
+            case R.id.nav_PaPa_Mobile:
+                fragmentClass = MainActivity.class;
                 break;
-            case 2:
-                mTitle = "Dodaj użytkownika";
+            case R.id.nav_Dodaj_użytkownika:
+                //fragmentClass = AddUserActivity.class;
                 startActivityAddNewUser();
                 break;
-            case 3:
-                mTitle = "Wyświetl obecności";
-                //openShowCostActivity(this.findViewById(android.R.id.content));
+            case R.id.nav_obecnosci:
+                //fragmentClass = ThirdFragment.class;
                 break;
-            case 4:
-                mTitle = "Kopia zapasowa";
-                //openDatabaseBackupActivity(this.findViewById(android.R.id.content));
-                break;
-            case 5:
-                mTitle = "Database Manager";
-                mCameraView.stopPreviewInCameraView();
+            case R.id.nav_Database_Manager:
+                //fragmentClass = AndroidDatabaseManager.class;
+                mCameraView.stopPreview();
                 startDatabaseManager();
                 break;
+            case R.id.nav_load_database:
+                menuItem.setChecked(false);
+                mCameraView.stopPreview();
+                CopyManager.loadBackupOfDatabase(context);
+                mCameraView.startPreview();
+                break;
+            case R.id.nav_create_copy_database:
+                menuItem.setChecked(false);
+                mCameraView.stopPreview();
+                CopyManager.addCopyOfDatabase(context);
+                mCameraView.startPreview();
+                break;
+            default:
+                fragmentClass = MainActivity.class;
         }
-    }
-
-    public void restoreActionBar() {
-        ActionBar actionBar = getSupportActionBar();
-        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
-        actionBar.setDisplayShowTitleEnabled(true);
-        actionBar.setTitle(mTitle);
-        actionBar.setBackgroundDrawable(new ColorDrawable(Color.rgb(0,168,0)));
-    }
-
-    /**
-     * A placeholder fragment containing a simple view.
-     */
-    public static class PlaceholderFragment extends Fragment {
-        /**
-         * The fragment argument representing the section number for this
-         * fragment.
-         */
-        private static final String ARG_SECTION_NUMBER = "section_number";
-
-        public PlaceholderFragment() {
+/*
+        try {
+            fragment = (Fragment) fragmentClass.newInstance();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+*/
+        // Insert the fragment by replacing any existing fragment
+        //FragmentManager fragmentManager = getSupportFragmentManager();
+        //fragmentManager.beginTransaction().replace(R.id.main_frame, fragment).commit();
+        /*LayoutInflater inflater = getLayoutInflater();
+        FrameLayout container = (FrameLayout) findViewById(R.id.main_frame);
+        inflater.inflate(R.layout.activity_main, container);*/
 
-        /**
-         * Returns a new instance of this fragment for the given section
-         * number.
-         */
-        public static PlaceholderFragment newInstance(int sectionNumber) {
-            PlaceholderFragment fragment = new PlaceholderFragment();
-            Bundle args = new Bundle();
-            args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-            fragment.setArguments(args);
-            return fragment;
-        }
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-            return rootView;
-        }
-
-        @Override
-        public void onAttach(Activity activity) {
-            super.onAttach(activity);
-            ((MainActivity) activity).onSectionAttached(
-                    getArguments().getInt(ARG_SECTION_NUMBER));
-        }
+        // Highlight the selected item has been done by NavigationView
+        //menuItem.setChecked(true);
+        // Set action bar title
+        //setTitle(menuItem.getTitle());
+        // Close the navigation drawer
+        mDrawer.closeDrawers();
     }
 
     static {
