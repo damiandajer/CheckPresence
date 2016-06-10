@@ -17,7 +17,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.app.database.DataBase;
-import com.app.handfeatures.HandFeatures;
 import com.app.handfeatures.HandFeaturesData;
 import com.app.measurement.AppExecutionTimes;
 import com.app.measurement.ExecutionTimeName;
@@ -36,11 +35,13 @@ import java.util.Map;
 
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     public static boolean refreshBackground = true;
-    public final static long autoAdjustmentTime = 2000000000L; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
 
-    public boolean measureCameraTime; // czy odliczac czas dla ustabilizowania kamery i jej blokady
+    private long autoAdjustmentTime; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
+    private boolean measureCameraTime; // czy odliczac czas dla ustabilizowania kamery i jej blokady
     private long startTime; //punkt poczatkowy czasu. actualTime - startTime >= autoAdjustmentTime => zablokowanie kamery
-    private Camera.Parameters startParameters; // poczatkowe ustawienia kamery, jezeli odblokujemy aparato to chcemy wlasnie do nich powrucic
+    private Camera.Parameters cameraParameters; // poczatkowe ustawienia kamery, jezeli odblokujemy aparato to chcemy wlasnie do nich powrucic
+
+    private long prevTimePreview; // pomocnicza zmienna do mierzenia czasu miedy pobraniem kolejnych klatek
 
     Activity mainActivity;
     MainActivity mainActivityObject;
@@ -67,28 +68,24 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     public CameraView(Context context, Activity activity, MainActivity mainActivityObject, Camera camera){
         super(context);
 
-        startAutoExposure();
-
         this.mainActivity = activity;
         this.mainActivityObject = mainActivityObject;
         this.backgroundBtn = (ImageButton) this.mainActivity.findViewById(R.id.backgroundBtn);
         this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
         mCamera = camera;
+        startAutoExposure(3000);
+
+        prevTimePreview = System.nanoTime();
+
         //get the holder and set this class as the callback, so we can get camera data here
         mHolder = getHolder();
         mHolder.addCallback(this);
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_NORMAL);
         mCamera.setDisplayOrientation(90);
-        setCameraParameters();
+        initCameraParameters(); // ustawia poczatkowe parametry kamery
         this.dataBase = MainActivity.getDataBase();
         this.cameraNull = false;
-        this.backgroundBtn.setOnClickListener(new View.OnClickListener(){
 
-            @Override
-            public void onClick(View v) {
-                refreshBackground = true;
-            }
-        });
         initiateOpenCV();
         this.cppViews = new ArrayList<>();
         this.openCVViews = new ArrayList<>();
@@ -102,6 +99,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         setAllViewsToVariables();
         setCppViewsList();
         setOpenCVViewsList();
+
+        this.backgroundBtn.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                startAutoExposure(500);
+                CameraView.refreshBackground = true;
+            }
+        });
     }
 
 
@@ -131,13 +136,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         mCamera.setPreviewCallback(new Camera.PreviewCallback() {
             public void onPreviewFrame(byte[] data, Camera _camera) {
                 //getting once bitmap with background
-                if(isGetBackgroundButtonClicked()){
+                if (CameraView.refreshBackground) {
                     getBackgroundFrame(data);
                 }
 
+
                 if (measureCameraTime) { // odliczanie czasu do zablokowania automatycznej ekpozycji kamery
                     //System.out.println("Diff time: " + (System.nanoTime() - startTime) + " > " + CameraView.autoAdjustmentTime);
-                    if (System.nanoTime() - startTime > CameraView.autoAdjustmentTime) {
+                    if (System.nanoTime() - startTime > autoAdjustmentTime) {
                         lockCameraExposure(true);
                         measureCameraTime = false;
                     }
@@ -145,7 +151,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
                 if(frames == 5) {
                     AppExecutionTimes.clear(); // czyscimy obecnie istniejace czasy
-                    AppExecutionTimes.startTime(ExecutionTimeName.CAPTURE_CAMERA_PREVIWE_TO_CALCULATE); // rozpoczynamy mierzenie czasu dla tej nawy
+                    // czas pomiedzy pobraniem klatek do przetworzenia
+                    long currTime = System.nanoTime();
+                    AppExecutionTimes.add(prevTimePreview, currTime, ExecutionTimeName.BETWEEN_CAPTURE_CAMERA_PREVIEW);
+                    prevTimePreview = currTime;
+
+                    // poczatek czasu dla przetworzenia klatki
+                    AppExecutionTimes.startTime(ExecutionTimeName.CAPTURE_CAMERA_PREVIEW_TO_CALCULATE); // rozpoczynamy mierzenie czasu dla tej nawy
 
                     //number of processed pictures
                     ++pictureSaved;
@@ -159,7 +171,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         if (Configure.SEARCH_USER_IN_DATABASE == true) { // Tomek - potrzebuje zeby nie blokowalo czasem aplikacji tylko caly czas przetwarzalo kolejne klatki
                             recognizeUser();
                             if (recognisedUsers.size() != 0) {
-                                mCamera.stopPreview();
+                                //mCamera.stopPreview();
+                                stopPreview();
                                 System.out.println(recognisedUsers.get(0));
                                 mainActivityObject.pushFoundUserToScreen(recognisedUsers, actualHandFeatures);
                                 recognisedUsers = new ArrayList<>();
@@ -170,7 +183,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     //set frames to 0 (return to the beginning of loop)
                     frames = 0;
 
-                    AppExecutionTimes.endTime(ExecutionTimeName.CAPTURE_CAMERA_PREVIWE_TO_CALCULATE); // konczymy liczyc czas dla tej nazwy
+                    AppExecutionTimes.endTime(ExecutionTimeName.CAPTURE_CAMERA_PREVIEW_TO_CALCULATE); // konczymy liczyc czas dla tej nazwy
                     if (Configure.SHOW_MEASURED_TIMES == true)
                         AppExecutionTimes.show(true);
                 }
@@ -182,38 +195,69 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     /**
      * Setting camera parameters
      */
-    public void setCameraParameters(){
+    public void initCameraParameters(){
         Camera.Parameters parameters = mCamera.getParameters();
         parameters.set("orientation", "portrait");
         parameters.setRotation(90);
         Camera.Size size = parameters.getPreviewSize();
         parameters.setPreviewSize(size.width / 2, size.height / 2);
-        startParameters = parameters; // zapamietuje poczatkowe ustawienia kamery
         mCamera.setParameters(parameters);
         this.size = parameters.getPreviewSize();
+
+        saveCameraParameters(); // zapamietuje poczatkowe ustawienia kamery
+    }
+
+    public void setCameraParameters(Camera.Parameters parameters) {
+        mCamera.setParameters(parameters);
+    }
+
+    public Camera.Parameters getCameraParameters() {
+        return mCamera.getParameters();
+    }
+
+    public void saveCameraParameters() {
+        cameraParameters = getCameraParameters();
+    }
+
+    public void loadCameraParameters() {
+        setCameraParameters(cameraParameters);
     }
 
     public void lockCameraExposure(boolean lock){
-        Camera.Parameters parameters = mCamera.getParameters();
+        boolean changed = false;
+        Camera.Parameters parameters = getCameraParameters();
 
         // chcemy zablokowac automatyczna ekspozycje siatla aparatu
-        if (lock == true) {
-            if (parameters.getAutoExposureLock() == false) { // ekspozycja swiatla automatyczna
+        if (lock) {
+            if (!parameters.getAutoExposureLock()) { // ekspozycja swiatla automatyczna
                 System.out.println("Ekspozycja swiatła automatyczna. Wylaczono");
                 parameters.setAutoExposureLock(true); // zabllkuj ekspozycje swiatla
+                changed = true;
             }
-            if (parameters.getAutoWhiteBalanceLock() == false) { // balans bieli automatyczny
+            if (!parameters.getAutoWhiteBalanceLock()) { // balans bieli automatyczny
                 System.out.println("Balans bielie automatyczny. Wylaczono");
                 parameters.setAutoWhiteBalanceLock(true); // zablokuj
+                changed = true;
+            }
+        }
+        else {
+            if (parameters.getAutoExposureLock()) { // ekspozycja swiatla automatyczna
+                System.out.println("Ekspozycja swiatła automatyczna. Wylaczono");
+                parameters.setAutoExposureLock(false); // zabllkuj ekspozycje swiatla
+                changed = true;
+            }
+            if (parameters.getAutoWhiteBalanceLock()) { // balans bieli automatyczny
+                System.out.println("Balans bielie automatyczny. Wylaczono");
+                parameters.setAutoWhiteBalanceLock(false); // zablokuj
+                changed = true;
             }
             //parameters.set("iso", 800);
         }
-        else {
-            // przywraca poczatkowe ustaiania kamery
-            mCamera.setParameters(startParameters);
-        }
 
-        mCamera.setParameters(parameters);
+        if (changed) {
+            setCameraParameters(parameters);
+            saveCameraParameters();
+        }
     }
 
 
@@ -247,7 +291,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         frame.findHandFeatures();
         //this.actualHandFeatures = frame.getHandFeatures();
         for (float[] features:frame.getHandFeatures()
-             ) {
+                ) {
             this.allHandFeatures.add(features);
             this.actualHandFeatures.add(features);
         }
@@ -293,10 +337,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         this.refreshBackground = false;
         actualHandFeatures.clear();
         System.out.println("Pobrano nową próbkę tła...");
-    }
-
-    protected Boolean isGetBackgroundButtonClicked(){
-        return this.refreshBackground;
     }
 
     private void setAllViewsToVariables(){
@@ -360,20 +400,29 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
             Log.d("ERROR", "Failed to get camera: " + e.getMessage());
         }
         mCamera.setDisplayOrientation(90);
-        setCameraParameters();
+        if (cameraParameters == null)
+            initCameraParameters();
+        else
+            loadCameraParameters();
     }
 
-    public void startPreviewInCameraView(){
+    public void startPreview(){
+        loadCameraParameters();
         mCamera.startPreview();
     }
 
-    public void stopPreviewInCameraView(){
+    public void stopPreview(){
+        saveCameraParameters();
         mCamera.stopPreview();
     }
 
-    public void startAutoExposure(){
+    public void startAutoExposure(int milliseconds){
+        if (mCamera == null)
+            return;
+
+        lockCameraExposure(false);
         measureCameraTime = true;
         startTime = System.nanoTime();
+        autoAdjustmentTime = milliseconds * 1000000L;
     }
 }
-

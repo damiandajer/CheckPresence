@@ -24,6 +24,10 @@ public class AppExecutionTimes {
         }
     }
 
+    public static void add(long startTime, long endTime, ExecutionTimeName name) {
+        AppExecutionTimes.executionTimeList.put(name, new FunctionExecutionTime(startTime, endTime));
+    }
+
     public static void show(boolean ordered) {
         System.out.println("Collected execution times:");
         if (ordered == false) {
