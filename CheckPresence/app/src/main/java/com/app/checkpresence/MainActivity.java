@@ -86,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
             camera_view.addView(mCameraView);//add the SurfaceView to the layout
         }
 
-        Button copyDatabaseButton = (Button) findViewById(R.id.loadDatabaseButton);
+        Button copyDatabaseButton = (Button) findViewById(R.id.copyDatabaseButton);
         copyDatabaseButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
@@ -96,14 +96,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Button loadDatabaseButton = (Button) findViewById(R.id.copyDatabaseButton);
+        Button loadDatabaseButton = (Button) findViewById(R.id.loadDatabaseButton);
         loadDatabaseButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                /*mCameraView.stopPreview();
+                mCameraView.stopPreview();
                 CopyManager.loadBackupOfDatabase(context);
-                mCameraView.startPreview();*/
-                startActivityAddNewUser();
+                mCameraView.startPreview();
             }
         });
 
