@@ -103,8 +103,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         mCamera.setPreviewCallback(new Camera.PreviewCallback() {
             public void onPreviewFrame(byte[] data, Camera _camera) {
                 //getting once bitmap with background
-                if(isGetBackgroundButtonClicked()){
-                    startAutoExposure(500);
+                if (CameraView.refreshBackground) {
                     getBackgroundFrame(data);
                 }
 
@@ -266,10 +265,6 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         this.refreshBackground = false;
         clearSegmentatedHandsBufor();
         System.out.println("Pobrano nową próbkę tła...");
-    }
-
-    protected Boolean isGetBackgroundButtonClicked(){
-        return this.refreshBackground;
     }
 
     private void setAllViewsToVariables(){

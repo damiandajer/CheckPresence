@@ -85,13 +85,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         initCameraParameters(); // ustawia poczatkowe parametry kamery
         this.dataBase = MainActivity.getDataBase();
         this.cameraNull = false;
-        this.backgroundBtn.setOnClickListener(new View.OnClickListener(){
 
-            @Override
-            public void onClick(View v) {
-                refreshBackground = true;
-            }
-        });
         initiateOpenCV();
         this.cppViews = new ArrayList<>();
         this.openCVViews = new ArrayList<>();
@@ -105,6 +99,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         setAllViewsToVariables();
         setCppViewsList();
         setOpenCVViewsList();
+
+        this.backgroundBtn.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                startAutoExposure(500);
+                CameraView.refreshBackground = true;
+            }
+        });
     }
 
 
@@ -134,11 +136,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         mCamera.setPreviewCallback(new Camera.PreviewCallback() {
             public void onPreviewFrame(byte[] data, Camera _camera) {
                 //getting once bitmap with background
-                if(isGetBackgroundButtonClicked()){
-                    startAutoExposure(500);
-                    CameraView.refreshBackground = true;
-                }
-
                 if (CameraView.refreshBackground) {
                     getBackgroundFrame(data);
                 }
@@ -342,10 +339,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         System.out.println("Pobrano nową próbkę tła...");
     }
 
-    protected Boolean isGetBackgroundButtonClicked(){
-        return this.refreshBackground;
-    }
-
     private void setAllViewsToVariables(){
         this.bottomRight = (ImageView) this.mainActivity.findViewById(R.id.segmentatedHand1);
         this.bottomLeft = (ImageView) this.mainActivity.findViewById(R.id.segmentatedHand3);
@@ -424,6 +417,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     }
 
     public void startAutoExposure(int milliseconds){
+        if (mCamera == null)
+            return;
+
         lockCameraExposure(false);
         measureCameraTime = true;
         startTime = System.nanoTime();
