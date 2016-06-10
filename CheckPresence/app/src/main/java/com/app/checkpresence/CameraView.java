@@ -35,11 +35,13 @@ import java.util.Map;
 
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     public static boolean refreshBackground = true;
-    public final static long autoAdjustmentTime = 2000000000L; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
 
-    public boolean measureCameraTime; // czy odliczac czas dla ustabilizowania kamery i jej blokady
+    private long autoAdjustmentTime; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
+    private boolean measureCameraTime; // czy odliczac czas dla ustabilizowania kamery i jej blokady
     private long startTime; //punkt poczatkowy czasu. actualTime - startTime >= autoAdjustmentTime => zablokowanie kamery
     private Camera.Parameters cameraParameters; // poczatkowe ustawienia kamery, jezeli odblokujemy aparato to chcemy wlasnie do nich powrucic
+
+    private long prevTimePreview; // pomocnicza zmienna do mierzenia czasu miedy pobraniem kolejnych klatek
 
     Activity mainActivity;
     MainActivity mainActivityObject;
@@ -66,13 +68,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     public CameraView(Context context, Activity activity, MainActivity mainActivityObject, Camera camera){
         super(context);
 
-        startAutoExposure();
-
         this.mainActivity = activity;
         this.mainActivityObject = mainActivityObject;
         this.backgroundBtn = (ImageButton) this.mainActivity.findViewById(R.id.backgroundBtn);
         this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
         mCamera = camera;
+        startAutoExposure(3000);
+
+        prevTimePreview = System.nanoTime();
+
         //get the holder and set this class as the callback, so we can get camera data here
         mHolder = getHolder();
         mHolder.addCallback(this);
@@ -131,12 +135,18 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
             public void onPreviewFrame(byte[] data, Camera _camera) {
                 //getting once bitmap with background
                 if(isGetBackgroundButtonClicked()){
+                    startAutoExposure(500);
+                    CameraView.refreshBackground = true;
+                }
+
+                if (CameraView.refreshBackground) {
                     getBackgroundFrame(data);
                 }
 
+
                 if (measureCameraTime) { // odliczanie czasu do zablokowania automatycznej ekpozycji kamery
                     //System.out.println("Diff time: " + (System.nanoTime() - startTime) + " > " + CameraView.autoAdjustmentTime);
-                    if (System.nanoTime() - startTime > CameraView.autoAdjustmentTime) {
+                    if (System.nanoTime() - startTime > autoAdjustmentTime) {
                         lockCameraExposure(true);
                         measureCameraTime = false;
                     }
@@ -144,7 +154,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
                 if(frames == 5) {
                     AppExecutionTimes.clear(); // czyscimy obecnie istniejace czasy
-                    AppExecutionTimes.startTime(ExecutionTimeName.CAPTURE_CAMERA_PREVIWE_TO_CALCULATE); // rozpoczynamy mierzenie czasu dla tej nawy
+                    // czas pomiedzy pobraniem klatek do przetworzenia
+                    long currTime = System.nanoTime();
+                    AppExecutionTimes.add(prevTimePreview, currTime, ExecutionTimeName.BETWEEN_CAPTURE_CAMERA_PREVIEW);
+                    prevTimePreview = currTime;
+
+                    // poczatek czasu dla przetworzenia klatki
+                    AppExecutionTimes.startTime(ExecutionTimeName.CAPTURE_CAMERA_PREVIEW_TO_CALCULATE); // rozpoczynamy mierzenie czasu dla tej nawy
 
                     //number of processed pictures
                     ++pictureSaved;
@@ -159,7 +175,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                             recognizeUser();
                             if (recognisedUsers.size() != 0) {
                                 //mCamera.stopPreview();
-                                stopPreviewInCameraView();
+                                stopPreview();
                                 System.out.println(recognisedUsers.get(0));
                                 mainActivityObject.pushFoundUserToScreen(recognisedUsers, actualHandFeatures);
                                 recognisedUsers = new ArrayList<>();
@@ -170,7 +186,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     //set frames to 0 (return to the beginning of loop)
                     frames = 0;
 
-                    AppExecutionTimes.endTime(ExecutionTimeName.CAPTURE_CAMERA_PREVIWE_TO_CALCULATE); // konczymy liczyc czas dla tej nazwy
+                    AppExecutionTimes.endTime(ExecutionTimeName.CAPTURE_CAMERA_PREVIEW_TO_CALCULATE); // konczymy liczyc czas dla tej nazwy
                     if (Configure.SHOW_MEASURED_TIMES == true)
                         AppExecutionTimes.show(true);
                 }
@@ -397,18 +413,20 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
             loadCameraParameters();
     }
 
-    public void startPreviewInCameraView(){
+    public void startPreview(){
         loadCameraParameters();
         mCamera.startPreview();
     }
 
-    public void stopPreviewInCameraView(){
+    public void stopPreview(){
         saveCameraParameters();
         mCamera.stopPreview();
     }
 
-    public void startAutoExposure(){
+    public void startAutoExposure(int milliseconds){
+        lockCameraExposure(false);
         measureCameraTime = true;
         startTime = System.nanoTime();
+        autoAdjustmentTime = milliseconds * 1000000L;
     }
 }

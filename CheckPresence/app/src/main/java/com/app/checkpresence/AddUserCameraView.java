@@ -26,11 +26,11 @@ import java.util.Map;
  */
 public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Callback {
     public static boolean refreshBackground = true;
-    public final static long autoAdjustmentTime = 2000000000L; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
 
-    public boolean measureCameraTime; // czy odliczac czas dla ustabilizowania kamery i jej blokady
+    private long autoAdjustmentTime; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
+    private boolean measureCameraTime; // czy odliczac czas dla ustabilizowania kamery i jej blokady
     private long startTime; //punkt poczatkowy czasu. actualTime - startTime >= autoAdjustmentTime => zablokowanie kamery
-    private Camera.Parameters startParameters; // poczatkowe ustawienia kamery, jezeli odblokujemy aparato to chcemy wlasnie do nich powrucic
+    private Camera.Parameters cameraParameters; // poczatkowe ustawienia kamery, jezeli odblokujemy aparato to chcemy wlasnie do nich powrucic
 
     Activity mainActivity;
     AddUserActivity addUserActivity;
@@ -56,18 +56,18 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     public AddUserCameraView(Context context, Activity activity, AddUserActivity addUserActivity, Camera camera){
         super(context);
 
-        startAutoExposure();
-
         this.mainActivity = activity;
         this.addUserActivity = addUserActivity;
         this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
         mCamera = camera;
+        startAutoExposure(3000);
+
         //get the holder and set this class as the callback, so we can get camera data here
         mHolder = getHolder();
         mHolder.addCallback(this);
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_NORMAL);
         mCamera.setDisplayOrientation(90);
-        setCameraParameters();
+        initCameraParameters();
         this.dataBase = MainActivity.getDataBase();
         this.actualHandFeatures = new ArrayList<>();
         this.allHandFeatures = new ArrayList<>();
@@ -104,12 +104,13 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
             public void onPreviewFrame(byte[] data, Camera _camera) {
                 //getting once bitmap with background
                 if(isGetBackgroundButtonClicked()){
+                    startAutoExposure(500);
                     getBackgroundFrame(data);
                 }
 
                 if (measureCameraTime) { // odliczanie czasu do zablokowania automatycznej ekpozycji kamery
                     //System.out.println("Diff time: " + (System.nanoTime() - startTime) + " > " + CameraView.autoAdjustmentTime);
-                    if (System.nanoTime() - startTime > CameraView.autoAdjustmentTime) {
+                    if (System.nanoTime() - startTime > autoAdjustmentTime) {
                         lockCameraExposure(true);
                         measureCameraTime = false;
                     }
@@ -137,38 +138,76 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     /**
      * Setting camera parameters
      */
-    public void setCameraParameters(){
+    public void initCameraParameters(){
         Camera.Parameters parameters = mCamera.getParameters();
         parameters.set("orientation", "portrait");
         parameters.setRotation(90);
         Camera.Size size = parameters.getPreviewSize();
         parameters.setPreviewSize(size.width / 2, size.height / 2);
-        startParameters = parameters; // zapamietuje poczatkowe ustawienia kamery
         mCamera.setParameters(parameters);
         this.size = parameters.getPreviewSize();
+
+        saveCameraParameters(); // zapamietuje poczatkowe ustawienia kamery
+    }
+
+    /**
+     * set parameters to camera
+     * @param parameters
+     */
+    public void setCameraParameters(Camera.Parameters parameters) {
+        mCamera.setParameters(parameters);
+    }
+
+    public Camera.Parameters getCameraParameters() {
+        return mCamera.getParameters();
+    }
+
+    /**
+     * save camera parameters for feture backup last parameters
+     */
+    public void saveCameraParameters() {
+        cameraParameters = getCameraParameters();
+    }
+
+    public void loadCameraParameters() {
+        setCameraParameters(cameraParameters);
     }
 
     public void lockCameraExposure(boolean lock){
-        Camera.Parameters parameters = mCamera.getParameters();
+        boolean changed = false;
+        Camera.Parameters parameters = getCameraParameters();
 
         // chcemy zablokowac automatyczna ekspozycje siatla aparatu
-        if (lock == true) {
-            if (parameters.getAutoExposureLock() == false) { // ekspozycja swiatla automatyczna
+        if (lock) {
+            if (!parameters.getAutoExposureLock()) { // ekspozycja swiatla automatyczna
                 System.out.println("Ekspozycja swiatła automatyczna. Wylaczono");
                 parameters.setAutoExposureLock(true); // zabllkuj ekspozycje swiatla
+                changed = true;
             }
-            if (parameters.getAutoWhiteBalanceLock() == false) { // balans bieli automatyczny
+            if (!parameters.getAutoWhiteBalanceLock()) { // balans bieli automatyczny
                 System.out.println("Balans bielie automatyczny. Wylaczono");
                 parameters.setAutoWhiteBalanceLock(true); // zablokuj
+                changed = true;
+            }
+        }
+        else {
+            if (parameters.getAutoExposureLock()) { // ekspozycja swiatla automatyczna
+                System.out.println("Ekspozycja swiatła automatyczna. Wylaczono");
+                parameters.setAutoExposureLock(false); // zabllkuj ekspozycje swiatla
+                changed = true;
+            }
+            if (parameters.getAutoWhiteBalanceLock()) { // balans bieli automatyczny
+                System.out.println("Balans bielie automatyczny. Wylaczono");
+                parameters.setAutoWhiteBalanceLock(false); // zablokuj
+                changed = true;
             }
             //parameters.set("iso", 800);
         }
-        else {
-            // przywraca poczatkowe ustaiania kamery
-            mCamera.setParameters(startParameters);
-        }
 
-        mCamera.setParameters(parameters);
+        if (changed) {
+            setCameraParameters(parameters);
+            saveCameraParameters();
+        }
     }
 
     /**
@@ -280,9 +319,21 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         this.indexUser = indexUser;
     }
 
-    public void startAutoExposure(){
+    public void startPreview(){
+        loadCameraParameters();
+        mCamera.startPreview();
+    }
+
+    public void stopPreview(){
+        saveCameraParameters();
+        mCamera.stopPreview();
+    }
+
+    public void startAutoExposure(int milliseconds){
+        lockCameraExposure(false);
         measureCameraTime = true;
         startTime = System.nanoTime();
+        autoAdjustmentTime = milliseconds * 1000000L;
     }
 
     public void clearSegmentatedHandsBufor(){

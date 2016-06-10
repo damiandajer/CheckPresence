@@ -95,9 +95,9 @@ public class MainActivity extends ActionBarActivity
         copyDatabaseButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                mCameraView.stopPreviewInCameraView();
+                mCameraView.stopPreview();
                 CopyManager.addCopyOfDatabase(context);
-                mCameraView.startPreviewInCameraView();
+                mCameraView.startPreview();
             }
         });
 
@@ -105,9 +105,9 @@ public class MainActivity extends ActionBarActivity
         loadDatabaseButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                mCameraView.stopPreviewInCameraView();
+                mCameraView.stopPreview();
                 CopyManager.loadBackupOfDatabase(context);
-                mCameraView.startPreviewInCameraView();
+                mCameraView.startPreview();
             }
         });
 
