@@ -3,6 +3,8 @@ package com.app.checkpresence;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -76,21 +78,6 @@ public class MainActivity extends ActionBarActivity
             }
         });
 
-        Button addUserButton = (Button) findViewById(R.id.addUserButton);
-        addUserButton.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                startActivityAddNewUser();
-            }
-        });
-
-        Button databaseManagerButton = (Button) findViewById(R.id.databaseManagerButton);
-        databaseManagerButton.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                startDatabaseManager();
-            }
-        });
         Button copyDatabaseButton = (Button) findViewById(R.id.loadDatabaseButton);
         copyDatabaseButton.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -112,6 +99,7 @@ public class MainActivity extends ActionBarActivity
         });
 
         openDB();
+        restoreActionBar();
     }
 
     @Override
@@ -140,6 +128,11 @@ public class MainActivity extends ActionBarActivity
                 mTitle = "Kopia zapasowa";
                 //openDatabaseBackupActivity(this.findViewById(android.R.id.content));
                 break;
+            case 5:
+                mTitle = "Database Manager";
+                mCameraView.stopPreviewInCameraView();
+                startDatabaseManager();
+                break;
         }
     }
 
@@ -148,6 +141,7 @@ public class MainActivity extends ActionBarActivity
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
         actionBar.setDisplayShowTitleEnabled(true);
         actionBar.setTitle(mTitle);
+        actionBar.setBackgroundDrawable(new ColorDrawable(Color.rgb(0,168,0)));
     }
 
     /**

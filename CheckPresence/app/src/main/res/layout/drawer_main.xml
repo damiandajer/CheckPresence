@@ -2,8 +2,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#cccc"
+    android:background="@color/background_floating_material_light"
     android:choiceMode="singleChoice"
-    android:divider="@color/highlighted_text_material_dark"
+    android:divider="@android:color/holo_green_light"
     android:dividerHeight="0dp"
-    tools:context="com.app.checkpresence.NavigationDrawerFragment" />
+    tools:context="com.app.checkpresence.NavigationDrawerFragment"
+    android:transitionGroup="false" />

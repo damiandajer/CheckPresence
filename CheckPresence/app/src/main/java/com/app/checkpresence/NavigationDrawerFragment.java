@@ -105,7 +105,8 @@ public class NavigationDrawerFragment extends Fragment {
                         "PaPa Mobile",
                         "Dodaj użytkownika",
                         "Wyświetl obecności",
-                        "Kopia zapasowa"
+                        "Kopia zapasowa",
+                        "Database Manager"
                 }));
         mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
         return mDrawerListView;
