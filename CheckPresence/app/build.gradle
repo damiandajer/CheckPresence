@@ -2,7 +2,7 @@ apply plugin: 'com.android.model.application'
 
 model {
     android {
-        compileSdkVersion = 21
+        compileSdkVersion = 23
         buildToolsVersion = "21.1.2"
 
         ndk {
@@ -15,7 +15,7 @@ model {
         defaultConfig {
             applicationId = "com.app.checkpresence"
             minSdkVersion.apiLevel 16
-            targetSdkVersion.apiLevel 21
+            targetSdkVersion.apiLevel 23
             versionCode 1
             versionName "1.0"
         }
@@ -33,5 +33,6 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:21.0.3'
     compile 'com.android.support:support-v4:21.0.3'
+    compile 'com.android.support:design:23.1.1'
     compile project(':openCVLibrary')
 }
