@@ -1,32 +1,21 @@
 package com.app.checkpresence;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.FrameLayout;
-import android.widget.ImageButton;
 
+import com.app.database.AndroidDatabaseManager;
 import com.app.database.DataBase;
 import com.app.memory.CopyManager;
 
@@ -135,7 +124,19 @@ public class MainActivity extends AppCompatActivity {
                 //fragmentClass = AddUserActivity.class;
                 startActivityAddNewUser();
                 break;
+            case R.id.nav_Dodaj_grupę:
+                mCameraView.stopPreview();
+                addGroupDialog();
+                //fragmentClass = AddUserActivity.class;
+                break;
+            case R.id.nav_Dodaj_zajęcia:
+                mCameraView.stopPreview();
+                addClassesDialog();
+                //fragmentClass = AddUserActivity.class;
+                break;
             case R.id.nav_obecnosci:
+                mCameraView.stopPreview();
+                startActivityUserPresences();
                 //fragmentClass = ThirdFragment.class;
                 break;
             case R.id.nav_Database_Manager:
@@ -245,6 +246,11 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    public void startActivityUserPresences(){
+        Intent intent = new Intent(this, UserPresencesActivity.class);
+        startActivity(intent);
+    }
+
     public void pushFoundUserToScreen(List<Integer> usersList, List<float[]> actualHandFeatures){
         MyAlertDialog myAlertDialog = new MyAlertDialog();
         myAlertDialog.setMainActivity(this);
@@ -253,5 +259,19 @@ public class MainActivity extends AppCompatActivity {
         myAlertDialog.setActualHandFeatures(actualHandFeatures);
         myAlertDialog.convertUsersListToListOfStrings(usersList);
         myAlertDialog.pushFoundUserToScreen();
+    }
+
+    public void addGroupDialog(){
+        MyAlertDialog myAlertDialog = new MyAlertDialog();
+        myAlertDialog.setMainActivity(this);
+        myAlertDialog.setContext(this);
+        myAlertDialog.addGroupDialog();
+    }
+
+    public void addClassesDialog(){
+        MyAlertDialog myAlertDialog = new MyAlertDialog();
+        myAlertDialog.setMainActivity(this);
+        myAlertDialog.setContext(this);
+        myAlertDialog.addClassesDialog();
     }
 }

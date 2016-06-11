@@ -32,10 +32,11 @@
         </activity>
         <activity
             android:name=".AddUserActivity"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait" />
         <activity
-            android:name=".AndroidDatabaseManager"
-            android:screenOrientation="portrait"/>
+            android:name="com.app.database.AndroidDatabaseManager"
+            android:screenOrientation="portrait" />
+        <activity android:name=".UserPresencesActivity"></activity>
     </application>
 
 </manifest>

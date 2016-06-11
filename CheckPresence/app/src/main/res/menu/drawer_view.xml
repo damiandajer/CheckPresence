@@ -11,6 +11,16 @@
             android:icon="@drawable/plus"
             android:title="Dodaj użytkownika" />
         <item
+            android:id="@+id/nav_Dodaj_grupę"
+            android:icon="@drawable/plus"
+            android:title="Dodaj grupę"
+            android:checkableBehavior="none"/>
+        <item
+            android:id="@+id/nav_Dodaj_zajęcia"
+            android:icon="@drawable/plus"
+            android:title="Dodaj zajęcia"
+            android:checkableBehavior="none"/>
+        <item
             android:id="@+id/nav_obecnosci"
             android:icon="@drawable/plus"
             android:title="Wyświetl obecności" />
