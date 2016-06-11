@@ -641,6 +641,74 @@ public class DataBase extends SQLiteOpenHelper{
     }
 
     /**
+     * Zwraca liste zajęć dla podanego dnia
+     * @return List<Classes> - lista z zajęciami
+     */
+    public List<Classes> getClasses(int day, int month, int year){
+        List<Classes> classes = new ArrayList<Classes>();
+
+        String selectQuery = "SELECT * "
+                + " FROM " + TABLE_NAME_CLASS
+                + " JOIN " + TABLE_NAME_GROUP
+                + " on " + COLUMN_NAME_ID_GROUP_IN_CLASS
+                + "=" + COLUMN_NAME_ID_GROUP
+                + " WHERE " + COLUMN_NAME_CLASS_DAY + "=" + day
+                + " AND " + COLUMN_NAME_CLASS_MONTH + "=" + month
+                + " AND " + COLUMN_NAME_CLASS_YEAR + "=" + year
+                + "";
+
+        Cursor cursor = dataBase.rawQuery(selectQuery, null);
+
+        if(cursor != null && cursor.moveToFirst()) {
+            do{
+                Classes c = new Classes( cursor.getString(cursor.getColumnIndex(COLUMN_NAME_GROUP_NAME)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID_CLASS)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_CLASS_YEAR)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_CLASS_MONTH)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_CLASS_DAY))
+                );
+                classes.add(c);
+            }while(cursor.moveToNext());
+        }
+
+        return classes;
+    }
+
+    /**
+     * Zwraca liste zajęć dla podanego dnia i grupy
+     * @return Classes - zajęcia, null jeżeli nie ma
+     */
+    public Classes getClasses(String groupName, int day, int month, int year){
+        Classes classes;
+
+        String selectQuery = "SELECT * "
+                + " FROM " + TABLE_NAME_CLASS
+                + " JOIN " + TABLE_NAME_GROUP
+                + " on " + COLUMN_NAME_ID_GROUP_IN_CLASS
+                + "=" + COLUMN_NAME_ID_GROUP
+                + " WHERE " + COLUMN_NAME_CLASS_DAY + "=" + day
+                + " AND " + COLUMN_NAME_CLASS_MONTH + "=" + month
+                + " AND " + COLUMN_NAME_CLASS_YEAR + "=" + year
+                + " AND " + COLUMN_NAME_GROUP_NAME + "='" + groupName
+                + "'";
+
+        Cursor cursor = dataBase.rawQuery(selectQuery, null);
+
+        if(cursor != null && cursor.moveToFirst()) {
+                classes = new Classes( cursor.getString(cursor.getColumnIndex(COLUMN_NAME_GROUP_NAME)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID_CLASS)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_CLASS_YEAR)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_CLASS_MONTH)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_CLASS_DAY))
+                );
+        } else {
+            classes = null;
+        }
+
+        return classes;
+    }
+
+    /**
      * Dodaje pole obecność dla podaej osoby na podanych zajęciach
      * @param idClass - id zajęć
      * @param idUser - id osoby
