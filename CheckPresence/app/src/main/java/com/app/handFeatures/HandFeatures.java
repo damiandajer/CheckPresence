@@ -149,6 +149,8 @@ public class HandFeatures {
 
         m_lowerHandWidth = 0;
         m_upperHandWidth = 0;
+
+        m_raport = new HandFeaturesRaport();
     }
 
 
@@ -210,6 +212,12 @@ public class HandFeatures {
 
         m_image = new MyImage(diff_image, m_input.getWidth(), m_input.getHeight());
 
+        m_raport.bin = new HandFeaturesRaport.BinaryzationRaport();
+        m_raport.bin.usedOpenCV = false;
+        m_raport.bin.width = m_image.width();
+        m_raport.bin.height = m_image.height();
+        m_raport.bin.elPixels = numOfElementPixels;
+
         AppExecutionTimes.endTime(ExecutionTimeName.BINARYZATION);
         return numOfElementPixels;
     }
@@ -240,9 +248,16 @@ public class HandFeatures {
         m_binarized = OpenCVHelper.matToBitmap(mask, width, height);
 
         m_image = new MyImage(m_binarized);
+        int numOfElementPixels = m_image.numOfPixels(Color.EL_COLOR);
+
+        m_raport.bin = new HandFeaturesRaport.BinaryzationRaport();
+        m_raport.bin.usedOpenCV = true;
+        m_raport.bin.width = m_image.width();
+        m_raport.bin.height = m_image.height();
+        m_raport.bin.elPixels = numOfElementPixels;
 
         AppExecutionTimes.endTime(ExecutionTimeName.BINARYZATION);
-        return m_image.numOfPixels(Color.EL_COLOR); // number of element pixels
+        return numOfElementPixels; // number of element pixels
     }
 
     /**
@@ -277,11 +292,15 @@ public class HandFeatures {
             m_image.setBorderColor(Color.BG_COLOR);
 
             area = m_image.findTheBiggestArea(Color.EL_COLOR);
-            //System.out.println("Znaleziono " + area.numOfFoundAreas + " plam.");
-            /*if (area.numOfFoundAreas > maxAreas) { // za duzo plam - obraz nie jest odpowieniej jakosci - zadnie pobrania nowego tla
-                return area.numOfFoundAreas;
-            }*/
-            if (area.points.size() < (m_image.width() * m_image.height() * 0.35)) {
+
+            m_raport.seg = new HandFeaturesRaport.SegmentationRaport();
+            m_raport.seg.width = area.rect.width();
+            m_raport.seg.height = area.rect.height();
+            m_raport.seg.numAreas = area.numOfFoundAreas;
+            m_raport.seg.theBiggestAreaPixels = area.points.size();
+            m_raport.seg.allAreasPixels = area.numOfFoundAllElementPixels;
+
+            if (area.points.size() < (m_image.width() * m_image.height() * 0.40)) {
                     System.out.println("Nie ma 40%!!!");
                 return 0;
             }
@@ -1488,6 +1507,7 @@ public class HandFeatures {
     // Getters
     //
 
+    public HandFeaturesRaport getRaport() { return m_raport; }
     public MyImage getImage() { return m_image; }
     public Finger[] getFingers() { return m_fingers; }
     public float getLowerHandWidth() { return m_lowerHandWidth; }
@@ -1538,4 +1558,6 @@ public class HandFeatures {
     int m_lowerHandWidth;
     int m_upperHandWidth;
     Point m_lowerRightHandWidthPoint;
+
+    HandFeaturesRaport m_raport;
 }

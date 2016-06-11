@@ -44,6 +44,7 @@ enum FeatureNames {
     PinkyArea;
 }
 
+
 public class HandFeaturesData {
     public HandFeaturesData() {
         size = FeatureNames.values().length;
@@ -53,6 +54,8 @@ public class HandFeaturesData {
     public HandFeaturesData(HandFeatures handFeatures){
         size = FeatureNames.values().length;
         features = new float[size];
+
+        raport = handFeatures.getRaport();
 
         Finger[] tempFingers = handFeatures.getFingers();
 
@@ -137,4 +140,6 @@ public class HandFeaturesData {
 
     public float features[];
     public int size;
+
+    public HandFeaturesRaport raport;
 }
