@@ -18,6 +18,7 @@ import android.widget.TextView;
 
 import com.app.database.DataBase;
 import com.app.handfeatures.HandFeaturesData;
+import com.app.handfeatures.HandFeaturesRaport;
 import com.app.measurement.AppExecutionTimes;
 import com.app.measurement.ExecutionTimeName;
 import com.app.memory.CopyManager;
@@ -163,7 +164,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     ++pictureSaved;
                     savedPic.setText(pictureSaved + " processed");
 
-                    segmentateImagesGivenAsBytes(data);
+                    HandFeaturesRaport raport = segmentateImagesGivenAsBytes(data);
 
                     if (CameraView.refreshBackground == false) {
                         findHandFeaturesFromSegmentatedHands();

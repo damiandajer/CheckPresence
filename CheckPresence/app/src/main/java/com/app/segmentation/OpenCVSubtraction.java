@@ -23,10 +23,7 @@ public class OpenCVSubtraction implements Runnable {
     private volatile Bitmap resultBitmap;
     Bitmap inputBitmap, backgroundBitmap;
     int height, width, threshold;
-    Mat imgToProcess1, imgToProcess2, imgToProcess, mask;
-    int[] intARGBArray;
-    //float[] handFeatures;
-    private native int[] deleteSmallAreas(int[] intARGBArray, int height, int width);
+
     private HandFeatures handFeatures = null;
     Rect areaToSegmentation;
 
@@ -45,11 +42,6 @@ public class OpenCVSubtraction implements Runnable {
         this.height = inputBitmap.getHeight();
         this.width = inputBitmap.getWidth();
         this.threshold = threshold;
-
-        this.imgToProcess = new Mat(height, width, CvType.CV_8UC4);
-        this.imgToProcess1 = new Mat(height, width, CvType.CV_8UC4);
-        this.imgToProcess2 = new Mat(height, width, CvType.CV_8UC4);
-        this.mask = new Mat(height, width, CvType.CV_8UC4);
     }
 
     @Override
@@ -83,46 +75,30 @@ public class OpenCVSubtraction implements Runnable {
             // RESZTA KODU JEST TAKA SAMA NIEZALEZNIE OD PROCESU BINARYZACJI
             // ------------------------
 
-            boolean tooFewElementPixels = false;
-            // jezeli obraz ma mniej niz 10% pixeli koloru elementu nie przetwarzaj dalej - najprowodpodobniej nie ma reki na obrazie
-            if (numberOfElementPixels < (handFeatures.getImage().width() * handFeatures.getImage().height()) * 0.10) {
-                System.out.println("Binaryzacja - znaleziono za malo pixeli elementu");
-                //CameraView.refreshBackground = true;
-                //resultBitmap = handFeatures.getProcessed(false);
-                //return;
-                tooFewElementPixels = true;
-            }
-            // jezeli obraz ma wiecej niz 60% pixeli koloru elementu nie przetwarzaj dalej - najprowodpodobniej nie ma reki na obrazie
-            if (numberOfElementPixels > (handFeatures.getImage().width() * handFeatures.getImage().height()) * 0.70) {
-                System.out.println("Binaryzacja - znaleziono za duzo pixeli elementu");
-                resultBitmap = handFeatures.getProcessed(false);
-                AddUserCameraView.refreshBackground = true;
-                CameraView.refreshBackground = true;
-                return;
-            }
-
             // jezeli np plama dloni jest za mala, lub jakis blad przy przetwarzaniu to zwruc aktualny wyglad obrazu i zakoncz przetwarzanie tej klatki
+            resultBitmap = handFeatures.getProcessed(false);
+            // jezeli obraz ma mniej niz 3% pixeli koloru elementu nie przetwarzaj dalej - najprowodpodobniej nie ma reki na obrazie
+            if (numberOfElementPixels < (handFeatures.getImage().width() * handFeatures.getImage().height()) * 0.03)
+                return;
+            // jezeli obraz ma wiecej niz 70% pixeli koloru elementu nie przetwarzaj dalej - najprowodpodobniej nie ma reki na obrazie
+            if (numberOfElementPixels > (handFeatures.getImage().width() * handFeatures.getImage().height()) * 0.70)
+                return;
+
             // czyscimy pijedyncze kropki
             handFeatures.getImage().setBorderColor(Color.BG_COLOR);
             handFeatures.getImage().smoothEdge(Color.EL_COLOR, Color.BG_COLOR);
 
             // segmentacja
             int foundAreas = handFeatures.segmentation(areaToSegmentation);
+            resultBitmap = handFeatures.getProcessed(false);
 
             // zapisanie do pliku obrazu po segmentacji
             if (Configure.SAVE_HAND_RECOGNIZATION_STEPS) {
                 CopyManager.saveBitmapToDisk(handFeatures.getProcessed(false), HandFeatures.foundedHandsFeatures, "segmentated_");
             }
 
-            if (tooFewElementPixels == true && foundAreas == 0 || foundAreas > HandFeatures.maxAllowedAreas) {
-                System.out.println("Segmentacja - blad przetwarzania!");
-                resultBitmap = handFeatures.getProcessed(false);
-                AddUserCameraView.refreshBackground = true;
-                CameraView.refreshBackground = true;
+            if (foundAreas > HandFeatures.maxAllowedAreas)
                 return;
-            }
-
-            resultBitmap = handFeatures.getProcessed(false);
 
         } catch (HandFeaturesException hfe) {
             if (Configure.SHOW_FOUND_HAND_FEATURES_EXCEPTIONS == true)
