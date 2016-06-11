@@ -265,6 +265,7 @@ public class MainActivity extends AppCompatActivity {
         MyAlertDialog myAlertDialog = new MyAlertDialog();
         myAlertDialog.setMainActivity(this);
         myAlertDialog.setContext(this);
+        myAlertDialog.setmCameraView(mCameraView);
         myAlertDialog.addGroupDialog();
     }
 
@@ -272,6 +273,7 @@ public class MainActivity extends AppCompatActivity {
         MyAlertDialog myAlertDialog = new MyAlertDialog();
         myAlertDialog.setMainActivity(this);
         myAlertDialog.setContext(this);
+        myAlertDialog.setmCameraView(mCameraView);
         myAlertDialog.addClassesDialog();
     }
 }
