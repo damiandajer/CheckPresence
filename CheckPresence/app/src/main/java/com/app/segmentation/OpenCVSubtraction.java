@@ -30,6 +30,10 @@ public class OpenCVSubtraction implements Runnable {
 
     HandFeaturesRaport report;
 
+    public HandFeaturesRaport getReport() {
+        return report;
+    }
+
 
     /**
      *
@@ -83,11 +87,13 @@ public class OpenCVSubtraction implements Runnable {
             // jezeli obraz ma mniej niz 3% pixeli koloru elementu nie przetwarzaj dalej - najprowodpodobniej nie ma reki na obrazie
             if (numberOfElementPixels < (handFeatures.getImage().width() * handFeatures.getImage().height()) * 0.03) {
                 report = handFeatures.getRaport();
+                //System.out.println("R1!");
                 return;
             }
             // jezeli obraz ma wiecej niz 70% pixeli koloru elementu nie przetwarzaj dalej - najprowodpodobniej nie ma reki na obrazie
             if (numberOfElementPixels > (handFeatures.getImage().width() * handFeatures.getImage().height()) * 0.70) {
                 report = handFeatures.getRaport();
+                //System.out.println("R2!");
                 return;
             }
 
@@ -98,6 +104,11 @@ public class OpenCVSubtraction implements Runnable {
             // segmentacja
             int foundAreas = handFeatures.segmentation(areaToSegmentation);
             resultBitmap = handFeatures.getProcessed(false);
+            if (foundAreas == 0) {
+                report = handFeatures.getRaport();
+                //System.out.println("R3!");
+                return;
+            }
 
             // zapisanie do pliku obrazu po segmentacji
             if (Configure.SAVE_HAND_RECOGNIZATION_STEPS) {
@@ -106,8 +117,12 @@ public class OpenCVSubtraction implements Runnable {
 
             if (foundAreas > HandFeatures.maxAllowedAreas) {
                 report = handFeatures.getRaport();
+                //System.out.println("R4!");
                 return;
             }
+
+            report = handFeatures.getRaport();
+            //System.out.println("R5!");
 
         } catch (HandFeaturesException hfe) {
             if (Configure.SHOW_FOUND_HAND_FEATURES_EXCEPTIONS == true)

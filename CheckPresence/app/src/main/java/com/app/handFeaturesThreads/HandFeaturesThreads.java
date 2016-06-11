@@ -1,5 +1,6 @@
 package com.app.handFeaturesThreads;
 
+import com.app.handfeatures.HandFeaturesRaport;
 import com.app.threads.TaskManager;
 import com.app.threads.ThreadHandler;
 
@@ -28,6 +29,7 @@ public class HandFeaturesThreads extends TaskManager {
 
         for (Runnable r: ThreadHandler.getRunnables()) {
             try {
+                reportCalculated = ((HandFeatures) r).getCalculatedReport();
                 if(checkIfHandFeaturesNotNull(((HandFeatures) r).getHandFeatures()))
                     floatArrays.add(((HandFeatures) r).getHandFeatures());
             }catch (IllegalFormatConversionException e){
@@ -53,5 +55,9 @@ public class HandFeaturesThreads extends TaskManager {
 
     public List<float[]> getListOfArraysWithHandFeatures(){
         return floatArrays;
+    }
+
+    public HandFeaturesRaport.CalculationRaport getCalculatedRaport(){
+        return reportCalculated;
     }
 }

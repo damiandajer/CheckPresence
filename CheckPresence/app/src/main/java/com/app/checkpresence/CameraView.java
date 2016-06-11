@@ -35,8 +35,9 @@ import java.util.List;
 import java.util.Map;
 
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
-    public static boolean refreshBackground = true;
+    private int noFoundedHandFeaturesInARow;
 
+    private boolean refreshBackground = true;
     private long autoAdjustmentTime; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
     private boolean measureCameraTime; // czy odliczac czas dla ustabilizowania kamery i jej blokady
     private long startTime; //punkt poczatkowy czasu. actualTime - startTime >= autoAdjustmentTime => zablokowanie kamery
@@ -105,7 +106,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
             @Override
             public void onClick(View v) {
                 startAutoExposure(500);
-                CameraView.refreshBackground = true;
+                refreshBackground = true;
             }
         });
     }
@@ -137,7 +138,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         mCamera.setPreviewCallback(new Camera.PreviewCallback() {
             public void onPreviewFrame(byte[] data, Camera _camera) {
                 //getting once bitmap with background
-                if (CameraView.refreshBackground) {
+                if (refreshBackground) {
                     getBackgroundFrame(data);
                 }
 
@@ -164,10 +165,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     ++pictureSaved;
                     savedPic.setText(pictureSaved + " processed");
 
-                    HandFeaturesRaport raport = segmentateImagesGivenAsBytes(data);
+                    HandFeaturesRaport report = segmentateImagesGivenAsBytes(data);
+                    HandFeatureRaportManager hfrm = new HandFeatureRaportManager(report);
+                    refreshBackground = hfrm.isNeedToTakeNewBackground();
 
-                    if (CameraView.refreshBackground == false) {
-                        findHandFeaturesFromSegmentatedHands();
+                    if (refreshBackground == false) {
+                        HandFeaturesRaport.CalculationRaport c_report = findHandFeaturesFromSegmentatedHands();
 
                         if (Configure.SEARCH_USER_IN_DATABASE == true) { // Tomek - potrzebuje zeby nie blokowalo czasem aplikacji tylko caly czas przetwarzalo kolejne klatki
                             recognizeUser();
@@ -266,7 +269,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
      * Process segmentation of data from camera preview, sets results to ImageViews
      * @param data byte Array
      */
-    public void segmentateImagesGivenAsBytes(byte[] data){
+    public HandFeaturesRaport segmentateImagesGivenAsBytes(byte[] data){
         AppExecutionTimes.startTime(ExecutionTimeName.SEGMENTATE_IMAGE_THREAD);
 
         frame.setActualFrame(data);
@@ -276,20 +279,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
         frame.setBackground(bmpBackground);
         frame.setThresholds(15, 15, 1);
-        frame.segmentateFrameWithOpenCV();
+        HandFeaturesRaport report = frame.segmentateFrameWithOpenCV();
         List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
         setBitmapsToViews(openCVViews, openCVBitmaps);
 
         //CopyManager.saveBitmapToDisk(openCVBitmaps, pictureSaved, "OpenCV");
 
         AppExecutionTimes.endTime(ExecutionTimeName.SEGMENTATE_IMAGE_THREAD);
+
+        return report;
     }
 
-    public void findHandFeaturesFromSegmentatedHands(){
+    public HandFeaturesRaport.CalculationRaport findHandFeaturesFromSegmentatedHands(){
         AppExecutionTimes.startTime(ExecutionTimeName.HAND_FEATURE_THREAD);
 
         //actualHandFeatures.clear();
-        frame.findHandFeatures();
+        HandFeaturesRaport.CalculationRaport report = frame.findHandFeatures();
         //this.actualHandFeatures = frame.getHandFeatures();
         for (float[] features:frame.getHandFeatures()
                 ) {
@@ -298,6 +303,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         }
 
         AppExecutionTimes.endTime(ExecutionTimeName.HAND_FEATURE_THREAD);
+        return report;
     }
 
     public void recognizeUser(){

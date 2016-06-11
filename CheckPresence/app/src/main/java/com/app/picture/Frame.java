@@ -8,6 +8,7 @@ import com.app.checkpresence.CameraView;
 import com.app.handFeaturesThreads.HandFeaturesThreads;
 import com.app.handfeatures.HandFeatures;
 import com.app.handfeatures.HandFeaturesData;
+import com.app.handfeatures.HandFeaturesRaport;
 import com.app.segmentation.OpenCVSubtractionThreads;
 
 import java.util.ArrayList;
@@ -28,6 +29,8 @@ public class Frame {
     private int min, max, numberOfThresholds;
     private int segmentatedHeight, segmentatedWidth;
     private List<HandFeatures> handFeaturesObjects;
+    private HandFeaturesRaport report;
+    private HandFeaturesRaport.CalculationRaport report_calculated;
 
     public Frame(){}
 
@@ -132,7 +135,7 @@ public class Frame {
         return this.argb;
     }
 
-    public void findHandFeatures(){
+    public HandFeaturesRaport.CalculationRaport findHandFeatures(){
         handFeatures = new ArrayList<>();
 
         HandFeaturesThreads handFeaturesThreads = HandFeaturesThreads.getNewObject();
@@ -140,9 +143,11 @@ public class Frame {
         handFeaturesThreads.executeThreads();
 
         handFeatures = handFeaturesThreads.getListOfArraysWithHandFeatures();
+        report_calculated = handFeaturesThreads.getCalculatedRaport();
+        return report_calculated;
     }
 
-    public void segmentateFrameWithOpenCV(){
+    public HandFeaturesRaport segmentateFrameWithOpenCV(){
         openCVBitmaps = new ArrayList<>();
         openCVIntArrays = new ArrayList<>();
         Rect sizeOfBitmapToSegmentation = createRectWithSizeOfSegmentatedBitmap();
@@ -154,8 +159,11 @@ public class Frame {
 
         openCVIntArrays = openCVSubtractionThreads.getListOfIntArrays();
         openCVBitmaps = openCVSubtractionThreads.getBitmaps();
+        report = openCVSubtractionThreads.getReport();
         handFeaturesObjects = openCVSubtractionThreads.getHandFeaturesObjects(); // may be null
         setSizeOfSegmentatedBitmaps(openCVBitmaps.get(0).getHeight(), openCVBitmaps.get(0).getWidth());
+
+        return report;
     }
 
     public List<Bitmap> getOpenCVBitmaps() {

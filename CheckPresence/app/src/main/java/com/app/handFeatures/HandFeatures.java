@@ -301,7 +301,7 @@ public class HandFeatures {
             m_raport.seg.allAreasPixels = area.numOfFoundAllElementPixels;
 
             if (area.points.size() < (m_image.width() * m_image.height() * 0.40)) {
-                    System.out.println("Nie ma 40%!!!");
+                System.out.println("Nie ma 40%!!!");
                 return 0;
             }
 
@@ -352,6 +352,8 @@ public class HandFeatures {
 
     public boolean calculateFeatures() {
         boolean isGood = true;
+        m_raportCalulated = new HandFeaturesRaport.CalculationRaport();
+
         try {
             AppExecutionTimes.startTime(ExecutionTimeName.HAND_FEATURE_FINGERS);
 
@@ -393,6 +395,7 @@ public class HandFeatures {
         }
 
         ++HandFeatures.foundedHandsFeatures;
+        m_raportCalulated.isGood = isGood;
         return isGood;
     }
 
@@ -1508,6 +1511,7 @@ public class HandFeatures {
     //
 
     public HandFeaturesRaport getRaport() { return m_raport; }
+    public HandFeaturesRaport.CalculationRaport getRaportCalculated() { return m_raportCalulated; }
     public MyImage getImage() { return m_image; }
     public Finger[] getFingers() { return m_fingers; }
     public float getLowerHandWidth() { return m_lowerHandWidth; }
@@ -1560,4 +1564,5 @@ public class HandFeatures {
     Point m_lowerRightHandWidthPoint;
 
     HandFeaturesRaport m_raport;
+    HandFeaturesRaport.CalculationRaport m_raportCalulated;
 }

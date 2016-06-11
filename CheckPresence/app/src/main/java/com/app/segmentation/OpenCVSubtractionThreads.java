@@ -5,6 +5,7 @@ import android.graphics.Rect;
 
 import com.app.handfeatures.HandFeatures;
 import com.app.handfeatures.HandFeaturesData;
+import com.app.handfeatures.HandFeaturesRaport;
 import com.app.threads.TaskManager;
 import com.app.threads.ThreadHandler;
 
@@ -43,6 +44,7 @@ public class OpenCVSubtractionThreads extends TaskManager {
             try {
                 bitmaps.add(((OpenCVSubtraction) r).getBitmap());
                 handFeatures.add(((OpenCVSubtraction) r).getHandFeaturesObject());
+                report = ((OpenCVSubtraction) r).getReport();
             }catch (IllegalFormatConversionException e){
                 e.printStackTrace();
             }
@@ -57,6 +59,15 @@ public class OpenCVSubtractionThreads extends TaskManager {
     public List<Bitmap> getBitmaps() {
         return bitmaps;
     }
+
+    public HandFeaturesRaport getReport() {
+        return report;
+    }
+
+    public HandFeaturesRaport.CalculationRaport getReportCalculated() {
+        return reportCalculated;
+    }
+
 
     public List<int[]> getListOfIntArrays() {
         return intArrays;
