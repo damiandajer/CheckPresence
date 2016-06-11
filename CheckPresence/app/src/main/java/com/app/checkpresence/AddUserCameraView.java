@@ -11,7 +11,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.app.database.DataBase;
-import com.app.handfeatures.HandFeaturesData;
 import com.app.picture.Frame;
 import com.app.recognition.HandRecognizer;
 
@@ -123,7 +122,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
                     segmentateImagesGivenAsBytes(data);
                     findHandFeaturesFromSegmentatedHands();
                     if(checkIfAllFeatures()){
-                        addUser();
+                        addUserDialog();
                     }
 
                     //set frames to 0 (return to the beginning of loop)
@@ -288,7 +287,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
             return true;
     }
 
-    private void addUser(){
+    private void addUserDialog(){
         mCamera.stopPreview();
         addUserActivity.addUserData();
     }
@@ -333,5 +332,9 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
 
     public void clearSegmentatedHandsBufor(){
         segmentatedHandsBufor = 0;
+    }
+
+    public void closeActivity(){
+        addUserActivity.closeActivity();
     }
 }

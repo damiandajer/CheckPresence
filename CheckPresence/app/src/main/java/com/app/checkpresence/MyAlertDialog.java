@@ -6,12 +6,15 @@ import android.content.DialogInterface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.app.database.DataBase;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -20,18 +23,19 @@ import java.util.List;
 public class MyAlertDialog {
     private Context context;
     private CameraView mCameraView;
+    private AddUserCameraView addUserCameraView;
     private LayoutInflater li;
     private View promptsView;
     private AlertDialog.Builder alertDialogBuilder;
-    private List<String> listOfUsers;
+    private List<String> listOfUsers, listOfGroups;
     private MainActivity mainActivity;
+    private AddUserActivity addUserActivity;
     private DataBase dataBase;
     private List<float[]> actualHandFeatures;
 
     public MyAlertDialog(){}
 
     public void pushFoundUserToScreen(){
-        System.out.println("pushfUtoscr");
         //final List<Integer> usersListFinal = usersList;
         li = LayoutInflater.from(getContext());
         promptsView = li.inflate(R.layout.found_user, null);
@@ -128,6 +132,147 @@ public class MyAlertDialog {
         alertDialog.show();
     }
 
+    public void addGroupDialog(){
+        //final List<Integer> usersListFinal = usersList;
+        li = LayoutInflater.from(getContext());
+        promptsView = li.inflate(R.layout.found_user, null);
+
+        alertDialogBuilder = new AlertDialog.Builder(getContext());
+
+        // set prompts.xml to alertdialog builder
+        alertDialogBuilder.setView(promptsView);
+
+        final TextView groupName = (TextView) promptsView
+                .findViewById(R.id.foundUserTextView);
+
+        // set dialog message
+        alertDialogBuilder
+                .setCancelable(false)
+                .setPositiveButton("OK",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog,int id) {
+                                addGroupToDatabase(groupName);
+                                getmCameraView().startPreview();
+                                getmCameraView().startAutoExposure(200);
+                                dialog.cancel();
+                            }
+                        })
+                .setNegativeButton("Anuluj",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                mCameraView.startPreview();
+                                getmCameraView().startAutoExposure(200);
+                                dialog.cancel();
+                            }
+                        });
+
+        // create alert dialog
+        AlertDialog alertDialog = alertDialogBuilder.create();
+
+        // show it
+        alertDialog.show();
+    }
+
+    public void addClassesDialog(){
+        //final List<Integer> usersListFinal = usersList;
+        li = LayoutInflater.from(getContext());
+        promptsView = li.inflate(R.layout.found_user, null);
+
+        alertDialogBuilder = new AlertDialog.Builder(getContext());
+
+        // set prompts.xml to alertdialog builder
+        alertDialogBuilder.setView(promptsView);
+
+        setListOfGroups();
+
+        final Spinner usersSpinner = (Spinner) promptsView
+                .findViewById(R.id.usersSpinner);
+        ArrayAdapter<String> usersListAdapter = new ArrayAdapter<String>(context,
+                android.R.layout.simple_spinner_item, listOfGroups);
+        usersListAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        usersSpinner.setAdapter(usersListAdapter);
+        usersSpinner.setSelection(0);
+
+        // set dialog message
+        alertDialogBuilder
+                .setCancelable(false)
+                .setPositiveButton("OK",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog,int id) {
+                                addClassesToDatabase(usersSpinner);
+                                getmCameraView().startPreview();
+                                getmCameraView().startAutoExposure(200);
+                                dialog.cancel();
+                            }
+                        })
+                .setNegativeButton("Anuluj",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                mCameraView.startPreview();
+                                getmCameraView().startAutoExposure(200);
+                                dialog.cancel();
+                            }
+                        });
+
+        // create alert dialog
+        AlertDialog alertDialog = alertDialogBuilder.create();
+
+        // show it
+        alertDialog.show();
+    }
+
+    public void addUserData(){
+        li = LayoutInflater.from(getContext());
+        promptsView = li.inflate(R.layout.get_user_data, null);
+
+        alertDialogBuilder = new AlertDialog.Builder(getContext());
+
+        // set prompts.xml to alertdialog builder
+        alertDialogBuilder.setView(promptsView);
+
+        final EditText userInputFirstName = (EditText) promptsView
+                .findViewById(R.id.EditTextGetFirstName);
+        userInputFirstName.setHint("Imię");
+        final EditText userInputSecondName = (EditText) promptsView
+                .findViewById(R.id.EditTextGetSecondName);
+        userInputSecondName.setHint("Nazwisko");
+        final EditText userInputIndex = (EditText) promptsView
+                .findViewById(R.id.EditTextGetIndex);
+        userInputIndex.setHint("Nr albumu");
+        final EditText userInputGroup = (EditText) promptsView
+                .findViewById(R.id.EditTextGetGroupName);
+        userInputGroup.setHint("Grupa");
+
+        // set dialog message
+        alertDialogBuilder
+                .setCancelable(false)
+                .setPositiveButton("OK",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog,int id) {
+                                addUserCameraView.setFirstName(userInputFirstName.getText().toString());
+                                addUserCameraView.setSecondName(userInputSecondName.getText().toString());
+                                addUserCameraView.setIndexUser(Integer.valueOf(userInputIndex.getText().toString()));
+                                addUserCameraView.setGroupName(userInputGroup.getText().toString());
+                                addUserCameraView.createUser();
+                                addUserCameraView.closeActivity();
+                            }
+                        })
+                .setNegativeButton("Cancel",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                dialog.cancel();
+                                addUserCameraView.closeActivity();
+                            }
+                        });
+
+        // create alert dialog
+        AlertDialog alertDialog = alertDialogBuilder.create();
+
+        // show it
+        alertDialog.show();
+    }
+
     private void addHandFeaturesToDatabase(Spinner usersSpinner){
         String user = usersSpinner.getSelectedItem().toString();
         long idUser = dataBase.getUserId(Integer.valueOf(user));
@@ -135,6 +280,15 @@ public class MyAlertDialog {
                 ) {
             dataBase.insertTraits(idUser, traits);
         }
+    }
+
+    private void addGroupToDatabase(TextView groupName){
+        dataBase.insertGroup(groupName.getText().toString());
+    }
+
+    private void addClassesToDatabase(Spinner groupsSpinner){
+        Date date = Calendar.getInstance().getTime();
+        dataBase.insertClass(groupsSpinner.getSelectedItem().toString(), date);
     }
 
     public Context getContext() {
@@ -153,6 +307,10 @@ public class MyAlertDialog {
         this.mCameraView = mCameraView;
     }
 
+    public void setAddUserCameraView(AddUserCameraView mCameraView) {
+        this.addUserCameraView = mCameraView;
+    }
+
     public void convertUsersListToListOfStrings(List<Integer> list){
         listOfUsers = new ArrayList<>();
         for (int i:list
@@ -165,7 +323,15 @@ public class MyAlertDialog {
         this.mainActivity = mainActivity;
     }
 
+    public void setAddUserActivity(AddUserActivity addUserActivity) {
+        this.addUserActivity = addUserActivity;
+    }
+
     public void setActualHandFeatures(List<float[]> actualHandFeatures) {
         this.actualHandFeatures = actualHandFeatures;
+    }
+
+    private void setListOfGroups(){
+        //this.listOfGroups = dataBase.getAllGroups();
     }
 }

@@ -52,51 +52,11 @@ public class AddUserActivity extends Activity {
     }
 
     public void addUserData(){
-        context = this;
-        li = LayoutInflater.from(context);
-        promptsView = li.inflate(R.layout.get_user_data, null);
-
-        alertDialogBuilder = new AlertDialog.Builder(context);
-
-        // set prompts.xml to alertdialog builder
-        alertDialogBuilder.setView(promptsView);
-
-        final EditText userInputFirstName = (EditText) promptsView
-                .findViewById(R.id.EditTextGetFirstName);
-        final EditText userInputSecondName = (EditText) promptsView
-                .findViewById(R.id.EditTextGetSecondName);
-        final EditText userInputIndex = (EditText) promptsView
-                .findViewById(R.id.EditTextGetIndex);
-        final EditText userInputGroup = (EditText) promptsView
-                .findViewById(R.id.EditTextGetGroupName);
-
-        // set dialog message
-        alertDialogBuilder
-                .setCancelable(false)
-                .setPositiveButton("OK",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog,int id) {
-                                mCameraView.setFirstName(userInputFirstName.getText().toString());
-                                mCameraView.setSecondName(userInputSecondName.getText().toString());
-                                mCameraView.setIndexUser(Integer.valueOf(userInputIndex.getText().toString()));
-                                mCameraView.setGroupName(userInputGroup.getText().toString());
-                                mCameraView.createUser();
-                                closeActivity();
-                            }
-                        })
-                .setNegativeButton("Cancel",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                dialog.cancel();
-                                closeActivity();
-                            }
-                        });
-
-        // create alert dialog
-        AlertDialog alertDialog = alertDialogBuilder.create();
-
-        // show it
-        alertDialog.show();
+        MyAlertDialog myAlertDialog = new MyAlertDialog();
+        myAlertDialog.setAddUserActivity(this);
+        myAlertDialog.setAddUserCameraView(mCameraView);
+        myAlertDialog.setContext(this);
+        myAlertDialog.addUserData();
     }
 
     @Override
