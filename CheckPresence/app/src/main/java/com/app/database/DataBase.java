@@ -13,6 +13,7 @@ import com.app.checkpresence.Classes;
 import com.app.checkpresence.User;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -535,6 +536,16 @@ public class DataBase extends SQLiteOpenHelper{
         }
 
         return traits;
+    }
+
+    /**
+     * Dodaje zajęcia z innymi argumentami niż poniżej
+     * @param groupName - nazwa grupy
+     * @param data -data
+     * @return
+     */
+    public long insertClass(String groupName, Date data){
+        return insertClass(groupName, data.getYear(), data.getMonth(), data.getDay());
     }
 
     /**
