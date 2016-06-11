@@ -10,6 +10,7 @@ import com.app.handfeatures.Color;
 import com.app.handfeatures.HandFeatures;
 import com.app.handfeatures.HandFeaturesData;
 import com.app.handfeatures.HandFeaturesException;
+import com.app.handfeatures.HandFeaturesRaport;
 import com.app.memory.CopyManager;
 
 import org.opencv.core.CvType;
@@ -26,6 +27,8 @@ public class OpenCVSubtraction implements Runnable {
 
     private HandFeatures handFeatures = null;
     Rect areaToSegmentation;
+
+    HandFeaturesRaport report;
 
 
     /**
@@ -78,11 +81,15 @@ public class OpenCVSubtraction implements Runnable {
             // jezeli np plama dloni jest za mala, lub jakis blad przy przetwarzaniu to zwruc aktualny wyglad obrazu i zakoncz przetwarzanie tej klatki
             resultBitmap = handFeatures.getProcessed(false);
             // jezeli obraz ma mniej niz 3% pixeli koloru elementu nie przetwarzaj dalej - najprowodpodobniej nie ma reki na obrazie
-            if (numberOfElementPixels < (handFeatures.getImage().width() * handFeatures.getImage().height()) * 0.03)
+            if (numberOfElementPixels < (handFeatures.getImage().width() * handFeatures.getImage().height()) * 0.03) {
+                report = handFeatures.getRaport();
                 return;
+            }
             // jezeli obraz ma wiecej niz 70% pixeli koloru elementu nie przetwarzaj dalej - najprowodpodobniej nie ma reki na obrazie
-            if (numberOfElementPixels > (handFeatures.getImage().width() * handFeatures.getImage().height()) * 0.70)
+            if (numberOfElementPixels > (handFeatures.getImage().width() * handFeatures.getImage().height()) * 0.70) {
+                report = handFeatures.getRaport();
                 return;
+            }
 
             // czyscimy pijedyncze kropki
             handFeatures.getImage().setBorderColor(Color.BG_COLOR);
@@ -97,8 +104,10 @@ public class OpenCVSubtraction implements Runnable {
                 CopyManager.saveBitmapToDisk(handFeatures.getProcessed(false), HandFeatures.foundedHandsFeatures, "segmentated_");
             }
 
-            if (foundAreas > HandFeatures.maxAllowedAreas)
+            if (foundAreas > HandFeatures.maxAllowedAreas) {
+                report = handFeatures.getRaport();
                 return;
+            }
 
         } catch (HandFeaturesException hfe) {
             if (Configure.SHOW_FOUND_HAND_FEATURES_EXCEPTIONS == true)

@@ -55,8 +55,6 @@ public class HandFeaturesData {
         size = FeatureNames.values().length;
         features = new float[size];
 
-        raport = handFeatures.getRaport();
-
         Finger[] tempFingers = handFeatures.getFingers();
 
         features[FeatureNames.ThumbBaseLength.ordinal()]  = tempFingers[Finger.THUMB].base_length;
@@ -140,6 +138,4 @@ public class HandFeaturesData {
 
     public float features[];
     public int size;
-
-    public HandFeaturesRaport raport;
 }
