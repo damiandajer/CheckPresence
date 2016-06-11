@@ -38,6 +38,10 @@ public class Classes {
         return day;
     }
 
+    public String getDate(){
+        return Integer.toString(year) + "-" + Integer.toString(month) + "-" +Integer.toString(day);
+    }
+
     public int getId(){ return id; }
 
     @Override
