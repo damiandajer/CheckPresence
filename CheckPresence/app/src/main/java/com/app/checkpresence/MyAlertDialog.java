@@ -40,6 +40,7 @@ public class MyAlertDialog {
 
         // set prompts.xml to alertdialog builder
         alertDialogBuilder.setView(promptsView);
+        //alertDialogBuilder.setTitle("Znaleziono użytkownika");
 
         final TextView foundUser = (TextView) promptsView
                 .findViewById(R.id.foundUserTextView);
