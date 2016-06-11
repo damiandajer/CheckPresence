@@ -46,7 +46,9 @@ public class AddUserActivity extends Activity {
     @Override
     public void onBackPressed(){
         //mCameraView.saveFeaturesToFile();
-        mCamera.release();
+        mCamera.stopPreview();
+        //mCamera.release();
+        this.closeActivity();
     }
 
     public void addUserData(){

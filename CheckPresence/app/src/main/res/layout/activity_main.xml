@@ -30,8 +30,8 @@
             android:layout_gravity="left|bottom">
 
             <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="280dp"
+                android:layout_height="373dp"
                 android:id="@+id/handImage"
                 android:background="@drawable/hand"
                 android:layout_alignParentTop="true"
