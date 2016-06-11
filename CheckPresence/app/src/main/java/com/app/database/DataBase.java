@@ -609,10 +609,10 @@ public class DataBase extends SQLiteOpenHelper{
 
 
     /**
-     * Zwraca liste zajęć dla podanej grupy w podanym dniu
+     * Zwraca liste zajęć dla podanej grupy
      * @return List<Classes> - lista z zajęciami
      */
-    public List<Classes> getClasses(String groupName, int year, int month, int day){
+    public List<Classes> getClasses(String groupName){
         List<Classes> classes = new ArrayList<Classes>();
 
         String selectQuery = "SELECT * "
@@ -621,9 +621,7 @@ public class DataBase extends SQLiteOpenHelper{
                 + " on " + COLUMN_NAME_ID_GROUP_IN_CLASS
                 + "=" + COLUMN_NAME_ID_GROUP
                 + " WHERE " + COLUMN_NAME_GROUP_NAME + "='" + groupName
-                + "' AND " + COLUMN_NAME_CLASS_YEAR + "=" + year
-                + " AND " + COLUMN_NAME_CLASS_MONTH + "=" + month
-                + " AND " + COLUMN_NAME_CLASS_DAY + "=" + day;
+                + "'";
 
         Cursor cursor = dataBase.rawQuery(selectQuery, null);
 
