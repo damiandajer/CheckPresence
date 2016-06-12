@@ -137,15 +137,16 @@ public class MyAlertDialog {
         this.dataBase = new DataBase(getContext());
         //final List<Integer> usersListFinal = usersList;
         li = LayoutInflater.from(getContext());
-        promptsView = li.inflate(R.layout.found_user, null);
+        promptsView = li.inflate(R.layout.set_new_group, null);
 
         alertDialogBuilder = new AlertDialog.Builder(getContext());
 
         // set prompts.xml to alertdialog builder
         alertDialogBuilder.setView(promptsView);
 
-        final TextView groupName = (TextView) promptsView
-                .findViewById(R.id.foundUserTextView);
+        final EditText groupName = (EditText) promptsView
+                .findViewById(R.id.EditTextGetGroupName);
+        groupName.setHint("Nazwa grupy");
 
         // set dialog message
         alertDialogBuilder
@@ -179,7 +180,7 @@ public class MyAlertDialog {
         this.dataBase = new DataBase(getContext());
         //final List<Integer> usersListFinal = usersList;
         li = LayoutInflater.from(getContext());
-        promptsView = li.inflate(R.layout.found_user, null);
+        promptsView = li.inflate(R.layout.set_new_classes, null);
 
         alertDialogBuilder = new AlertDialog.Builder(getContext());
 
@@ -294,7 +295,7 @@ public class MyAlertDialog {
         }
     }
 
-    private void addGroupToDatabase(TextView groupName){
+    private void addGroupToDatabase(EditText groupName){
         dataBase.insertGroup(groupName.getText().toString());
     }
 
