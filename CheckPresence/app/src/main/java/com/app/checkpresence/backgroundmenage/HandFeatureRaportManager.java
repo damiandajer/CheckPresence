@@ -10,7 +10,7 @@ public class HandFeatureRaportManager {
     private static int notCalculatedInARow = 0;
 
     public HandFeatureRaportManager(HandFeaturesRaport report) {
-        notCalculatedInARow = 0;
+        //notCalculatedInARow = 0;
         m_report = report;
     }
 
@@ -65,10 +65,9 @@ public class HandFeatureRaportManager {
         }
         else {
             ++HandFeatureRaportManager.notCalculatedInARow;
-            return false;
         }
 
-        //return false;
+        return false;
     }
 
     public boolean isReadyToCalculateFeatures() {
