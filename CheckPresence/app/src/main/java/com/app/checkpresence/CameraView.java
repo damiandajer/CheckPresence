@@ -16,6 +16,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.app.checkpresence.backgroundmenage.CameraParameters;
 import com.app.checkpresence.backgroundmenage.HandFeatureRaportManager;
 import com.app.database.DataBase;
 import com.app.handfeatures.HandFeaturesData;
@@ -38,7 +39,7 @@ import java.util.Map;
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private int noFoundedHandFeaturesInARow;
 
-    private boolean refreshBackground = true;
+    private boolean refreshBackground;
     private long autoAdjustmentTime; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
     private boolean measureCameraTime; // czy odliczac czas dla ustabilizowania kamery i jej blokady
     private long startTime; //punkt poczatkowy czasu. actualTime - startTime >= autoAdjustmentTime => zablokowanie kamery
@@ -71,6 +72,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     public CameraView(Context context, Activity activity, MainActivity mainActivityObject, Camera camera){
         super(context);
 
+        refreshBackground = true;
+
         this.mainActivity = activity;
         this.mainActivityObject = mainActivityObject;
         this.backgroundBtn = (ImageButton) this.mainActivity.findViewById(R.id.backgroundBtn);
@@ -85,7 +88,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         mHolder.addCallback(this);
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_NORMAL);
         mCamera.setDisplayOrientation(90);
-        initCameraParameters(); // ustawia poczatkowe parametry kamery
+        size = CameraParameters.initCameraParameters(camera); // ustawia poczatkowe parametry kamery
         this.dataBase = MainActivity.getDataBase();
         this.cameraNull = false;
 
@@ -170,7 +173,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     HandFeatureRaportManager hfrm = new HandFeatureRaportManager(report);
                     refreshBackground = hfrm.isNeedToTakeNewBackground();
 
-                    if (hfrm.isReadyToCalculateFeatures()) {
+                    if (!refreshBackground && hfrm.isReadyToCalculateFeatures()) {
                         HandFeaturesRaport.CalculationRaport c_report = findHandFeaturesFromSegmentatedHands();
                         hfrm.add(c_report);
                         refreshBackground = hfrm.isNeedToTakeNewBackground();
@@ -199,21 +202,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         });
     }
 
-    /**
-     * Setting camera parameters
-     */
-    public void initCameraParameters(){
-        Camera.Parameters parameters = mCamera.getParameters();
-        parameters.set("orientation", "portrait");
-        parameters.setRotation(90);
-        Camera.Size size = parameters.getPreviewSize();
-        parameters.setPreviewSize(size.width / 2, size.height / 2);
-        mCamera.setParameters(parameters);
-        this.size = parameters.getPreviewSize();
-
-        saveCameraParameters(); // zapamietuje poczatkowe ustawienia kamery
-    }
-
     public void setCameraParameters(Camera.Parameters parameters) {
         mCamera.setParameters(parameters);
     }
@@ -222,12 +210,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         return mCamera.getParameters();
     }
 
+    /**
+     * save camera parameters for feture backup last parameters
+     */
     public void saveCameraParameters() {
-        cameraParameters = getCameraParameters();
+        CameraParameters.setParameters(getCameraParameters());
     }
 
     public void loadCameraParameters() {
-        setCameraParameters(cameraParameters);
+        setCameraParameters(CameraParameters.getParameters());
     }
 
     public void lockCameraExposure(boolean lock){
@@ -404,6 +395,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private void openCameraAndSetParameters(){
         try{
             mCamera.release();
+            CameraParameters.realeaseCameraParameters();
             mCamera = null;
             mCamera = Camera.open(1);//you can use open(int) to use different cameras
         } catch (Exception e){
@@ -411,7 +403,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         }
         mCamera.setDisplayOrientation(90);
         if (cameraParameters == null)
-            initCameraParameters();
+            CameraParameters.initCameraParameters(mCamera);
         else
             loadCameraParameters();
     }

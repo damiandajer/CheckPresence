@@ -10,6 +10,7 @@ import android.view.SurfaceView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.app.checkpresence.backgroundmenage.CameraParameters;
 import com.app.checkpresence.backgroundmenage.HandFeatureRaportManager;
 import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
 import com.app.database.DataBase;
@@ -27,8 +28,7 @@ import java.util.Map;
  * Created by Damian on 30.05.2016.
  */
 public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Callback {
-    public static boolean refreshBackground = true;
-
+    private boolean refreshBackground;
     private long autoAdjustmentTime; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
     private boolean measureCameraTime; // czy odliczac czas dla ustabilizowania kamery i jej blokady
     private long startTime; //punkt poczatkowy czasu. actualTime - startTime >= autoAdjustmentTime => zablokowanie kamery
@@ -58,6 +58,8 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     public AddUserCameraView(Context context, Activity activity, AddUserActivity addUserActivity, Camera camera){
         super(context);
 
+        refreshBackground = true;
+
         this.mainActivity = activity;
         this.addUserActivity = addUserActivity;
         this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
@@ -69,7 +71,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         mHolder.addCallback(this);
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_NORMAL);
         mCamera.setDisplayOrientation(90);
-        initCameraParameters();
+        CameraParameters.initCameraParameters(camera);
         this.dataBase = MainActivity.getDataBase();
         this.actualHandFeatures = new ArrayList<>();
         this.allHandFeatures = new ArrayList<>();
@@ -105,7 +107,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         mCamera.setPreviewCallback(new Camera.PreviewCallback() {
             public void onPreviewFrame(byte[] data, Camera _camera) {
                 //getting once bitmap with background
-                if (AddUserCameraView.refreshBackground) {
+                if (refreshBackground) {
                     getBackgroundFrame(data);
                 }
 
@@ -126,7 +128,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
                     HandFeatureRaportManager hfrm = new HandFeatureRaportManager(report);
                     refreshBackground = hfrm.isNeedToTakeNewBackground();
 
-                    if (hfrm.isReadyToCalculateFeatures()) {
+                    if (!refreshBackground && hfrm.isReadyToCalculateFeatures()) {
                         HandFeaturesRaport.CalculationRaport c_report = findHandFeaturesFromSegmentatedHands();
                         hfrm.add(c_report);
                         refreshBackground = hfrm.isNeedToTakeNewBackground();
@@ -141,21 +143,6 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
                 ++frames;
             }
         });
-    }
-
-    /**
-     * Setting camera parameters
-     */
-    public void initCameraParameters(){
-        Camera.Parameters parameters = mCamera.getParameters();
-        parameters.set("orientation", "portrait");
-        parameters.setRotation(90);
-        Camera.Size size = parameters.getPreviewSize();
-        parameters.setPreviewSize(size.width / 2, size.height / 2);
-        mCamera.setParameters(parameters);
-        this.size = parameters.getPreviewSize();
-
-        saveCameraParameters(); // zapamietuje poczatkowe ustawienia kamery
     }
 
     /**
@@ -174,11 +161,11 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
      * save camera parameters for feture backup last parameters
      */
     public void saveCameraParameters() {
-        cameraParameters = getCameraParameters();
+        CameraParameters.setParameters(getCameraParameters());
     }
 
     public void loadCameraParameters() {
-        setCameraParameters(cameraParameters);
+        setCameraParameters(CameraParameters.getParameters());
     }
 
     public void lockCameraExposure(boolean lock){
