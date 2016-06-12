@@ -11,6 +11,8 @@ import com.app.handfeatures.HandFeaturesException;
 import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
 import com.app.memory.CopyManager;
 
+import java.util.Locale;
+
 
 /**
  * Created by Damian on 17.05.2016.
@@ -82,13 +84,13 @@ public class OpenCVSubtraction implements Runnable {
             // jezeli obraz ma mniej niz 3% pixeli koloru elementu nie przetwarzaj dalej - najprowodpodobniej nie ma reki na obrazie
             if (numberOfElementPixels < (handFeatures.getImage().width() * handFeatures.getImage().height()) * HandFeatureProcessConfig.MIN_BINARYZATION) {
                 report = handFeatures.getRaport();
-                System.out.println("Binaryzacja - ponizej " + HandFeatureProcessConfig.MIN_BINARYZATION + "% obszaru.");
+                System.out.println("Binaryzacja - ponizej " + String.format(Locale.getDefault(), "%.1f", HandFeatureProcessConfig.MIN_BINARYZATION )+ "% obszaru.");
                 return;
             }
             // jezeli obraz ma wiecej niz 70% pixeli koloru elementu nie przetwarzaj dalej - najprowodpodobniej nie ma reki na obrazie
             if (numberOfElementPixels > (handFeatures.getImage().width() * handFeatures.getImage().height()) * HandFeatureProcessConfig.MAX_BINARYZATION) {
                 report = handFeatures.getRaport();
-                System.out.println("Binaryzacja - powyzej " + HandFeatureProcessConfig.MIN_BINARYZATION + "% obszaru.");
+                System.out.println("Binaryzacja - powyzej " + String.format(Locale.getDefault(), "%.1f", HandFeatureProcessConfig.MIN_BINARYZATION )+ "% obszaru.");
                 return;
             }
 

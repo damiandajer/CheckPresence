@@ -115,7 +115,7 @@ public class MyAlertDialog {
                 .setNegativeButton("Anuluj",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
-                                mCameraView.startPreview();
+                                getmCameraView().startPreview();
                                 getmCameraView().startAutoExposure(200);
                                 dialog.cancel();
                             }

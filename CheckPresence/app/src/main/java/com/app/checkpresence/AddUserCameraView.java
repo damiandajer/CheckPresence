@@ -69,7 +69,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         this.backgroundBtn = (ImageButton) this.addUserActivity.findViewById(R.id.backgroundBtn);
         this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
         mCamera = camera;
-        startAutoExposure(3000);
+        startAutoExposure(2000);
 
         //get the holder and set this class as the callback, so we can get camera data here
         mHolder = getHolder();

@@ -395,15 +395,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     private void openCameraAndSetParameters(){
         try{
             mCamera.release();
-            CameraParameters.realeaseCameraParameters();
             mCamera = null;
             mCamera = Camera.open(1);//you can use open(int) to use different cameras
         } catch (Exception e){
             Log.d("ERROR", "Failed to get camera: " + e.getMessage());
         }
         mCamera.setDisplayOrientation(90);
-        if (cameraParameters == null)
+        if (cameraParameters == null) {
             CameraParameters.initCameraParameters(mCamera);
+            startAutoExposure(200);
+        }
         else
             loadCameraParameters();
     }
