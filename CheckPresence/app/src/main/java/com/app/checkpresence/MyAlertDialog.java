@@ -134,6 +134,7 @@ public class MyAlertDialog {
     }
 
     public void addGroupDialog(){
+        this.dataBase = new DataBase(getContext());
         //final List<Integer> usersListFinal = usersList;
         li = LayoutInflater.from(getContext());
         promptsView = li.inflate(R.layout.found_user, null);
@@ -175,6 +176,7 @@ public class MyAlertDialog {
     }
 
     public void addClassesDialog(){
+        this.dataBase = new DataBase(getContext());
         //final List<Integer> usersListFinal = usersList;
         li = LayoutInflater.from(getContext());
         promptsView = li.inflate(R.layout.found_user, null);
@@ -224,6 +226,7 @@ public class MyAlertDialog {
     }
 
     public void addUserData(){
+        this.dataBase = new DataBase(getContext());
         li = LayoutInflater.from(getContext());
         promptsView = li.inflate(R.layout.get_user_data, null);
 
@@ -231,6 +234,8 @@ public class MyAlertDialog {
 
         // set prompts.xml to alertdialog builder
         alertDialogBuilder.setView(promptsView);
+
+        setListOfGroups();
 
         final EditText userInputFirstName = (EditText) promptsView
                 .findViewById(R.id.EditTextGetFirstName);
@@ -241,9 +246,15 @@ public class MyAlertDialog {
         final EditText userInputIndex = (EditText) promptsView
                 .findViewById(R.id.EditTextGetIndex);
         userInputIndex.setHint("Nr albumu");
-        final EditText userInputGroup = (EditText) promptsView
-                .findViewById(R.id.EditTextGetGroupName);
-        userInputGroup.setHint("Grupa");
+
+        final Spinner usersSpinner = (Spinner) promptsView
+                .findViewById(R.id.usersSpinner);
+        ArrayAdapter<String> usersListAdapter = new ArrayAdapter<String>(context,
+                android.R.layout.simple_spinner_item, listOfGroups);
+        usersListAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        usersSpinner.setAdapter(usersListAdapter);
+        usersSpinner.setSelection(0);
 
         // set dialog message
         alertDialogBuilder
@@ -254,12 +265,12 @@ public class MyAlertDialog {
                                 addUserCameraView.setFirstName(userInputFirstName.getText().toString());
                                 addUserCameraView.setSecondName(userInputSecondName.getText().toString());
                                 addUserCameraView.setIndexUser(Integer.valueOf(userInputIndex.getText().toString()));
-                                addUserCameraView.setGroupName(userInputGroup.getText().toString());
+                                addUserCameraView.setGroupName(usersSpinner.getSelectedItem().toString());
                                 addUserCameraView.createUser();
                                 addUserCameraView.closeActivity();
                             }
                         })
-                .setNegativeButton("Cancel",
+                .setNegativeButton("Anuluj",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                                 dialog.cancel();
@@ -333,6 +344,6 @@ public class MyAlertDialog {
     }
 
     private void setListOfGroups(){
-        //this.listOfGroups = dataBase.getAllGroups();
+        this.listOfGroups = dataBase.getAllGroups();
     }
 }

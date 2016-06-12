@@ -588,6 +588,24 @@ public class DataBase extends SQLiteOpenHelper{
         return ret;
     }
 
+    public List<String> getAllGroups(){
+
+        List<String> groups = new ArrayList<String>();
+
+        String selectQuery = "SELECT " + COLUMN_NAME_GROUP_NAME
+                + " FROM " + TABLE_NAME_GROUP;
+
+        Cursor cursor = dataBase.rawQuery(selectQuery, null);
+
+        if(cursor != null && cursor.moveToFirst()) {
+            do{
+                groups.add(cursor.getString(cursor.getColumnIndex(COLUMN_NAME_GROUP_NAME)));
+            }while(cursor.moveToNext());
+        }
+
+        return groups;
+    }
+
     /**
      * Zwraca liste wszystkich zajęć
      * @return List<Classes> - lista z zajęciami
