@@ -7,6 +7,8 @@ import android.hardware.Camera;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -42,8 +44,10 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     protected int frames = 1;
     protected int pictureSaved = 0;
     protected TextView savedPic;
-    private ImageView bottomCenter;
+    private ImageView bottomCenter, bottomRight;
+    private ImageButton backgroundBtn;
     private Bitmap bmpBackground;
+    private List<ImageView> openCVViews;
     private Frame frame, backgroundFrame;
     private List<float[]> actualHandFeatures, allHandFeatures;
     private HandRecognizer handRecognizer;
@@ -62,6 +66,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
 
         this.mainActivity = activity;
         this.addUserActivity = addUserActivity;
+        this.backgroundBtn = (ImageButton) this.addUserActivity.findViewById(R.id.backgroundBtn);
         this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
         mCamera = camera;
         startAutoExposure(3000);
@@ -80,8 +85,18 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         this.frame = new Frame();
         this.backgroundFrame = new Frame();
         this.handRecognizer = new HandRecognizer();
+        this.openCVViews = new ArrayList<>();
         setAllViewsToVariables();
         clearSegmentatedHandsBufor();
+        setOpenCVViewsList();
+
+        this.backgroundBtn.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                startAutoExposure(500);
+                refreshBackground = true;
+            }
+        });
     }
 
 
@@ -218,6 +233,8 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         frame.setBackground(bmpBackground);
         frame.setThresholds(20, 20, 1);
         HandFeaturesRaport report = frame.segmentateFrameWithOpenCV();
+        List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
+        setBitmapsToViews(openCVViews, openCVBitmaps);
 
         //CopyManager.saveBitmapToDisk(openCVBitmaps, pictureSaved, "OpenCV");
 
@@ -228,7 +245,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         HandFeaturesRaport.CalculationRaport report = frame.findHandFeatures();
         this.actualHandFeatures = frame.getHandFeatures();
         ++segmentatedHandsBufor;
-        if(actualHandFeatures.size() != 0 && segmentatedHandsBufor > 2) {
+        if(actualHandFeatures.size() != 0 && segmentatedHandsBufor > 0) {
             for (float[] features : frame.getHandFeatures()
                     ) {
                 this.allHandFeatures.add(features);
@@ -268,7 +285,8 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     }
 
     private void setAllViewsToVariables(){
-        this.bottomCenter = (ImageView) this.mainActivity.findViewById(R.id.liveView);
+        this.bottomCenter = (ImageView) this.addUserActivity.findViewById(R.id.liveView);
+        this.bottomRight = (ImageView) this.addUserActivity.findViewById(R.id.segmentatedHand1);
     }
 
     public void setBitmapsToViews(List<ImageView> views, List<Bitmap> bitmaps){
@@ -277,6 +295,10 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
             setImageToImageView(view, bitmaps.get(counter));
             ++counter;
         }
+    }
+
+    private void setOpenCVViewsList(){
+        this.openCVViews.add(bottomRight);
     }
 
     private boolean checkIfAllFeatures(){
