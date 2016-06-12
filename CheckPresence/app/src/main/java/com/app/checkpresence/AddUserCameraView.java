@@ -10,6 +10,8 @@ import android.view.SurfaceView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.app.checkpresence.backgroundmenage.HandFeatureRaportManager;
+import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
 import com.app.database.DataBase;
 import com.app.handfeatures.HandFeaturesData;
 import com.app.picture.Frame;
@@ -120,10 +122,17 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
                     ++pictureSaved;
                     //savedPic.setText(pictureSaved + " processed");
 
-                    segmentateImagesGivenAsBytes(data);
-                    findHandFeaturesFromSegmentatedHands();
-                    if(checkIfAllFeatures()){
-                        addUser();
+                    HandFeaturesRaport report = segmentateImagesGivenAsBytes(data);
+                    HandFeatureRaportManager hfrm = new HandFeatureRaportManager(report);
+                    refreshBackground = hfrm.isNeedToTakeNewBackground();
+
+                    if (hfrm.isReadyToCalculateFeatures()) {
+                        HandFeaturesRaport.CalculationRaport c_report = findHandFeaturesFromSegmentatedHands();
+                        hfrm.add(c_report);
+                        refreshBackground = hfrm.isNeedToTakeNewBackground();
+                        if (checkIfAllFeatures()) {
+                            addUser();
+                        }
                     }
 
                     //set frames to 0 (return to the beginning of loop)
@@ -213,7 +222,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
      * Process segmentation of data from camera preview, sets results to ImageViews
      * @param data byte Array
      */
-    public void segmentateImagesGivenAsBytes(byte[] data){
+    public HandFeaturesRaport segmentateImagesGivenAsBytes(byte[] data){
         frame.setActualFrame(data);
 
         Bitmap liveViewBitmap = frame.getActualBitmap();
@@ -221,13 +230,15 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
 
         frame.setBackground(bmpBackground);
         frame.setThresholds(20, 20, 1);
-        frame.segmentateFrameWithOpenCV();
+        HandFeaturesRaport report = frame.segmentateFrameWithOpenCV();
 
         //CopyManager.saveBitmapToDisk(openCVBitmaps, pictureSaved, "OpenCV");
+
+        return report;
     }
 
-    public void findHandFeaturesFromSegmentatedHands(){
-        frame.findHandFeatures();
+    public HandFeaturesRaport.CalculationRaport findHandFeaturesFromSegmentatedHands(){
+        HandFeaturesRaport.CalculationRaport report = frame.findHandFeatures();
         this.actualHandFeatures = frame.getHandFeatures();
         ++segmentatedHandsBufor;
         if(actualHandFeatures.size() != 0 && segmentatedHandsBufor > 2) {
@@ -237,6 +248,8 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
             }
             clearSegmentatedHandsBufor();
         }
+
+        return report;
     }
 
     @Override
