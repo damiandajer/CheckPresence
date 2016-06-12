@@ -18,6 +18,7 @@ import android.widget.TextView;
 
 import com.app.checkpresence.backgroundmenage.CameraParameters;
 import com.app.checkpresence.backgroundmenage.HandFeatureRaportManager;
+import com.app.checkpresence.backgroundmenage.HandMatchingLevel;
 import com.app.database.DataBase;
 import com.app.handfeatures.HandFeaturesData;
 import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
@@ -189,6 +190,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                             }
                         }
                     }
+
+                    // pobranie stopnia dopasowania dloni do konturu
+                    HandMatchingLevel level = hfrm.getMatchingLevel();
+                    // TUTEJ XD ZMIANA KOLORU MINIATURY(w wewnotrz tej funkcji trzeba spr. czy zmieniamy na ten sam stan - jezeli tak to nie zmieniaj)
+                    
 
                     //set frames to 0 (return to the beginning of loop)
                     frames = 0;

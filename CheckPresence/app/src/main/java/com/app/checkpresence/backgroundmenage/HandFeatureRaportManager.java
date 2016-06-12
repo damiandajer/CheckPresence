@@ -12,6 +12,7 @@ public class HandFeatureRaportManager {
     public HandFeatureRaportManager(HandFeaturesRaport report) {
         //notCalculatedInARow = 0;
         m_report = report;
+        m_matching = HandMatchingLevel.NO;
     }
 
     public void add(HandFeaturesRaport.CalculationRaport raport) {
@@ -75,14 +76,21 @@ public class HandFeatureRaportManager {
             return false;
 
         if (m_report.seg.theBiggestAreaCoverage > HandFeatureProcessConfig.MIN_AREA_TO_CEVERAGE_SEGMENTATION
-                && m_report.seg.theBiggestAreaCoverage < HandFeatureProcessConfig.MAX_AREA_TO_CEVERAGE_SEGMENTATION)
+                && m_report.seg.theBiggestAreaCoverage < HandFeatureProcessConfig.MAX_AREA_TO_CEVERAGE_SEGMENTATION) {
+            m_matching = HandMatchingLevel.MATCHED;
             return true;
-        else
-            if (m_report.seg.theBiggestAreaCoverage < HandFeatureProcessConfig.MAX_AREA_CEVERAGE_FOR_NEW_BACKGROUND_SEGMENTATION)
-                ++HandFeatureRaportManager.notCalculatedInARow;
+        } else if (m_report.seg.theBiggestAreaCoverage < HandFeatureProcessConfig.MAX_AREA_CEVERAGE_FOR_NEW_BACKGROUND_SEGMENTATION) {
+            m_matching = HandMatchingLevel.LOW;
+            ++HandFeatureRaportManager.notCalculatedInARow;
+        } else {
+            m_matching = HandMatchingLevel.CLOSE;
+        }
 
         return false;
     }
 
+    public HandMatchingLevel getMatchingLevel() { return m_matching; }
+
     private HandFeaturesRaport m_report;
+    private HandMatchingLevel m_matching;
 }

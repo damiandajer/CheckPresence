@@ -147,7 +147,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
                         hfrm.add(c_report);
                         refreshBackground = hfrm.isNeedToTakeNewBackground();
                         if (checkIfAllFeatures()) {
-                            addUser();
+                            addUserDialog();
                         }
                     }
 
