@@ -10,7 +10,7 @@ import java.util.List;
  * Created by bijat on 12.06.2016.
  */
 final public class CameraParameters {
-    final private static int PREVIEW_WIDTH = 380;
+    final private static int PREVIEW_WIDTH = 440;
 
     public static Camera.Size initCameraParameters(Camera camera){
         if (CameraParameters.m_parameters != null)
