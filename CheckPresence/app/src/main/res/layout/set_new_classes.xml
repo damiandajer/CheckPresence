@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layout_root"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+    android:weightSum="1">
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/alertHeader"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:orientation="horizontal"
+        android:padding="10dp"
+        android:background="?attr/colorPrimaryDark"
+        android:weightSum="1">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:id="@+id/user_data_ico"
+            android:background="@drawable/ic_add_user_light"
+            android:layout_weight="0.09" />
+
+        <TextView
+            android:id="@+id/textView1"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="Dodaj zajęcia"
+            android:textColor="@android:color/white"
+            android:textSize="20dp"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+            android:gravity="center_vertical"
+            android:layout_gravity="center_horizontal" />
+    </LinearLayout>
+
+    <Spinner
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/usersSpinner"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"/>
+
+
+</LinearLayout>

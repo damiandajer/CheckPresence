@@ -16,7 +16,6 @@ import com.app.checkpresence.backgroundmenage.CameraParameters;
 import com.app.checkpresence.backgroundmenage.HandFeatureRaportManager;
 import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
 import com.app.database.DataBase;
-import com.app.handfeatures.HandFeaturesData;
 import com.app.picture.Frame;
 import com.app.recognition.HandRecognizer;
 
@@ -310,7 +309,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
             return true;
     }
 
-    private void addUser(){
+    private void addUserDialog(){
         mCamera.stopPreview();
         addUserActivity.addUserData();
     }
@@ -355,5 +354,9 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
 
     public void clearSegmentatedHandsBufor(){
         segmentatedHandsBufor = 0;
+    }
+
+    public void closeActivity(){
+        addUserActivity.closeActivity();
     }
 }

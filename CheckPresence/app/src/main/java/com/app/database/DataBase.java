@@ -13,6 +13,7 @@ import com.app.checkpresence.Classes;
 import com.app.checkpresence.User;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -538,6 +539,16 @@ public class DataBase extends SQLiteOpenHelper{
     }
 
     /**
+     * Dodaje zajęcia z innymi argumentami niż poniżej
+     * @param groupName - nazwa grupy
+     * @param data -data
+     * @return
+     */
+    public long insertClass(String groupName, Date data){
+        return insertClass(groupName, data.getYear(), data.getMonth(), data.getDay());
+    }
+
+    /**
      * Dodaje nowe zajęcia do bazy. Zajecia dla podanej grupy w podanym dniu
      * @param groupName - nazwa grupy
      * @param year - rok
@@ -577,6 +588,24 @@ public class DataBase extends SQLiteOpenHelper{
         return ret;
     }
 
+    public List<String> getAllGroups(){
+
+        List<String> groups = new ArrayList<String>();
+
+        String selectQuery = "SELECT " + COLUMN_NAME_GROUP_NAME
+                + " FROM " + TABLE_NAME_GROUP;
+
+        Cursor cursor = dataBase.rawQuery(selectQuery, null);
+
+        if(cursor != null && cursor.moveToFirst()) {
+            do{
+                groups.add(cursor.getString(cursor.getColumnIndex(COLUMN_NAME_GROUP_NAME)));
+            }while(cursor.moveToNext());
+        }
+
+        return groups;
+    }
+
     /**
      * Zwraca liste wszystkich zajęć
      * @return List<Classes> - lista z zajęciami
@@ -609,10 +638,10 @@ public class DataBase extends SQLiteOpenHelper{
 
 
     /**
-     * Zwraca liste zajęć dla podanej grupy w podanym dniu
+     * Zwraca liste zajęć dla podanej grupy
      * @return List<Classes> - lista z zajęciami
      */
-    public List<Classes> getClasses(String groupName, int year, int month, int day){
+    public List<Classes> getClasses(String groupName){
         List<Classes> classes = new ArrayList<Classes>();
 
         String selectQuery = "SELECT * "
@@ -621,9 +650,7 @@ public class DataBase extends SQLiteOpenHelper{
                 + " on " + COLUMN_NAME_ID_GROUP_IN_CLASS
                 + "=" + COLUMN_NAME_ID_GROUP
                 + " WHERE " + COLUMN_NAME_GROUP_NAME + "='" + groupName
-                + "' AND " + COLUMN_NAME_CLASS_YEAR + "=" + year
-                + " AND " + COLUMN_NAME_CLASS_MONTH + "=" + month
-                + " AND " + COLUMN_NAME_CLASS_DAY + "=" + day;
+                + "'";
 
         Cursor cursor = dataBase.rawQuery(selectQuery, null);
 
@@ -637,6 +664,74 @@ public class DataBase extends SQLiteOpenHelper{
                 );
                 classes.add(c);
             }while(cursor.moveToNext());
+        }
+
+        return classes;
+    }
+
+    /**
+     * Zwraca liste zajęć dla podanego dnia
+     * @return List<Classes> - lista z zajęciami
+     */
+    public List<Classes> getClasses(int day, int month, int year){
+        List<Classes> classes = new ArrayList<Classes>();
+
+        String selectQuery = "SELECT * "
+                + " FROM " + TABLE_NAME_CLASS
+                + " JOIN " + TABLE_NAME_GROUP
+                + " on " + COLUMN_NAME_ID_GROUP_IN_CLASS
+                + "=" + COLUMN_NAME_ID_GROUP
+                + " WHERE " + COLUMN_NAME_CLASS_DAY + "=" + day
+                + " AND " + COLUMN_NAME_CLASS_MONTH + "=" + month
+                + " AND " + COLUMN_NAME_CLASS_YEAR + "=" + year
+                + "";
+
+        Cursor cursor = dataBase.rawQuery(selectQuery, null);
+
+        if(cursor != null && cursor.moveToFirst()) {
+            do{
+                Classes c = new Classes( cursor.getString(cursor.getColumnIndex(COLUMN_NAME_GROUP_NAME)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID_CLASS)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_CLASS_YEAR)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_CLASS_MONTH)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_CLASS_DAY))
+                );
+                classes.add(c);
+            }while(cursor.moveToNext());
+        }
+
+        return classes;
+    }
+
+    /**
+     * Zwraca liste zajęć dla podanego dnia i grupy
+     * @return Classes - zajęcia, null jeżeli nie ma
+     */
+    public Classes getClasses(String groupName, int day, int month, int year){
+        Classes classes;
+
+        String selectQuery = "SELECT * "
+                + " FROM " + TABLE_NAME_CLASS
+                + " JOIN " + TABLE_NAME_GROUP
+                + " on " + COLUMN_NAME_ID_GROUP_IN_CLASS
+                + "=" + COLUMN_NAME_ID_GROUP
+                + " WHERE " + COLUMN_NAME_CLASS_DAY + "=" + day
+                + " AND " + COLUMN_NAME_CLASS_MONTH + "=" + month
+                + " AND " + COLUMN_NAME_CLASS_YEAR + "=" + year
+                + " AND " + COLUMN_NAME_GROUP_NAME + "='" + groupName
+                + "'";
+
+        Cursor cursor = dataBase.rawQuery(selectQuery, null);
+
+        if(cursor != null && cursor.moveToFirst()) {
+                classes = new Classes( cursor.getString(cursor.getColumnIndex(COLUMN_NAME_GROUP_NAME)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID_CLASS)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_CLASS_YEAR)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_CLASS_MONTH)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_CLASS_DAY))
+                );
+        } else {
+            classes = null;
         }
 
         return classes;
