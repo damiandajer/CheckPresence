@@ -78,11 +78,11 @@ public class HandFeatureRaportManager {
                 && m_report.seg.theBiggestAreaCoverage < HandFeatureProcessConfig.MAX_AREA_TO_CEVERAGE_SEGMENTATION)
             return true;
         else
-            ++HandFeatureRaportManager.notCalculatedInARow;
+            if (m_report.seg.theBiggestAreaCoverage < HandFeatureProcessConfig.MAX_AREA_CEVERAGE_FOR_NEW_BACKGROUND_SEGMENTATION)
+                ++HandFeatureRaportManager.notCalculatedInARow;
 
         return false;
     }
 
     private HandFeaturesRaport m_report;
-    private boolean m_isReadyToCalculateFeatures;
 }
