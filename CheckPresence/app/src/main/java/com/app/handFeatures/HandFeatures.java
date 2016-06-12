@@ -6,6 +6,8 @@ import android.graphics.Rect;
 import android.util.Log;
 
 import com.app.checkpresence.Configure;
+import com.app.checkpresence.backgroundmenage.HandFeatureProcessConfig;
+import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
 import com.app.measurement.AppExecutionTimes;
 import com.app.measurement.ExecutionTimeName;
 
@@ -149,6 +151,8 @@ public class HandFeatures {
 
         m_lowerHandWidth = 0;
         m_upperHandWidth = 0;
+
+        m_raport = new HandFeaturesRaport();
     }
 
 
@@ -210,6 +214,12 @@ public class HandFeatures {
 
         m_image = new MyImage(diff_image, m_input.getWidth(), m_input.getHeight());
 
+        m_raport.bin = new HandFeaturesRaport.BinaryzationRaport();
+        m_raport.bin.usedOpenCV = false;
+        m_raport.bin.width = m_image.width();
+        m_raport.bin.height = m_image.height();
+        m_raport.bin.elPixels = numOfElementPixels;
+
         AppExecutionTimes.endTime(ExecutionTimeName.BINARYZATION);
         return numOfElementPixels;
     }
@@ -240,9 +250,16 @@ public class HandFeatures {
         m_binarized = OpenCVHelper.matToBitmap(mask, width, height);
 
         m_image = new MyImage(m_binarized);
+        int numOfElementPixels = m_image.numOfPixels(Color.EL_COLOR);
+
+        m_raport.bin = new HandFeaturesRaport.BinaryzationRaport();
+        m_raport.bin.usedOpenCV = true;
+        m_raport.bin.width = m_image.width();
+        m_raport.bin.height = m_image.height();
+        m_raport.bin.elPixels = numOfElementPixels;
 
         AppExecutionTimes.endTime(ExecutionTimeName.BINARYZATION);
-        return m_image.numOfPixels(Color.EL_COLOR); // number of element pixels
+        return numOfElementPixels; // number of element pixels
     }
 
     /**
@@ -270,29 +287,46 @@ public class HandFeatures {
         if (areaToProcess != null) {
             m_image = m_image.getImage(areaToProcess, Color.BG_COLOR);
         }
+        else {
+            areaToProcess.top = 0;
+            areaToProcess.left = 0;
+            areaToProcess.right = m_image.width();
+            areaToProcess.bottom = m_image.height();
+        }
 
         ImageArea area = new ImageArea();
+        int areaToProcessPixels = areaToProcess.width() * areaToProcess.height();
         try {
             // ustawienie border zeby dalej nie sprawdzac warunkow brzegowych pozycji pixeli
             m_image.setBorderColor(Color.BG_COLOR);
 
             area = m_image.findTheBiggestArea(Color.EL_COLOR);
-            //System.out.println("Znaleziono " + area.numOfFoundAreas + " plam.");
-            /*if (area.numOfFoundAreas > maxAreas) { // za duzo plam - obraz nie jest odpowieniej jakosci - zadnie pobrania nowego tla
-                return area.numOfFoundAreas;
-            }*/
-            if (area.points.size() < (m_image.width() * m_image.height() * 0.35)) {
-                    System.out.println("Nie ma 40%!!!");
+
+            m_raport.seg = new HandFeaturesRaport.SegmentationRaport();
+            m_raport.seg.width = area.rect.width();
+            m_raport.seg.height = area.rect.height();
+            m_raport.seg.numAreas = area.numOfFoundAreas;
+            m_raport.seg.theBiggestAreaPixels = area.points.size();
+            m_raport.seg.allAreasPixels = area.numOfFoundAllElementPixels;
+            m_raport.seg.theBiggestAreaCoverage = ((float)area.points.size() / (float)areaToProcessPixels);
+
+            if (m_raport.seg.theBiggestAreaCoverage < HandFeatureProcessConfig.MIN_AREA_TO_CEVERAGE_SEGMENTATION) {
+                System.out.print("Segmantacja - pokrycie ponizej "+ (HandFeatureProcessConfig.MIN_AREA_TO_CEVERAGE_SEGMENTATION * 100.0f) +"%!!!");
+                System.out.println(" ("+area.points.size()+"/"+areaToProcessPixels+")("+m_raport.seg.theBiggestAreaCoverage+"/100.0).");
+                return 0;
+            } else if (m_raport.seg.theBiggestAreaCoverage > HandFeatureProcessConfig.MAX_AREA_TO_CEVERAGE_SEGMENTATION) {
+                System.out.print("Segmantacja - pokrycie powyzej " + (HandFeatureProcessConfig.MAX_AREA_TO_CEVERAGE_SEGMENTATION * 100.0f) + "%!!!");
+                System.out.println(" ("+area.points.size()+"/"+areaToProcessPixels+")("+m_raport.seg.theBiggestAreaCoverage+"/100.0).");
                 return 0;
             }
 
             //System.out.println("Plama sklada sie z " + area.points.size() + " pixeli.");
             // znaleziona plama musi pokrywac chociaz 10% obrazu
-            if (area.points.size() < (m_image.width() * m_image.height() * 0.05)) {
+            /*if (area.points.size() < (m_image.width() * m_image.height() * 0.05)) {
                 System.out.println("Segmentacja - plama pokrywa zbyt maly obszar obrazu(5% wymagane)!!");
                 //CameraView.refreshBackground = true;
                 return 0;
-            }
+            }*/
 
             // add space for border and 1 pixel space around element for one big backgroud area
             area.rect.left -= 2;
@@ -300,8 +334,17 @@ public class HandFeatures {
             area.rect.top -= 2;
             area.rect.bottom += 2;
 
-            //MyImage elementImage = m_image.getImage(area.rect, Color.BG_COLOR);
+            // czyszczenie czarncyh plam jezeli sa odpowiedni duze (m_image.width() * 5)
             MyImage elementImage = new MyImage(area);
+            int firstLeft = 0;
+            while (firstLeft < (elementImage.width() / 2) && elementImage.pixel(firstLeft, elementImage.height() - 3) != Color.EL_COLOR)
+                ++firstLeft;
+            int firstRight = elementImage.width() - 2;
+            while (firstRight > (elementImage.width() / 2) && elementImage.pixel(firstRight, elementImage.height() - 3) != Color.EL_COLOR)
+                --firstRight;
+            if (firstLeft != 0 && firstRight != (elementImage.width() - 1))
+                elementImage.drawLine(new Point(firstLeft, elementImage.height() - 3), new Point(firstRight, elementImage.height() - 3), Color.EL_COLOR);
+            
             elementImage.setBorderColor(Color.EL_COLOR);
             ImageUtils.fillAllArea(elementImage, Color.BG_COLOR, Color.EL_COLOR, m_image.width() * 5);
 
@@ -333,6 +376,8 @@ public class HandFeatures {
 
     public boolean calculateFeatures() {
         boolean isGood = true;
+        m_raportCalulated = new HandFeaturesRaport.CalculationRaport();
+
         try {
             AppExecutionTimes.startTime(ExecutionTimeName.HAND_FEATURE_FINGERS);
 
@@ -374,6 +419,7 @@ public class HandFeatures {
         }
 
         ++HandFeatures.foundedHandsFeatures;
+        m_raportCalulated.isGood = isGood;
         return isGood;
     }
 
@@ -1488,6 +1534,8 @@ public class HandFeatures {
     // Getters
     //
 
+    public HandFeaturesRaport getRaport() { return m_raport; }
+    public HandFeaturesRaport.CalculationRaport getRaportCalculated() { return m_raportCalulated; }
     public MyImage getImage() { return m_image; }
     public Finger[] getFingers() { return m_fingers; }
     public float getLowerHandWidth() { return m_lowerHandWidth; }
@@ -1538,4 +1586,7 @@ public class HandFeatures {
     int m_lowerHandWidth;
     int m_upperHandWidth;
     Point m_lowerRightHandWidthPoint;
+
+    HandFeaturesRaport m_raport;
+    HandFeaturesRaport.CalculationRaport m_raportCalulated;
 }

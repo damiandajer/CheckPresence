@@ -16,8 +16,11 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.app.checkpresence.backgroundmenage.CameraParameters;
+import com.app.checkpresence.backgroundmenage.HandFeatureRaportManager;
 import com.app.database.DataBase;
 import com.app.handfeatures.HandFeaturesData;
+import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
 import com.app.measurement.AppExecutionTimes;
 import com.app.measurement.ExecutionTimeName;
 import com.app.memory.CopyManager;
@@ -34,8 +37,9 @@ import java.util.List;
 import java.util.Map;
 
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
-    public static boolean refreshBackground = true;
+    private int noFoundedHandFeaturesInARow;
 
+    private boolean refreshBackground;
     private long autoAdjustmentTime; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
     private boolean measureCameraTime; // czy odliczac czas dla ustabilizowania kamery i jej blokady
     private long startTime; //punkt poczatkowy czasu. actualTime - startTime >= autoAdjustmentTime => zablokowanie kamery
@@ -68,6 +72,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     public CameraView(Context context, Activity activity, MainActivity mainActivityObject, Camera camera){
         super(context);
 
+        refreshBackground = true;
+
         this.mainActivity = activity;
         this.mainActivityObject = mainActivityObject;
         this.backgroundBtn = (ImageButton) this.mainActivity.findViewById(R.id.backgroundBtn);
@@ -82,7 +88,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         mHolder.addCallback(this);
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_NORMAL);
         mCamera.setDisplayOrientation(90);
-        initCameraParameters(); // ustawia poczatkowe parametry kamery
+        size = CameraParameters.initCameraParameters(camera); // ustawia poczatkowe parametry kamery
         this.dataBase = MainActivity.getDataBase();
         this.cameraNull = false;
 
@@ -104,7 +110,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
             @Override
             public void onClick(View v) {
                 startAutoExposure(500);
-                CameraView.refreshBackground = true;
+                refreshBackground = true;
             }
         });
     }
@@ -136,7 +142,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         mCamera.setPreviewCallback(new Camera.PreviewCallback() {
             public void onPreviewFrame(byte[] data, Camera _camera) {
                 //getting once bitmap with background
-                if (CameraView.refreshBackground) {
+                if (refreshBackground) {
                     getBackgroundFrame(data);
                 }
 
@@ -163,10 +169,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     ++pictureSaved;
                     savedPic.setText(pictureSaved + " processed");
 
-                    segmentateImagesGivenAsBytes(data);
+                    HandFeaturesRaport report = segmentateImagesGivenAsBytes(data);
+                    HandFeatureRaportManager hfrm = new HandFeatureRaportManager(report);
+                    refreshBackground = hfrm.isNeedToTakeNewBackground();
 
-                    if (CameraView.refreshBackground == false) {
-                        findHandFeaturesFromSegmentatedHands();
+                    if (!refreshBackground && hfrm.isReadyToCalculateFeatures()) {
+                        HandFeaturesRaport.CalculationRaport c_report = findHandFeaturesFromSegmentatedHands();
+                        hfrm.add(c_report);
+                        refreshBackground = hfrm.isNeedToTakeNewBackground();
 
                         if (Configure.SEARCH_USER_IN_DATABASE == true) { // Tomek - potrzebuje zeby nie blokowalo czasem aplikacji tylko caly czas przetwarzalo kolejne klatki
                             recognizeUser();
@@ -192,21 +202,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         });
     }
 
-    /**
-     * Setting camera parameters
-     */
-    public void initCameraParameters(){
-        Camera.Parameters parameters = mCamera.getParameters();
-        parameters.set("orientation", "portrait");
-        parameters.setRotation(90);
-        Camera.Size size = parameters.getPreviewSize();
-        parameters.setPreviewSize(size.width / 2, size.height / 2);
-        mCamera.setParameters(parameters);
-        this.size = parameters.getPreviewSize();
-
-        saveCameraParameters(); // zapamietuje poczatkowe ustawienia kamery
-    }
-
     public void setCameraParameters(Camera.Parameters parameters) {
         mCamera.setParameters(parameters);
     }
@@ -215,12 +210,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         return mCamera.getParameters();
     }
 
+    /**
+     * save camera parameters for feture backup last parameters
+     */
     public void saveCameraParameters() {
-        cameraParameters = getCameraParameters();
+        CameraParameters.setParameters(getCameraParameters());
     }
 
     public void loadCameraParameters() {
-        setCameraParameters(cameraParameters);
+        setCameraParameters(CameraParameters.getParameters());
     }
 
     public void lockCameraExposure(boolean lock){
@@ -265,7 +263,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
      * Process segmentation of data from camera preview, sets results to ImageViews
      * @param data byte Array
      */
-    public void segmentateImagesGivenAsBytes(byte[] data){
+    public HandFeaturesRaport segmentateImagesGivenAsBytes(byte[] data){
         AppExecutionTimes.startTime(ExecutionTimeName.SEGMENTATE_IMAGE_THREAD);
 
         frame.setActualFrame(data);
@@ -275,20 +273,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
         frame.setBackground(bmpBackground);
         frame.setThresholds(15, 15, 1);
-        frame.segmentateFrameWithOpenCV();
+        HandFeaturesRaport report = frame.segmentateFrameWithOpenCV();
         List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
         setBitmapsToViews(openCVViews, openCVBitmaps);
 
         //CopyManager.saveBitmapToDisk(openCVBitmaps, pictureSaved, "OpenCV");
 
         AppExecutionTimes.endTime(ExecutionTimeName.SEGMENTATE_IMAGE_THREAD);
+
+        return report;
     }
 
-    public void findHandFeaturesFromSegmentatedHands(){
+    public HandFeaturesRaport.CalculationRaport findHandFeaturesFromSegmentatedHands(){
         AppExecutionTimes.startTime(ExecutionTimeName.HAND_FEATURE_THREAD);
 
         //actualHandFeatures.clear();
-        frame.findHandFeatures();
+        HandFeaturesRaport.CalculationRaport report = frame.findHandFeatures();
         //this.actualHandFeatures = frame.getHandFeatures();
         for (float[] features:frame.getHandFeatures()
                 ) {
@@ -297,6 +297,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         }
 
         AppExecutionTimes.endTime(ExecutionTimeName.HAND_FEATURE_THREAD);
+        return report;
     }
 
     public void recognizeUser(){
@@ -400,8 +401,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
             Log.d("ERROR", "Failed to get camera: " + e.getMessage());
         }
         mCamera.setDisplayOrientation(90);
-        if (cameraParameters == null)
-            initCameraParameters();
+        if (cameraParameters == null) {
+            CameraParameters.initCameraParameters(mCamera);
+            startAutoExposure(200);
+        }
         else
             loadCameraParameters();
     }

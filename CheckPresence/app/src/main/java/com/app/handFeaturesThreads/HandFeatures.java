@@ -2,7 +2,7 @@ package com.app.handFeaturesThreads;
 
 import com.app.checkpresence.Configure;
 import com.app.handfeatures.HandFeaturesData;
-import com.app.handfeatures.HandFeaturesException;
+import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
 import com.app.measurement.AppExecutionTimes;
 import com.app.measurement.ExecutionTimeName;
 import com.app.memory.CopyManager;
@@ -14,6 +14,7 @@ public class HandFeatures implements Runnable {
     private com.app.handfeatures.HandFeatures segmentatedHand;
     private float[] handFeatures;
     private HandFeaturesData handFeaturesData = null;
+    private HandFeaturesRaport.CalculationRaport report;
     //private native float[] findHandFeatures(int[] intARGBArray, int rows, int cols);
 
     public HandFeatures(com.app.handfeatures.HandFeatures segmentatedHand){
@@ -26,19 +27,20 @@ public class HandFeatures implements Runnable {
     }
 
     private void findHandFeatures(){
-        findHandFeaturesJava(this.segmentatedHand);
+        report = findHandFeaturesJava(this.segmentatedHand);
         if(handFeaturesData != null)
             this.handFeatures = handFeaturesData.features;
         if (handFeatures != null)
             System.out.println("Odnaleziono wszystkie cechy!");
     }
 
-    private void findHandFeaturesJava(com.app.handfeatures.HandFeatures handFeaturesObject){
+    private HandFeaturesRaport.CalculationRaport findHandFeaturesJava(com.app.handfeatures.HandFeatures handFeaturesObject){
         try {
             AppExecutionTimes.startTime(ExecutionTimeName.HAND_FEATURE_CALCULATE);
-            boolean calculated = handFeaturesObject.calculateFeatures();
+            handFeaturesObject.calculateFeatures();
+            report = handFeaturesObject.getRaportCalculated();
             AppExecutionTimes.endTime(ExecutionTimeName.HAND_FEATURE_CALCULATE);
-            if (calculated == true) {
+            if (report.isGood == true) {
                 if (Configure.SAVE_HAND_RECOGNIZATION_STEPS) {
                     CopyManager.saveBitmapToDisk(handFeaturesObject.getProcessed(true), com.app.handfeatures.HandFeatures.foundedHandsFeatures, "calculated_");
                     CopyManager.saveBitmapToDisk(handFeaturesObject.getConturBitmap(false), handFeaturesObject.foundedHandsFeatures, "contour_");
@@ -54,6 +56,7 @@ public class HandFeatures implements Runnable {
             System.out.println(e.toString());
             e.printStackTrace();
         }
+        return report;
     }
 
     public HandFeaturesData getHandFeaturesData(){
@@ -62,5 +65,9 @@ public class HandFeatures implements Runnable {
 
     public float[] getHandFeatures(){
         return this.handFeatures;
+    }
+
+    public HandFeaturesRaport.CalculationRaport getCalculatedReport(){
+        return report;
     }
 }
