@@ -334,8 +334,17 @@ public class HandFeatures {
             area.rect.top -= 2;
             area.rect.bottom += 2;
 
-            //MyImage elementImage = m_image.getImage(area.rect, Color.BG_COLOR);
+            // czyszczenie czarncyh plam jezeli sa odpowiedni duze (m_image.width() * 5)
             MyImage elementImage = new MyImage(area);
+            int firstLeft = 0;
+            while (firstLeft < (elementImage.width() / 2) && elementImage.pixel(firstLeft, elementImage.height() - 3) != Color.EL_COLOR)
+                ++firstLeft;
+            int firstRight = elementImage.width() - 2;
+            while (firstRight > (elementImage.width() / 2) && elementImage.pixel(firstRight, elementImage.height() - 3) != Color.EL_COLOR)
+                --firstRight;
+            if (firstLeft != 0 && firstRight != (elementImage.width() - 1))
+                elementImage.drawLine(new Point(firstLeft, elementImage.height() - 3), new Point(firstRight, elementImage.height() - 3), Color.EL_COLOR);
+            
             elementImage.setBorderColor(Color.EL_COLOR);
             ImageUtils.fillAllArea(elementImage, Color.BG_COLOR, Color.EL_COLOR, m_image.width() * 5);
 

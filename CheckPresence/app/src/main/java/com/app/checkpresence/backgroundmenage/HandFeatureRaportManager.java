@@ -10,6 +10,7 @@ public class HandFeatureRaportManager {
     private static int notCalculatedInARow = 0;
 
     public HandFeatureRaportManager(HandFeaturesRaport report) {
+        notCalculatedInARow = 0;
         m_report = report;
     }
 
