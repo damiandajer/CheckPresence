@@ -3,18 +3,13 @@ package com.app.segmentation;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 
-import com.app.checkpresence.AddUserCameraView;
-import com.app.checkpresence.CameraView;
 import com.app.checkpresence.Configure;
+import com.app.checkpresence.backgroundmenage.HandFeatureProcessConfig;
 import com.app.handfeatures.Color;
 import com.app.handfeatures.HandFeatures;
-import com.app.handfeatures.HandFeaturesData;
 import com.app.handfeatures.HandFeaturesException;
-import com.app.handfeatures.HandFeaturesRaport;
+import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
 import com.app.memory.CopyManager;
-
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
 
 
 /**
@@ -54,10 +49,10 @@ public class OpenCVSubtraction implements Runnable {
     @Override
     public void run() {
         boolean useOpenCV = true;
-        if (useOpenCV)
+        /*if (useOpenCV)
             System.out.println("Thread is processing frame with OpenCV");
         else
-            System.out.println("Thread is processing frame withOUT OpenCV");
+            System.out.println("Thread is processing frame withOUT OpenCV");*/
 
 
         int numberOfElementPixels = 0;
@@ -85,15 +80,15 @@ public class OpenCVSubtraction implements Runnable {
             // jezeli np plama dloni jest za mala, lub jakis blad przy przetwarzaniu to zwruc aktualny wyglad obrazu i zakoncz przetwarzanie tej klatki
             resultBitmap = handFeatures.getProcessed(false);
             // jezeli obraz ma mniej niz 3% pixeli koloru elementu nie przetwarzaj dalej - najprowodpodobniej nie ma reki na obrazie
-            if (numberOfElementPixels < (handFeatures.getImage().width() * handFeatures.getImage().height()) * 0.03) {
+            if (numberOfElementPixels < (handFeatures.getImage().width() * handFeatures.getImage().height()) * HandFeatureProcessConfig.MIN_BINARYZATION) {
                 report = handFeatures.getRaport();
-                //System.out.println("R1!");
+                System.out.println("Binaryzacja - ponizej " + HandFeatureProcessConfig.MIN_BINARYZATION + "% obszaru.");
                 return;
             }
             // jezeli obraz ma wiecej niz 70% pixeli koloru elementu nie przetwarzaj dalej - najprowodpodobniej nie ma reki na obrazie
-            if (numberOfElementPixels > (handFeatures.getImage().width() * handFeatures.getImage().height()) * 0.70) {
+            if (numberOfElementPixels > (handFeatures.getImage().width() * handFeatures.getImage().height()) * HandFeatureProcessConfig.MAX_BINARYZATION) {
                 report = handFeatures.getRaport();
-                //System.out.println("R2!");
+                System.out.println("Binaryzacja - powyzej " + HandFeatureProcessConfig.MIN_BINARYZATION + "% obszaru.");
                 return;
             }
 
@@ -106,7 +101,7 @@ public class OpenCVSubtraction implements Runnable {
             resultBitmap = handFeatures.getProcessed(false);
             if (foundAreas == 0) {
                 report = handFeatures.getRaport();
-                //System.out.println("R3!");
+                //System.out.println("Segmentacja");
                 return;
             }
 
@@ -115,9 +110,9 @@ public class OpenCVSubtraction implements Runnable {
                 CopyManager.saveBitmapToDisk(handFeatures.getProcessed(false), HandFeatures.foundedHandsFeatures, "segmentated_");
             }
 
-            if (foundAreas > HandFeatures.maxAllowedAreas) {
+            if (foundAreas > HandFeatureProcessConfig.MAX_ALLOWED_AREAS_SEGMENTATION) {
                 report = handFeatures.getRaport();
-                //System.out.println("R4!");
+                System.out.println("Segmentacja - za duzo plam/max:" + foundAreas + "/" + HandFeatureProcessConfig.MAX_ALLOWED_AREAS_SEGMENTATION);
                 return;
             }
 

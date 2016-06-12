@@ -4,7 +4,7 @@ import android.graphics.Bitmap;
 
 import com.app.handfeatures.HandFeatures;
 import com.app.handfeatures.HandFeaturesData;
-import com.app.handfeatures.HandFeaturesRaport;
+import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
 
 import java.util.ArrayList;
 import java.util.List;

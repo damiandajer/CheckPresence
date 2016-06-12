@@ -6,6 +6,8 @@ import android.graphics.Rect;
 import android.util.Log;
 
 import com.app.checkpresence.Configure;
+import com.app.checkpresence.backgroundmenage.HandFeatureProcessConfig;
+import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
 import com.app.measurement.AppExecutionTimes;
 import com.app.measurement.ExecutionTimeName;
 
@@ -285,8 +287,15 @@ public class HandFeatures {
         if (areaToProcess != null) {
             m_image = m_image.getImage(areaToProcess, Color.BG_COLOR);
         }
+        else {
+            areaToProcess.top = 0;
+            areaToProcess.left = 0;
+            areaToProcess.right = m_image.width();
+            areaToProcess.bottom = m_image.height();
+        }
 
         ImageArea area = new ImageArea();
+        int areaToProcessPixels = areaToProcess.width() * areaToProcess.height();
         try {
             // ustawienie border zeby dalej nie sprawdzac warunkow brzegowych pozycji pixeli
             m_image.setBorderColor(Color.BG_COLOR);
@@ -299,19 +308,25 @@ public class HandFeatures {
             m_raport.seg.numAreas = area.numOfFoundAreas;
             m_raport.seg.theBiggestAreaPixels = area.points.size();
             m_raport.seg.allAreasPixels = area.numOfFoundAllElementPixels;
+            m_raport.seg.theBiggestAreaCoverage = ((float)area.points.size() / (float)areaToProcessPixels);
 
-            if (area.points.size() < (m_image.width() * m_image.height() * 0.40)) {
-                System.out.println("Nie ma 40%!!!");
+            if (m_raport.seg.theBiggestAreaCoverage < HandFeatureProcessConfig.MIN_AREA_TO_CEVERAGE_SEGMENTATION) {
+                System.out.print("Segmantacja - pokrycie ponizej "+ (HandFeatureProcessConfig.MIN_AREA_TO_CEVERAGE_SEGMENTATION * 100.0f) +"%!!!");
+                System.out.println(" ("+area.points.size()+"/"+areaToProcessPixels+")("+m_raport.seg.theBiggestAreaCoverage+"/100.0).");
+                return 0;
+            } else if (m_raport.seg.theBiggestAreaCoverage > HandFeatureProcessConfig.MAX_AREA_TO_CEVERAGE_SEGMENTATION) {
+                System.out.print("Segmantacja - pokrycie powyzej " + (HandFeatureProcessConfig.MAX_AREA_TO_CEVERAGE_SEGMENTATION * 100.0f) + "%!!!");
+                System.out.println(" ("+area.points.size()+"/"+areaToProcessPixels+")("+m_raport.seg.theBiggestAreaCoverage+"/100.0).");
                 return 0;
             }
 
             //System.out.println("Plama sklada sie z " + area.points.size() + " pixeli.");
             // znaleziona plama musi pokrywac chociaz 10% obrazu
-            if (area.points.size() < (m_image.width() * m_image.height() * 0.05)) {
+            /*if (area.points.size() < (m_image.width() * m_image.height() * 0.05)) {
                 System.out.println("Segmentacja - plama pokrywa zbyt maly obszar obrazu(5% wymagane)!!");
                 //CameraView.refreshBackground = true;
                 return 0;
-            }
+            }*/
 
             // add space for border and 1 pixel space around element for one big backgroud area
             area.rect.left -= 2;

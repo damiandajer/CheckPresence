@@ -16,9 +16,10 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.app.checkpresence.backgroundmenage.HandFeatureRaportManager;
 import com.app.database.DataBase;
 import com.app.handfeatures.HandFeaturesData;
-import com.app.handfeatures.HandFeaturesRaport;
+import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
 import com.app.measurement.AppExecutionTimes;
 import com.app.measurement.ExecutionTimeName;
 import com.app.memory.CopyManager;
@@ -169,8 +170,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     HandFeatureRaportManager hfrm = new HandFeatureRaportManager(report);
                     refreshBackground = hfrm.isNeedToTakeNewBackground();
 
-                    if (refreshBackground == false) {
+                    if (hfrm.isReadyToCalculateFeatures()) {
                         HandFeaturesRaport.CalculationRaport c_report = findHandFeaturesFromSegmentatedHands();
+                        hfrm.add(c_report);
+                        refreshBackground = hfrm.isNeedToTakeNewBackground();
 
                         if (Configure.SEARCH_USER_IN_DATABASE == true) { // Tomek - potrzebuje zeby nie blokowalo czasem aplikacji tylko caly czas przetwarzalo kolejne klatki
                             recognizeUser();

@@ -1,4 +1,4 @@
-package com.app.handfeatures;
+package com.app.checkpresence.backgroundmenage;
 
 /**
  * Created by bijat on 11.06.2016.
@@ -9,11 +9,6 @@ public class HandFeaturesRaport {
         public int height;
         public int elPixels;
         public boolean usedOpenCV;
-
-        /*public int width() {return width;}
-        public int height() { return height;}
-        public boolean isUsedOpenCV() {return usedOpenCV;}
-        public int elPixels() {return elPixels;}*/
     }
 
     public static class SegmentationRaport {
@@ -22,12 +17,7 @@ public class HandFeaturesRaport {
         public int numAreas;
         public int theBiggestAreaPixels;
         public int allAreasPixels;
-
-        /*public int width() {return width;}
-        public int height() { return height;}
-        public int numAreas() { return numAreas;}
-        public int theBiggestAreaPixels() { return theBiggestAreaPixels;}
-        public int allAreasPixels() { return allAreasPixels;}*/
+        public float theBiggestAreaCoverage;
     }
 
     public static class CalculationRaport {

@@ -4,8 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.Rect;
 
 import com.app.handfeatures.HandFeatures;
-import com.app.handfeatures.HandFeaturesData;
-import com.app.handfeatures.HandFeaturesRaport;
+import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
 import com.app.threads.TaskManager;
 import com.app.threads.ThreadHandler;
 

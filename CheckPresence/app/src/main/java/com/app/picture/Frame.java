@@ -7,8 +7,7 @@ import android.hardware.Camera;
 import com.app.checkpresence.CameraView;
 import com.app.handFeaturesThreads.HandFeaturesThreads;
 import com.app.handfeatures.HandFeatures;
-import com.app.handfeatures.HandFeaturesData;
-import com.app.handfeatures.HandFeaturesRaport;
+import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
 import com.app.segmentation.OpenCVSubtractionThreads;
 
 import java.util.ArrayList;

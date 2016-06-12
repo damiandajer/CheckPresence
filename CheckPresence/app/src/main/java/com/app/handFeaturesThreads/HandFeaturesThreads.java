@@ -1,6 +1,6 @@
 package com.app.handFeaturesThreads;
 
-import com.app.handfeatures.HandFeaturesRaport;
+import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
 import com.app.threads.TaskManager;
 import com.app.threads.ThreadHandler;
 

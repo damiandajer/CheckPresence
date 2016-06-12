@@ -2,8 +2,7 @@ package com.app.handFeaturesThreads;
 
 import com.app.checkpresence.Configure;
 import com.app.handfeatures.HandFeaturesData;
-import com.app.handfeatures.HandFeaturesException;
-import com.app.handfeatures.HandFeaturesRaport;
+import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
 import com.app.measurement.AppExecutionTimes;
 import com.app.measurement.ExecutionTimeName;
 import com.app.memory.CopyManager;
