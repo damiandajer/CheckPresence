@@ -8,6 +8,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
+import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -56,7 +57,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     protected int frames = 1;
     protected int pictureSaved = 0;
     protected TextView savedPic;
-    private ImageView bottomRight, bottomLeft, topLeft, topCenter, topRight, bottomCenter;
+    private ImageView bottomRight, bottomLeft, topLeft, topCenter, topRight, bottomCenter, infoView;
     private ImageButton backgroundBtn;
     private Bitmap bmpBackground;
     //public static boolean refreshBackground = true;
@@ -79,6 +80,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         this.mainActivityObject = mainActivityObject;
         this.backgroundBtn = (ImageButton) this.mainActivity.findViewById(R.id.backgroundBtn);
         this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
+        this.infoView = (ImageView) this.mainActivity.findViewById(R.id.infoView);
         mCamera = camera;
         startAutoExposure(3000);
 
@@ -155,6 +157,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                         measureCameraTime = false;
                     }
                 }
+
+                if(measureCameraTime == true)
+                    infoView.setVisibility(VISIBLE);
+                else
+                    infoView.setVisibility(INVISIBLE);
 
                 if(frames == 5) {
                     AppExecutionTimes.clear(); // czyscimy obecnie istniejace czasy

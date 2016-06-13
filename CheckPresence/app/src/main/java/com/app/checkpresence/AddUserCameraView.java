@@ -43,7 +43,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     protected int frames = 1;
     protected int pictureSaved = 0;
     protected TextView savedPic;
-    private ImageView bottomCenter, bottomRight;
+    private ImageView bottomCenter, bottomRight, infoView;
     private ImageButton backgroundBtn;
     private Bitmap bmpBackground;
     private List<ImageView> openCVViews;
@@ -67,6 +67,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         this.addUserActivity = addUserActivity;
         this.backgroundBtn = (ImageButton) this.addUserActivity.findViewById(R.id.backgroundBtn);
         this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
+        this.infoView = (ImageView) this.mainActivity.findViewById(R.id.infoView);
         mCamera = camera;
         startAutoExposure(2000);
 
@@ -132,6 +133,11 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
                         measureCameraTime = false;
                     }
                 }
+
+                if(measureCameraTime == true)
+                    infoView.setVisibility(VISIBLE);
+                else
+                    infoView.setVisibility(INVISIBLE);
 
                 if(frames == 5) {
                     //number of processed pictures
