@@ -86,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
             public void onDrawerClosed(View view) {
                 super.onDrawerClosed(view);
                 // Do whatever you want here
+                //mCamera.startPreview();
             }
 
             /**
@@ -101,9 +102,10 @@ public class MainActivity extends AppCompatActivity {
                 if (newState == DrawerLayout.STATE_SETTLING) {
                     if (mDrawer.isDrawerOpen(Gravity.LEFT)) {
                         // closing drawer
-                        mCamera.startPreview();
+                        //mCamera.startPreview();
                     } else {
                         // starts opening
+                        //mCamera.stopPreview();
                     }
                     invalidateOptionsMenu();
                 }
