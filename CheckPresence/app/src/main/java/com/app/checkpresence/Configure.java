@@ -8,9 +8,9 @@ package com.app.checkpresence;
  * Zebranie cześci opcji w jednym miejcu
  */
 public class Configure {
-    public static boolean SHOW_FOUND_HAND_FEATURES_EXCEPTIONS = true;
-    public static boolean SHOW_FOUND_HAND_FEATURES = true;
-    public static boolean SHOW_MEASURED_TIMES = true;
+    public static boolean SHOW_FOUND_HAND_FEATURES_EXCEPTIONS = false;
+    public static boolean SHOW_FOUND_HAND_FEATURES = false;
+    public static boolean SHOW_MEASURED_TIMES = false;
 
     public static boolean SAVE_HAND_RECOGNIZATION_STEPS = false;
 

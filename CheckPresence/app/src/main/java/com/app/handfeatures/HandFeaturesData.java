@@ -44,6 +44,7 @@ enum FeatureNames {
     PinkyArea;
 }
 
+
 public class HandFeaturesData {
     public HandFeaturesData() {
         size = FeatureNames.values().length;

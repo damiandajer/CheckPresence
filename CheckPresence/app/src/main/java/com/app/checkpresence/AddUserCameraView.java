@@ -7,11 +7,15 @@ import android.hardware.Camera;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.app.checkpresence.backgroundmenage.CameraParameters;
+import com.app.checkpresence.backgroundmenage.HandFeatureRaportManager;
+import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
 import com.app.database.DataBase;
-import com.app.handfeatures.HandFeaturesData;
 import com.app.picture.Frame;
 import com.app.recognition.HandRecognizer;
 
@@ -25,8 +29,7 @@ import java.util.Map;
  * Created by Damian on 30.05.2016.
  */
 public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Callback {
-    public static boolean refreshBackground = true;
-
+    private boolean refreshBackground;
     private long autoAdjustmentTime; // czas w ns, po jakim kamera zablokuje ekspozycje swiatla us
     private boolean measureCameraTime; // czy odliczac czas dla ustabilizowania kamery i jej blokady
     private long startTime; //punkt poczatkowy czasu. actualTime - startTime >= autoAdjustmentTime => zablokowanie kamery
@@ -40,8 +43,10 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     protected int frames = 1;
     protected int pictureSaved = 0;
     protected TextView savedPic;
-    private ImageView bottomCenter;
+    private ImageView bottomCenter, bottomRight;
+    private ImageButton backgroundBtn;
     private Bitmap bmpBackground;
+    private List<ImageView> openCVViews;
     private Frame frame, backgroundFrame;
     private List<float[]> actualHandFeatures, allHandFeatures;
     private HandRecognizer handRecognizer;
@@ -56,18 +61,21 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     public AddUserCameraView(Context context, Activity activity, AddUserActivity addUserActivity, Camera camera){
         super(context);
 
+        refreshBackground = true;
+
         this.mainActivity = activity;
         this.addUserActivity = addUserActivity;
+        this.backgroundBtn = (ImageButton) this.addUserActivity.findViewById(R.id.backgroundBtn);
         this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
         mCamera = camera;
-        startAutoExposure(3000);
+        startAutoExposure(2000);
 
         //get the holder and set this class as the callback, so we can get camera data here
         mHolder = getHolder();
         mHolder.addCallback(this);
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_NORMAL);
         mCamera.setDisplayOrientation(90);
-        initCameraParameters();
+        CameraParameters.initCameraParameters(camera);
         this.dataBase = MainActivity.getDataBase();
         this.actualHandFeatures = new ArrayList<>();
         this.allHandFeatures = new ArrayList<>();
@@ -76,8 +84,18 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         this.frame = new Frame();
         this.backgroundFrame = new Frame();
         this.handRecognizer = new HandRecognizer();
+        this.openCVViews = new ArrayList<>();
         setAllViewsToVariables();
         clearSegmentatedHandsBufor();
+        setOpenCVViewsList();
+
+        this.backgroundBtn.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                startAutoExposure(500);
+                refreshBackground = true;
+            }
+        });
     }
 
 
@@ -103,7 +121,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         mCamera.setPreviewCallback(new Camera.PreviewCallback() {
             public void onPreviewFrame(byte[] data, Camera _camera) {
                 //getting once bitmap with background
-                if (AddUserCameraView.refreshBackground) {
+                if (refreshBackground) {
                     getBackgroundFrame(data);
                 }
 
@@ -120,10 +138,17 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
                     ++pictureSaved;
                     //savedPic.setText(pictureSaved + " processed");
 
-                    segmentateImagesGivenAsBytes(data);
-                    findHandFeaturesFromSegmentatedHands();
-                    if(checkIfAllFeatures()){
-                        addUser();
+                    HandFeaturesRaport report = segmentateImagesGivenAsBytes(data);
+                    HandFeatureRaportManager hfrm = new HandFeatureRaportManager(report);
+                    refreshBackground = hfrm.isNeedToTakeNewBackground();
+
+                    if (!refreshBackground && hfrm.isReadyToCalculateFeatures()) {
+                        HandFeaturesRaport.CalculationRaport c_report = findHandFeaturesFromSegmentatedHands();
+                        hfrm.add(c_report);
+                        refreshBackground = hfrm.isNeedToTakeNewBackground();
+                        if (checkIfAllFeatures()) {
+                            addUserDialog();
+                        }
                     }
 
                     //set frames to 0 (return to the beginning of loop)
@@ -132,21 +157,6 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
                 ++frames;
             }
         });
-    }
-
-    /**
-     * Setting camera parameters
-     */
-    public void initCameraParameters(){
-        Camera.Parameters parameters = mCamera.getParameters();
-        parameters.set("orientation", "portrait");
-        parameters.setRotation(90);
-        Camera.Size size = parameters.getPreviewSize();
-        parameters.setPreviewSize(size.width / 2, size.height / 2);
-        mCamera.setParameters(parameters);
-        this.size = parameters.getPreviewSize();
-
-        saveCameraParameters(); // zapamietuje poczatkowe ustawienia kamery
     }
 
     /**
@@ -165,11 +175,11 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
      * save camera parameters for feture backup last parameters
      */
     public void saveCameraParameters() {
-        cameraParameters = getCameraParameters();
+        CameraParameters.setParameters(getCameraParameters());
     }
 
     public void loadCameraParameters() {
-        setCameraParameters(cameraParameters);
+        setCameraParameters(CameraParameters.getParameters());
     }
 
     public void lockCameraExposure(boolean lock){
@@ -213,7 +223,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
      * Process segmentation of data from camera preview, sets results to ImageViews
      * @param data byte Array
      */
-    public void segmentateImagesGivenAsBytes(byte[] data){
+    public HandFeaturesRaport segmentateImagesGivenAsBytes(byte[] data){
         frame.setActualFrame(data);
 
         Bitmap liveViewBitmap = frame.getActualBitmap();
@@ -221,22 +231,28 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
 
         frame.setBackground(bmpBackground);
         frame.setThresholds(20, 20, 1);
-        frame.segmentateFrameWithOpenCV();
+        HandFeaturesRaport report = frame.segmentateFrameWithOpenCV();
+        List<Bitmap> openCVBitmaps = frame.getOpenCVBitmaps();
+        setBitmapsToViews(openCVViews, openCVBitmaps);
 
         //CopyManager.saveBitmapToDisk(openCVBitmaps, pictureSaved, "OpenCV");
+
+        return report;
     }
 
-    public void findHandFeaturesFromSegmentatedHands(){
-        frame.findHandFeatures();
+    public HandFeaturesRaport.CalculationRaport findHandFeaturesFromSegmentatedHands(){
+        HandFeaturesRaport.CalculationRaport report = frame.findHandFeatures();
         this.actualHandFeatures = frame.getHandFeatures();
         ++segmentatedHandsBufor;
-        if(actualHandFeatures.size() != 0 && segmentatedHandsBufor > 2) {
+        if(actualHandFeatures.size() != 0 && segmentatedHandsBufor > 0) {
             for (float[] features : frame.getHandFeatures()
                     ) {
                 this.allHandFeatures.add(features);
             }
             clearSegmentatedHandsBufor();
         }
+
+        return report;
     }
 
     @Override
@@ -268,7 +284,8 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     }
 
     private void setAllViewsToVariables(){
-        this.bottomCenter = (ImageView) this.mainActivity.findViewById(R.id.liveView);
+        this.bottomCenter = (ImageView) this.addUserActivity.findViewById(R.id.liveView);
+        this.bottomRight = (ImageView) this.addUserActivity.findViewById(R.id.segmentatedHand1);
     }
 
     public void setBitmapsToViews(List<ImageView> views, List<Bitmap> bitmaps){
@@ -277,6 +294,10 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
             setImageToImageView(view, bitmaps.get(counter));
             ++counter;
         }
+    }
+
+    private void setOpenCVViewsList(){
+        this.openCVViews.add(bottomRight);
     }
 
     private boolean checkIfAllFeatures(){
@@ -288,7 +309,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
             return true;
     }
 
-    private void addUser(){
+    private void addUserDialog(){
         mCamera.stopPreview();
         addUserActivity.addUserData();
     }
@@ -333,5 +354,9 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
 
     public void clearSegmentatedHandsBufor(){
         segmentatedHandsBufor = 0;
+    }
+
+    public void closeActivity(){
+        addUserActivity.closeActivity();
     }
 }
