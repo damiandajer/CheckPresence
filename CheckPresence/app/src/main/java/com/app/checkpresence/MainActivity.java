@@ -12,7 +12,9 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.FrameLayout;
 
 import com.app.database.AndroidDatabaseManager;
@@ -54,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
         // Find our drawer view
         mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawerToggle = setupDrawerToggle();
+        mDrawer.setDrawerListener(drawerToggle);
 
         // Find our drawer view
         nvDrawer = (NavigationView) findViewById(R.id.nvView);
@@ -75,7 +78,37 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private ActionBarDrawerToggle setupDrawerToggle() {
-        return new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open,  R.string.drawer_close);
+        return new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open, R.string.drawer_close) {
+
+            /**
+             * Called when a drawer has settled in a completely closed state.
+             */
+            public void onDrawerClosed(View view) {
+                super.onDrawerClosed(view);
+                // Do whatever you want here
+            }
+
+            /**
+             * Called when a drawer has settled in a completely open state.
+             */
+            public void onDrawerOpened(View drawerView) {
+                super.onDrawerOpened(drawerView);
+                // Do whatever you want here
+                //mCamera.stopPreview();
+            }
+
+            public void onDrawerStateChanged(int newState){
+                if (newState == DrawerLayout.STATE_SETTLING) {
+                    if (mDrawer.isDrawerOpen(Gravity.LEFT)) {
+                        // closing drawer
+                        mCamera.startPreview();
+                    } else {
+                        // starts opening
+                    }
+                    invalidateOptionsMenu();
+                }
+            }
+        };
     }
 
     @Override
@@ -125,36 +158,36 @@ public class MainActivity extends AppCompatActivity {
                 startActivityAddNewUser();
                 break;
             case R.id.nav_Dodaj_grupę:
-                mCameraView.stopPreview();
+                //mCameraView.stopPreview();
                 addGroupDialog();
                 //fragmentClass = AddUserActivity.class;
                 break;
             case R.id.nav_Dodaj_zajęcia:
-                mCameraView.stopPreview();
+                //mCameraView.stopPreview();
                 addClassesDialog();
                 //fragmentClass = AddUserActivity.class;
                 break;
             case R.id.nav_obecnosci:
-                mCameraView.stopPreview();
+                //mCameraView.stopPreview();
                 startActivityUserPresences();
                 //fragmentClass = ThirdFragment.class;
                 break;
             case R.id.nav_Database_Manager:
                 //fragmentClass = AndroidDatabaseManager.class;
-                mCameraView.stopPreview();
+                //mCameraView.stopPreview();
                 startDatabaseManager();
                 break;
             case R.id.nav_load_database:
                 menuItem.setChecked(false);
-                mCameraView.stopPreview();
+                //mCameraView.stopPreview();
                 CopyManager.loadBackupOfDatabase(context);
-                mCameraView.startPreview();
+                //mCameraView.startPreview();
                 break;
             case R.id.nav_create_copy_database:
                 menuItem.setChecked(false);
-                mCameraView.stopPreview();
+                //mCameraView.stopPreview();
                 CopyManager.addCopyOfDatabase(context);
-                mCameraView.startPreview();
+                //mCameraView.startPreview();
                 break;
             default:
                 fragmentClass = MainActivity.class;
