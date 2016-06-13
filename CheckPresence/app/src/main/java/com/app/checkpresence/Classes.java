@@ -47,6 +47,6 @@ public class Classes {
     @Override
     public String toString() {
         return Integer.toString(id) + ". " + groupName + " - "
-                + Integer.toString(day) + " " + Integer.toString(month) + " "+ Integer.toString(year);
+                + Integer.toString(day) + "." + Integer.toString(month) + "."+ Integer.toString(year);
     }
 }
