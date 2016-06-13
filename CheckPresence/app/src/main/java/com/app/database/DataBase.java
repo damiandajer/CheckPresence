@@ -13,6 +13,7 @@ import com.app.checkpresence.Classes;
 import com.app.checkpresence.User;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -545,7 +546,9 @@ public class DataBase extends SQLiteOpenHelper{
      * @return
      */
     public long insertClass(String groupName, Date data){
-        return insertClass(groupName, data.getYear(), data.getMonth(), data.getDay());
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(data);
+        return insertClass(groupName,  cal.get(Calendar.YEAR),  cal.get(Calendar.MONTH),  cal.get(Calendar.DAY_OF_MONTH));
     }
 
     /**
@@ -724,7 +727,7 @@ public class DataBase extends SQLiteOpenHelper{
         Cursor cursor = dataBase.rawQuery(selectQuery, null);
 
         if(cursor != null && cursor.moveToFirst()) {
-                classes = new Classes( cursor.getString(cursor.getColumnIndex(COLUMN_NAME_GROUP_NAME)),
+                classes = new Classes(cursor.getString(cursor.getColumnIndex(COLUMN_NAME_GROUP_NAME)),
                         cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID_CLASS)),
                         cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_CLASS_YEAR)),
                         cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_CLASS_MONTH)),
@@ -776,6 +779,38 @@ public class DataBase extends SQLiteOpenHelper{
         }
 
         return false;
+    }
+
+    public List<String> getPresence(long idClass){
+        List<String> pres = new ArrayList<String>();
+        String tmp;
+
+        String selectQuery = "SELECT * "
+                + " FROM " + TABLE_NAME_PRESENCE
+                + " JOIN " + TABLE_NAME_USERS
+                + " ON " + COLUMN_NAME_ID_USER_IN_PRESENCE
+                + " = " + COLUMN_NAME_ID_USER
+                + " WHERE " + COLUMN_NAME_ID_CLASS_IN_PRESENCE + "=" + Long.toString(idClass) + ";";
+
+
+        Cursor cursor = dataBase.rawQuery(selectQuery, null);
+
+        if(cursor != null && cursor.moveToFirst()) {
+            do{
+                tmp = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_FIRST_NAME)) + " "
+                    + cursor.getString(cursor.getColumnIndex(COLUMN_NAME_SECOND_NAME)) + " ";
+
+                if(cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_PRESENCE_BOOL)) == 0){
+                    tmp += "- nieobecny";
+                } else {
+                    tmp += "- obecny";
+                }
+                                
+                pres.add(tmp);
+            }while(cursor.moveToNext());
+        }
+
+        return pres;
     }
 
     /**
