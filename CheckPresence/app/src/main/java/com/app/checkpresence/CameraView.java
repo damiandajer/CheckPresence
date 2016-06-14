@@ -57,7 +57,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
     protected int frames = 1;
     protected int pictureSaved = 0;
     protected TextView savedPic;
-    private ImageView bottomRight, bottomLeft, topLeft, topCenter, topRight, bottomCenter, infoView;
+    private ImageView bottomRight, bottomLeft, topLeft, topCenter, topRight, bottomCenter, infoView, handImage;
     private ImageButton backgroundBtn;
     private Bitmap bmpBackground;
     //public static boolean refreshBackground = true;
@@ -81,6 +81,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         this.backgroundBtn = (ImageButton) this.mainActivity.findViewById(R.id.backgroundBtn);
         this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
         this.infoView = (ImageView) this.mainActivity.findViewById(R.id.infoView);
+        this.handImage = (ImageView) this.mainActivity.findViewById(R.id.handImage);
         mCamera = camera;
         startAutoExposure(3000);
 
@@ -200,7 +201,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
 
                     // pobranie stopnia dopasowania dloni do konturu
                     HandMatchingLevel level = hfrm.getMatchingLevel();
-                    // TUTEJ XD ZMIANA KOLORU MINIATURY(w wewnotrz tej funkcji trzeba spr. czy zmieniamy na ten sam stan - jezeli tak to nie zmieniaj)
+                    setProperColorOfContour(level);
                     
 
                     //set frames to 0 (return to the beginning of loop)
@@ -440,5 +441,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
         measureCameraTime = true;
         startTime = System.nanoTime();
         autoAdjustmentTime = milliseconds * 1000000L;
+    }
+
+    public void setProperColorOfContour(HandMatchingLevel level){
+        if(level == HandMatchingLevel.NO)
+            handImage.setImageResource(R.drawable.bad_red_hand);
+        else if(level == HandMatchingLevel.LOW)
+            handImage.setImageResource(R.drawable.bad_orange_hand);
+        else if(level == HandMatchingLevel.MATCHED)
+            handImage.setImageResource(R.drawable.good_hand);
     }
 }

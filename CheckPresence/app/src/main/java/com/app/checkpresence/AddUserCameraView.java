@@ -15,6 +15,7 @@ import android.widget.TextView;
 import com.app.checkpresence.backgroundmenage.CameraParameters;
 import com.app.checkpresence.backgroundmenage.HandFeatureRaportManager;
 import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
+import com.app.checkpresence.backgroundmenage.HandMatchingLevel;
 import com.app.database.DataBase;
 import com.app.picture.Frame;
 import com.app.recognition.HandRecognizer;
@@ -43,7 +44,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     protected int frames = 1;
     protected int pictureSaved = 0;
     protected TextView savedPic;
-    private ImageView bottomCenter, bottomRight, infoView;
+    private ImageView bottomCenter, bottomRight, infoView, handImage;
     private ImageButton backgroundBtn;
     private Bitmap bmpBackground;
     private List<ImageView> openCVViews;
@@ -66,8 +67,9 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         this.mainActivity = activity;
         this.addUserActivity = addUserActivity;
         this.backgroundBtn = (ImageButton) this.addUserActivity.findViewById(R.id.backgroundBtn);
-        this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
-        this.infoView = (ImageView) this.mainActivity.findViewById(R.id.infoView);
+        this.savedPic = (TextView) this.addUserActivity.findViewById(R.id.saved);
+        this.infoView = (ImageView) this.addUserActivity.findViewById(R.id.infoView);
+        this.handImage = (ImageView) this.addUserActivity.findViewById(R.id.handImage);
         mCamera = camera;
         startAutoExposure(2000);
 
@@ -156,6 +158,10 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
                             addUserDialog();
                         }
                     }
+
+                    // pobranie stopnia dopasowania dloni do konturu
+                    HandMatchingLevel level = hfrm.getMatchingLevel();
+                    setProperColorOfContour(level);
 
                     //set frames to 0 (return to the beginning of loop)
                     frames = 0;
@@ -364,5 +370,14 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
 
     public void closeActivity(){
         addUserActivity.closeActivity();
+    }
+
+    public void setProperColorOfContour(HandMatchingLevel level){
+        if(level == HandMatchingLevel.NO)
+            handImage.setImageResource(R.drawable.bad_red_hand);
+        else if(level == HandMatchingLevel.LOW)
+            handImage.setImageResource(R.drawable.bad_orange_hand);
+        else if(level == HandMatchingLevel.MATCHED)
+            handImage.setImageResource(R.drawable.good_hand);
     }
 }
