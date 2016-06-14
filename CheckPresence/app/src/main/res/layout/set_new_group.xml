@@ -19,7 +19,7 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:id="@+id/user_data_ico"
-            android:background="@drawable/ic_add_user_light"
+            android:background="@drawable/ic_dodaj_grupe_light"
             android:layout_weight="0.09" />
 
         <TextView

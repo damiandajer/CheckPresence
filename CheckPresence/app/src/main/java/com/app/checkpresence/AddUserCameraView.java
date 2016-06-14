@@ -136,10 +136,13 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
                     }
                 }
 
-                if(measureCameraTime == true)
+                if(measureCameraTime == true) {
                     infoView.setVisibility(VISIBLE);
+                    infoView.setImageResource(R.drawable.poczekaj);
+                }
                 else
-                    infoView.setVisibility(INVISIBLE);
+                    //infoView.setVisibility(INVISIBLE);
+                    infoView.setImageResource(R.drawable.dopasuj);
 
                 if(frames == 5) {
                     //number of processed pictures
@@ -373,11 +376,18 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public void setProperColorOfContour(HandMatchingLevel level){
-        if(level == HandMatchingLevel.NO)
+        if(level == HandMatchingLevel.NO) {
             handImage.setImageResource(R.drawable.bad_red_hand);
-        else if(level == HandMatchingLevel.LOW)
+            infoView.setImageResource(R.drawable.dopasuj);
+            infoView.setVisibility(VISIBLE);
+        }
+        else if(level == HandMatchingLevel.LOW) {
             handImage.setImageResource(R.drawable.bad_orange_hand);
-        else if(level == HandMatchingLevel.MATCHED)
+            infoView.setVisibility(INVISIBLE);
+        }
+        else if(level == HandMatchingLevel.MATCHED) {
             handImage.setImageResource(R.drawable.good_hand);
+            infoView.setVisibility(INVISIBLE);
+        }
     }
 }
