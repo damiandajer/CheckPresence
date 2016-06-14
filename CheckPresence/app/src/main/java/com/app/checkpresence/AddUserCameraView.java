@@ -44,7 +44,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     protected int frames = 1;
     protected int pictureSaved = 0;
     protected TextView savedPic;
-    private ImageView bottomCenter, bottomRight, infoView, handImage;
+    private ImageView bottomCenter, bottomRight, infoView, handImage, infoCounter;
     private ImageButton backgroundBtn;
     private Bitmap bmpBackground;
     private List<ImageView> openCVViews;
@@ -70,6 +70,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         this.savedPic = (TextView) this.addUserActivity.findViewById(R.id.saved);
         this.infoView = (ImageView) this.addUserActivity.findViewById(R.id.infoView);
         this.handImage = (ImageView) this.addUserActivity.findViewById(R.id.handImage);
+        this.infoCounter = (ImageView) this.addUserActivity.findViewById(R.id.infoCounter);
         mCamera = camera;
         startAutoExposure(2000);
 
@@ -136,13 +137,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
                     }
                 }
 
-                if(measureCameraTime == true) {
-                    infoView.setVisibility(VISIBLE);
-                    infoView.setImageResource(R.drawable.poczekaj);
-                }
-                else
-                    //infoView.setVisibility(INVISIBLE);
-                    infoView.setImageResource(R.drawable.dopasuj);
+                setInfoView();
 
                 if(frames == 5) {
                     //number of processed pictures
@@ -317,11 +312,46 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
 
     private boolean checkIfAllFeatures(){
         if(allHandFeatures.size() < 10){
-            savedPic.setText(allHandFeatures.size() + " found");
+            setInfoCounter(allHandFeatures.size());
             return false;
         }
         else
             return true;
+    }
+
+    private void setInfoCounter(int count){
+        switch (count) {
+            case 0:
+                infoCounter.setImageResource(R.drawable.licznik10);
+                break;
+            case 1:
+                infoCounter.setImageResource(R.drawable.licznik9);
+                break;
+            case 2:
+                infoCounter.setImageResource(R.drawable.licznik8);
+                break;
+            case 3:
+                infoCounter.setImageResource(R.drawable.licznik7);
+                break;
+            case 4:
+                infoCounter.setImageResource(R.drawable.licznik6);
+                break;
+            case 5:
+                infoCounter.setImageResource(R.drawable.licznik5);
+                break;
+            case 6:
+                infoCounter.setImageResource(R.drawable.licznik4);
+                break;
+            case 7:
+                infoCounter.setImageResource(R.drawable.licznik3);
+                break;
+            case 8:
+                infoCounter.setImageResource(R.drawable.licznik2);
+                break;
+            case 9:
+                infoCounter.setImageResource(R.drawable.licznik1);
+                break;
+        }
     }
 
     private void addUserDialog(){
@@ -389,5 +419,14 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
             handImage.setImageResource(R.drawable.good_hand);
             infoView.setVisibility(INVISIBLE);
         }
+    }
+
+    private void setInfoView(){
+        if(measureCameraTime == true) {
+            infoView.setVisibility(VISIBLE);
+            infoView.setImageResource(R.drawable.poczekaj);
+        }
+        else
+            infoView.setImageResource(R.drawable.dopasuj);
     }
 }

@@ -159,13 +159,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
                     }
                 }
 
-                if(measureCameraTime == true) {
-                    infoView.setVisibility(VISIBLE);
-                    infoView.setImageResource(R.drawable.poczekaj);
-                }
-                else
-                    //infoView.setVisibility(INVISIBLE);
-                    infoView.setImageResource(R.drawable.dopasuj);
+                setInfoView();
 
                 if(frames == 5) {
                     AppExecutionTimes.clear(); // czyscimy obecnie istniejace czasy
@@ -460,5 +454,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback{
             handImage.setImageResource(R.drawable.good_hand);
             infoView.setVisibility(INVISIBLE);
         }
+    }
+
+    private void setInfoView(){
+        if(measureCameraTime == true) {
+            infoView.setVisibility(VISIBLE);
+            infoView.setImageResource(R.drawable.poczekaj);
+        }
+        else
+            infoView.setImageResource(R.drawable.dopasuj);
     }
 }
