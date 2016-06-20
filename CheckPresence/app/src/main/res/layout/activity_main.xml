@@ -112,6 +112,15 @@
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentStart="true" />
 
+            <ImageView
+                android:layout_width="300dp"
+                android:layout_height="100dp"
+                android:id="@+id/infoView"
+                android:layout_below="@+id/saved"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="52dp"
+                android:src="@drawable/poczekaj"/>
+
         </RelativeLayout>
 
     </FrameLayout>

@@ -12,17 +12,17 @@
             android:title="Dodaj użytkownika" />
         <item
             android:id="@+id/nav_Dodaj_grupę"
-            android:icon="@drawable/plus"
+            android:icon="@drawable/ic_dodaj_grupe"
             android:title="Dodaj grupę"
             android:checkableBehavior="none"/>
         <item
             android:id="@+id/nav_Dodaj_zajęcia"
-            android:icon="@drawable/plus"
+            android:icon="@drawable/ic_dodaj_zajecia"
             android:title="Dodaj zajęcia"
             android:checkableBehavior="none"/>
         <item
             android:id="@+id/nav_obecnosci"
-            android:icon="@drawable/plus"
+            android:icon="@drawable/ic_wyswietl_obecnosci"
             android:title="Wyświetl obecności" />
         <item
             android:id="@+id/nav_Database_Manager"

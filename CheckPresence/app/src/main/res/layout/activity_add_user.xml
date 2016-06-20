@@ -50,6 +50,22 @@
             android:layout_alignTop="@+id/liveView"
             android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true" />
+
+        <ImageView
+            android:layout_width="300dp"
+            android:layout_height="100dp"
+            android:id="@+id/infoView"
+            android:layout_marginTop="54dp"
+            android:src="@drawable/poczekaj"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true" />
+
+        <ImageView
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:id="@+id/infoCounter"
+            android:layout_below="@+id/infoView"
+            android:layout_centerHorizontal="true" />
     </RelativeLayout>
 
     <TextView

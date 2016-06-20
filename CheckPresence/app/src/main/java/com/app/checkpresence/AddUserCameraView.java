@@ -15,6 +15,7 @@ import android.widget.TextView;
 import com.app.checkpresence.backgroundmenage.CameraParameters;
 import com.app.checkpresence.backgroundmenage.HandFeatureRaportManager;
 import com.app.checkpresence.backgroundmenage.HandFeaturesRaport;
+import com.app.checkpresence.backgroundmenage.HandMatchingLevel;
 import com.app.database.DataBase;
 import com.app.picture.Frame;
 import com.app.recognition.HandRecognizer;
@@ -43,7 +44,7 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
     protected int frames = 1;
     protected int pictureSaved = 0;
     protected TextView savedPic;
-    private ImageView bottomCenter, bottomRight;
+    private ImageView bottomCenter, bottomRight, infoView, handImage, infoCounter;
     private ImageButton backgroundBtn;
     private Bitmap bmpBackground;
     private List<ImageView> openCVViews;
@@ -66,7 +67,10 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
         this.mainActivity = activity;
         this.addUserActivity = addUserActivity;
         this.backgroundBtn = (ImageButton) this.addUserActivity.findViewById(R.id.backgroundBtn);
-        this.savedPic = (TextView) this.mainActivity.findViewById(R.id.saved);
+        this.savedPic = (TextView) this.addUserActivity.findViewById(R.id.saved);
+        this.infoView = (ImageView) this.addUserActivity.findViewById(R.id.infoView);
+        this.handImage = (ImageView) this.addUserActivity.findViewById(R.id.handImage);
+        this.infoCounter = (ImageView) this.addUserActivity.findViewById(R.id.infoCounter);
         mCamera = camera;
         startAutoExposure(2000);
 
@@ -133,6 +137,8 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
                     }
                 }
 
+                setInfoView();
+
                 if(frames == 5) {
                     //number of processed pictures
                     ++pictureSaved;
@@ -150,6 +156,10 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
                             addUserDialog();
                         }
                     }
+
+                    // pobranie stopnia dopasowania dloni do konturu
+                    HandMatchingLevel level = hfrm.getMatchingLevel();
+                    setProperColorOfContour(level);
 
                     //set frames to 0 (return to the beginning of loop)
                     frames = 0;
@@ -302,11 +312,46 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
 
     private boolean checkIfAllFeatures(){
         if(allHandFeatures.size() < 10){
-            savedPic.setText(allHandFeatures.size() + " found");
+            setInfoCounter(allHandFeatures.size());
             return false;
         }
         else
             return true;
+    }
+
+    private void setInfoCounter(int count){
+        switch (count) {
+            case 0:
+                infoCounter.setImageResource(R.drawable.licznik10);
+                break;
+            case 1:
+                infoCounter.setImageResource(R.drawable.licznik9);
+                break;
+            case 2:
+                infoCounter.setImageResource(R.drawable.licznik8);
+                break;
+            case 3:
+                infoCounter.setImageResource(R.drawable.licznik7);
+                break;
+            case 4:
+                infoCounter.setImageResource(R.drawable.licznik6);
+                break;
+            case 5:
+                infoCounter.setImageResource(R.drawable.licznik5);
+                break;
+            case 6:
+                infoCounter.setImageResource(R.drawable.licznik4);
+                break;
+            case 7:
+                infoCounter.setImageResource(R.drawable.licznik3);
+                break;
+            case 8:
+                infoCounter.setImageResource(R.drawable.licznik2);
+                break;
+            case 9:
+                infoCounter.setImageResource(R.drawable.licznik1);
+                break;
+        }
     }
 
     private void addUserDialog(){
@@ -358,5 +403,30 @@ public class AddUserCameraView extends SurfaceView implements SurfaceHolder.Call
 
     public void closeActivity(){
         addUserActivity.closeActivity();
+    }
+
+    public void setProperColorOfContour(HandMatchingLevel level){
+        if(level == HandMatchingLevel.NO) {
+            handImage.setImageResource(R.drawable.bad_red_hand);
+            infoView.setImageResource(R.drawable.dopasuj);
+            infoView.setVisibility(VISIBLE);
+        }
+        else if(level == HandMatchingLevel.LOW) {
+            handImage.setImageResource(R.drawable.bad_orange_hand);
+            infoView.setVisibility(INVISIBLE);
+        }
+        else if(level == HandMatchingLevel.MATCHED) {
+            handImage.setImageResource(R.drawable.good_hand);
+            infoView.setVisibility(INVISIBLE);
+        }
+    }
+
+    private void setInfoView(){
+        if(measureCameraTime == true) {
+            infoView.setVisibility(VISIBLE);
+            infoView.setImageResource(R.drawable.poczekaj);
+        }
+        else
+            infoView.setImageResource(R.drawable.dopasuj);
     }
 }
