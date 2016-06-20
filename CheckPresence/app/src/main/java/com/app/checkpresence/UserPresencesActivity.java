@@ -5,8 +5,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.app.database.DataBase;
 
@@ -17,6 +19,7 @@ public class UserPresencesActivity extends AppCompatActivity {
     private static DataBase dataBase;
     private ListView listView;
     Spinner spinner;
+    Button removeClasses;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,7 +30,7 @@ public class UserPresencesActivity extends AppCompatActivity {
 
         List<Classes> classes = dataBase.getAllClassses();
         spinner = (Spinner) findViewById(R.id.group_spinner);
-        ArrayAdapter adapter = new ArrayAdapter(this,
+        final ArrayAdapter adapter = new ArrayAdapter(this,
                 android.R.layout.simple_spinner_dropdown_item,
                 classes);
 
@@ -47,12 +50,25 @@ public class UserPresencesActivity extends AppCompatActivity {
             }
         });
 
+        removeClasses = (Button) findViewById(R.id.button_remove_classes);
+
+        removeClasses.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Classes classesSelected = (Classes)spinner.getSelectedItem();
+                if(classesSelected != null){
+                    adapter.remove(classesSelected);
+                    dataBase.deleteClassess(classesSelected.getId());
+                    Toast toast = Toast.makeText(getApplicationContext(), "Usunięto zajęcia", Toast.LENGTH_SHORT);
+                    toast.show();
+                }
+                            }
+        });
 
     }
 
     private void refreshClasses(){
         Classes cl = (Classes)spinner.getSelectedItem();
-
 
         ArrayAdapter adapterList = new ArrayAdapter(this,
                 android.R.layout.simple_spinner_dropdown_item,
