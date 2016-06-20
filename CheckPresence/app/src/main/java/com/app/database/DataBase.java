@@ -741,6 +741,16 @@ public class DataBase extends SQLiteOpenHelper{
     }
 
     /**
+     * Usuwa zajęcia o podanym id
+     * @param idClass - id zajęć do usunięcia
+     */
+    public void deleteClassess(long idClass){
+        String deleteQuery = "DELETE FROM " + TABLE_NAME_CLASS
+                + " WHERE " + COLUMN_NAME_ID_CLASS + " = " + idClass;
+        dataBase.execSQL(deleteQuery);
+    }
+
+    /**
      * Dodaje pole obecność dla podaej osoby na podanych zajęciach
      * @param idClass - id zajęć
      * @param idUser - id osoby
@@ -794,10 +804,11 @@ public class DataBase extends SQLiteOpenHelper{
 
 
         Cursor cursor = dataBase.rawQuery(selectQuery, null);
+        int i = 1;
 
         if(cursor != null && cursor.moveToFirst()) {
             do{
-                tmp = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_FIRST_NAME)) + " "
+                tmp = Integer.toString(i) + ". " + cursor.getString(cursor.getColumnIndex(COLUMN_NAME_FIRST_NAME)) + " "
                     + cursor.getString(cursor.getColumnIndex(COLUMN_NAME_SECOND_NAME)) + " ";
 
                 if(cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_PRESENCE_BOOL)) == 0){
@@ -805,7 +816,8 @@ public class DataBase extends SQLiteOpenHelper{
                 } else {
                     tmp += "- obecny";
                 }
-                                
+
+                i++;
                 pres.add(tmp);
             }while(cursor.moveToNext());
         }
